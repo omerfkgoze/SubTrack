@@ -1,6 +1,6 @@
 # Story 1.1: Project Initialization & Core Infrastructure
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -492,10 +492,20 @@ Claude Opus 4.6 (claude-opus-4-6)
 - supabase/config.toml
 - supabase/seed.sql
 - supabase/.gitignore
+- supabase/migrations/.gitkeep
+- supabase/functions/.gitkeep
+- metro.config.js
+- assets/images/.gitkeep
+- assets/animations/.gitkeep
+- assets/fonts/.gitkeep
+- .github/workflows/.gitkeep
 
 #### Modified Files
 - .gitignore (added /ios, /android, .kotlin/ entries)
+- package.json (removed deprecated --ext flag from lint scripts)
+- src/config/index.ts (removed env from barrel export to prevent crash when env vars not set)
 
 ## Change Log
 
 - 2026-02-15: Story 1.1 implementation completed — Full project initialization with Expo SDK 54, all core dependencies, feature-based structure, navigation, providers, theme, and dev tooling
+- 2026-02-15: Code review fixes — Added missing .gitkeep files for supabase/migrations, supabase/functions, assets/images, assets/animations, assets/fonts, .github/workflows. Created metro.config.js. Fixed deprecated ESLint --ext flag. Removed env from config barrel export to prevent crash.
