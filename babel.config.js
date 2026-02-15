@@ -15,8 +15,8 @@ module.exports = function (api) {
           },
         },
       ],
-      'react-native-worklets/plugin', // MUST be before reanimated
-      'react-native-reanimated/plugin', // MUST be LAST plugin
+      // react-native-worklets/plugin and react-native-reanimated/plugin
+      // are automatically included by babel-preset-expo in SDK 54
     ],
   };
 };
