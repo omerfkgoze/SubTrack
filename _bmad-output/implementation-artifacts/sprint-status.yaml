@@ -42,7 +42,7 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
   # Epic 1: Project Foundation & User Authentication
   epic-1: in-progress
-  1-1-project-initialization-core-infrastructure: ready-for-dev
+  1-1-project-initialization-core-infrastructure: review
   1-2-user-registration-with-email: backlog
   1-3-user-login-with-email-password: backlog
   1-4-biometric-authentication-setup: backlog

@@ -23,7 +23,12 @@ expo-env.d.ts
 *.orig.*
 
 # ---------- React Native ----------
-# iOS
+# Generated native folders (created by expo prebuild)
+/ios
+/android
+.kotlin/
+
+# iOS (if prebuild)
 ios/Pods/
 ios/build/
 ios/*.xcworkspace
@@ -35,7 +40,7 @@ ios/DerivedData/
 *.dSYM.zip
 *.dSYM
 
-# Android
+# Android (if prebuild)
 android/app/build/
 android/build/
 android/.gradle/
