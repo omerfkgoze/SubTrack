@@ -33,11 +33,15 @@ export type RootStackParamList = {
 };
 
 // Screen prop types
-export type AuthStackScreenProps<T extends keyof AuthStackParamList> =
-  NativeStackScreenProps<AuthStackParamList, T>;
+export type AuthStackScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<
+  AuthStackParamList,
+  T
+>;
 
-export type MainTabsScreenProps<T extends keyof MainTabsParamList> =
-  BottomTabScreenProps<MainTabsParamList, T>;
+export type MainTabsScreenProps<T extends keyof MainTabsParamList> = BottomTabScreenProps<
+  MainTabsParamList,
+  T
+>;
 
 export type SettingsStackScreenProps<T extends keyof SettingsStackParamList> =
   NativeStackScreenProps<SettingsStackParamList, T>;

@@ -1,6 +1,6 @@
 # Story 1.2: User Registration with Email
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,45 +27,45 @@ So that I can start tracking my subscriptions securely.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Supabase client service (AC: #4)
-  - [ ] 1.1 Create `src/shared/services/supabase.ts` with typed Supabase client using `createClient()` from `@supabase/supabase-js`
-  - [ ] 1.2 Import `env.ts` for `SUPABASE_URL` and `SUPABASE_ANON_KEY`
-  - [ ] 1.3 Export typed client instance for use across the app
-- [ ] Task 2: Create auth types (AC: #4, #5)
-  - [ ] 2.1 Create `src/features/auth/types/index.ts` with `RegisterFormData`, `AuthError` interfaces
-  - [ ] 2.2 Define Zod v4 validation schemas for registration form in `src/features/auth/types/schemas.ts`
-- [ ] Task 3: Create auth service (AC: #3, #6, #11)
-  - [ ] 3.1 Create `src/features/auth/services/authService.ts` with `signUpWithEmail(email, password)` function
-  - [ ] 3.2 Handle Supabase auth errors and map to user-friendly messages (duplicate email, network error, etc.)
-  - [ ] 3.3 Return typed result with `{ user, session, error }` pattern
-- [ ] Task 4: Create useAuthStore Zustand store (AC: #5, #9)
-  - [ ] 4.1 Create `src/shared/stores/useAuthStore.ts` following the architecture Zustand pattern
-  - [ ] 4.2 Implement state: `user`, `session`, `isLoading`, `error`, `isAuthenticated`
-  - [ ] 4.3 Implement actions: `signUp`, `setSession`, `clearAuth`, `clearError`
-  - [ ] 4.4 Add MMKV persistence for session data using `zustand/middleware` persist
-- [ ] Task 5: Update AuthProvider to use Zustand store (AC: #9)
-  - [ ] 5.1 Update `src/app/providers/AuthProvider.tsx` to read from `useAuthStore` instead of local state
-  - [ ] 5.2 Add Supabase `onAuthStateChange` listener to sync auth state
-  - [ ] 5.3 Update `RootNavigator` to consume `isAuthenticated` from the store
-- [ ] Task 6: Implement RegisterScreen UI (AC: #1, #7, #8, #10, #12)
-  - [ ] 6.1 Replace placeholder `RegisterScreen.tsx` with full registration form
-  - [ ] 6.2 Use `react-hook-form` with `zodResolver` for form state and validation
-  - [ ] 6.3 Add email `TextInput` with email keyboard type and autoCapitalize="none"
-  - [ ] 6.4 Add password `TextInput` with secureTextEntry and toggle visibility icon
-  - [ ] 6.5 Add confirm password `TextInput` with match validation
-  - [ ] 6.6 Add password requirements helper text showing which rules pass/fail
-  - [ ] 6.7 Add "Create Account" `Button` with loading state
-  - [ ] 6.8 Add "Already have an account? Login" link at bottom
-  - [ ] 6.9 Handle keyboard avoidance with `KeyboardAvoidingView`
-  - [ ] 6.10 Ensure all touch targets are minimum 44x44pt
-- [ ] Task 7: Connect form to auth store and service (AC: #3, #6, #9, #10, #11)
-  - [ ] 7.1 Wire form submission to `useAuthStore.signUp()` action
-  - [ ] 7.2 Display inline errors from Supabase (duplicate email, network errors)
-  - [ ] 7.3 On success, auth state changes → navigation switches to MainTabs automatically
-  - [ ] 7.4 Handle loading/submitting states on the button
-- [ ] Task 8: Update feature exports (AC: all)
-  - [ ] 8.1 Update `src/features/auth/index.ts` to export RegisterScreen, auth types, and hooks
-  - [ ] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
+- [x] Task 1: Create Supabase client service (AC: #4)
+  - [x] 1.1 Create `src/shared/services/supabase.ts` with typed Supabase client using `createClient()` from `@supabase/supabase-js`
+  - [x] 1.2 Import `env.ts` for `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+  - [x] 1.3 Export typed client instance for use across the app
+- [x] Task 2: Create auth types (AC: #4, #5)
+  - [x] 2.1 Create `src/features/auth/types/index.ts` with `RegisterFormData`, `AuthError` interfaces
+  - [x] 2.2 Define Zod v4 validation schemas for registration form in `src/features/auth/types/schemas.ts`
+- [x] Task 3: Create auth service (AC: #3, #6, #11)
+  - [x] 3.1 Create `src/features/auth/services/authService.ts` with `signUpWithEmail(email, password)` function
+  - [x] 3.2 Handle Supabase auth errors and map to user-friendly messages (duplicate email, network error, etc.)
+  - [x] 3.3 Return typed result with `{ user, session, error }` pattern
+- [x] Task 4: Create useAuthStore Zustand store (AC: #5, #9)
+  - [x] 4.1 Create `src/shared/stores/useAuthStore.ts` following the architecture Zustand pattern
+  - [x] 4.2 Implement state: `user`, `session`, `isLoading`, `error`, `isAuthenticated`
+  - [x] 4.3 Implement actions: `signUp`, `setSession`, `clearAuth`, `clearError`
+  - [x] 4.4 Add MMKV persistence for session data using `zustand/middleware` persist
+- [x] Task 5: Update AuthProvider to use Zustand store (AC: #9)
+  - [x] 5.1 Update `src/app/providers/AuthProvider.tsx` to read from `useAuthStore` instead of local state
+  - [x] 5.2 Add Supabase `onAuthStateChange` listener to sync auth state
+  - [x] 5.3 Update `RootNavigator` to consume `isAuthenticated` from the store
+- [x] Task 6: Implement RegisterScreen UI (AC: #1, #7, #8, #10, #12)
+  - [x] 6.1 Replace placeholder `RegisterScreen.tsx` with full registration form
+  - [x] 6.2 Use `react-hook-form` with `zodResolver` for form state and validation
+  - [x] 6.3 Add email `TextInput` with email keyboard type and autoCapitalize="none"
+  - [x] 6.4 Add password `TextInput` with secureTextEntry and toggle visibility icon
+  - [x] 6.5 Add confirm password `TextInput` with match validation
+  - [x] 6.6 Add password requirements helper text showing which rules pass/fail
+  - [x] 6.7 Add "Create Account" `Button` with loading state
+  - [x] 6.8 Add "Already have an account? Login" link at bottom
+  - [x] 6.9 Handle keyboard avoidance with `KeyboardAvoidingView`
+  - [x] 6.10 Ensure all touch targets are minimum 44x44pt
+- [x] Task 7: Connect form to auth store and service (AC: #3, #6, #9, #10, #11)
+  - [x] 7.1 Wire form submission to `useAuthStore.signUp()` action
+  - [x] 7.2 Display inline errors from Supabase (duplicate email, network errors)
+  - [x] 7.3 On success, auth state changes → navigation switches to MainTabs automatically
+  - [x] 7.4 Handle loading/submitting states on the button
+- [x] Task 8: Update feature exports (AC: all)
+  - [x] 8.1 Update `src/features/auth/index.ts` to export RegisterScreen, auth types, and hooks
+  - [x] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
 
 ## Dev Notes
 
@@ -363,10 +363,40 @@ c4c5448 ready for review epic-1
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- MMKV v4 API change: `MMKV` is a type-only export. Use `createMMKV()` function instead of `new MMKV()`. Method `delete()` renamed to `remove()`.
+- ESLint caught unused `err` variable in catch block — fixed with bare `catch {}`.
+
 ### Completion Notes List
 
+- Task 1: Created Supabase client with MMKV storage adapter for React Native compatibility (`createMMKV` API for v4).
+- Task 2: Auth types (`RegisterFormData`, `AuthError`, `AuthResult`) and Zod v4 schema with `z.email()` and `.refine()` for password confirmation.
+- Task 3: Auth service with `signUpWithEmail()` and user-friendly error mapping (duplicate email, network error, generic fallback).
+- Task 4: Zustand v5 store with `persist` middleware and MMKV storage. State: `user`, `session`, `isAuthenticated`, `isLoading`, `error`. Actions: `signUp`, `setSession`, `setUser`, `clearAuth`, `clearError`.
+- Task 5: AuthProvider refactored from Context to Zustand + Supabase `onAuthStateChange` listener. RootNavigator reads `isAuthenticated` directly from store. App.tsx simplified.
+- Task 6: Full RegisterScreen with react-hook-form + zodResolver, email/password/confirmPassword fields, password visibility toggle, live password requirements indicator, loading state on button, "Already have an account? Login" link, KeyboardAvoidingView, 44pt min touch targets.
+- Task 7: Form wired to `useAuthStore.signUp()`, auth errors displayed inline, navigation auto-switches on `isAuthenticated` change, loading state handled.
+- Task 8: Feature exports updated in `src/features/auth/index.ts`. All imports verified with path aliases.
+
+### Change Log
+
+- 2026-02-15: Story 1.2 implementation complete — all 8 tasks and 30 subtasks done.
+
 ### File List
+
+**Created:**
+- `src/shared/services/supabase.ts`
+- `src/shared/stores/useAuthStore.ts`
+- `src/features/auth/services/authService.ts`
+- `src/features/auth/types/index.ts`
+- `src/features/auth/types/schemas.ts`
+
+**Modified:**
+- `src/features/auth/screens/RegisterScreen.tsx`
+- `src/app/providers/AuthProvider.tsx`
+- `src/app/navigation/index.tsx`
+- `src/app/App.tsx`
+- `src/features/auth/index.ts`

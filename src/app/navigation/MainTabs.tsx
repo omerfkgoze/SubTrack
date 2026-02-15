@@ -25,9 +25,7 @@ export function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="home" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Icon source="home" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -45,9 +43,7 @@ export function MainTabs() {
         component={AddSubscriptionScreen}
         options={{
           tabBarLabel: 'Add',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="plus-circle" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Icon source="plus-circle" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -55,9 +51,7 @@ export function MainTabs() {
         component={SettingsStack}
         options={{
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="cog" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Icon source="cog" size={size} color={color} />,
         }}
       />
     </Tab.Navigator>

@@ -1,0 +1,102 @@
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { createMMKV } from 'react-native-mmkv';
+import type { User, Session } from '@supabase/supabase-js';
+import { signUpWithEmail } from '@features/auth/services/authService';
+
+const storage = createMMKV({ id: 'auth-storage' });
+
+const mmkvStorage = {
+  getItem: (name: string): string | null => {
+    return storage.getString(name) ?? null;
+  },
+  setItem: (name: string, value: string): void => {
+    storage.set(name, value);
+  },
+  removeItem: (name: string): void => {
+    storage.remove(name);
+  },
+};
+
+interface AuthState {
+  user: User | null;
+  session: Session | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+interface AuthActions {
+  signUp: (email: string, password: string) => Promise<void>;
+  setSession: (session: Session | null) => void;
+  setUser: (user: User | null) => void;
+  clearAuth: () => void;
+  clearError: () => void;
+}
+
+type AuthStore = AuthState & AuthActions;
+
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      user: null,
+      session: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+
+      signUp: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+
+        const result = await signUpWithEmail(email, password);
+
+        if (result.error) {
+          set({ isLoading: false, error: result.error.message });
+          return;
+        }
+
+        set({
+          user: result.user,
+          session: result.session,
+          isAuthenticated: result.session !== null,
+          isLoading: false,
+          error: null,
+        });
+      },
+
+      setSession: (session: Session | null) => {
+        set({
+          session,
+          isAuthenticated: session !== null,
+        });
+      },
+
+      setUser: (user: User | null) => {
+        set({ user });
+      },
+
+      clearAuth: () => {
+        set({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
+    }),
+    {
+      name: 'auth-session',
+      storage: createJSONStorage(() => mmkvStorage),
+      partialize: (state) => ({
+        user: state.user,
+        session: state.session,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

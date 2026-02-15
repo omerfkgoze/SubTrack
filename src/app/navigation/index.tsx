@@ -4,14 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
+import { useAuthStore } from '@shared/stores/useAuthStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-interface RootNavigatorProps {
-  isAuthenticated: boolean;
-}
+export function RootNavigator() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-export function RootNavigator({ isAuthenticated }: RootNavigatorProps) {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
