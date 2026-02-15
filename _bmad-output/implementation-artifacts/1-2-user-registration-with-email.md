@@ -1,6 +1,6 @@
 # Story 1.2: User Registration with Email
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -370,6 +370,27 @@ Claude Opus 4.6
 - MMKV v4 API change: `MMKV` is a type-only export. Use `createMMKV()` function instead of `new MMKV()`. Method `delete()` renamed to `remove()`.
 - ESLint caught unused `err` variable in catch block — fixed with bare `catch {}`.
 
+### Senior Developer Review (AI)
+
+**Reviewer:** GOZE | **Date:** 2026-02-15 | **Model:** Claude Opus 4.6
+
+**Issues Found:** 3 High, 4 Medium, 3 Low (10 total)
+
+**Fixed (7):**
+- [H1] Email confirmation scenario: Added `needsEmailConfirmation` state to store + confirmation UI in RegisterScreen
+- [H2] Error type mismatch: Changed `error: string | null` → `error: AuthError | null` in useAuthStore, matching architecture pattern
+- [H3] Story File List: Documented all 5 undocumented file changes (app.json, package.json, types.ts, MainTabs.tsx, QueryProvider.tsx)
+- [M1] Retry option: Button text changes to "Try Again" on network errors
+- [M2] Email trimming: Added `.trim()` to email before submission
+- [M3] Hardcoded color: Replaced `#10B981` with `theme.colors.tertiary` via `useTheme()` hook
+
+**Remaining (3 Low - acceptable for MVP):**
+- [L1] Password toggle icons missing `accessibilityLabel` — FIXED as bonus
+- [L2] No `testID` props on components (E2E testing convenience)
+- [L3] Formatting-only changes mixed with story commits
+
+**Build Verification:** TypeScript `--noEmit` PASS, ESLint PASS
+
 ### Completion Notes List
 
 - Task 1: Created Supabase client with MMKV storage adapter for React Native compatibility (`createMMKV` API for v4).
@@ -384,6 +405,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-02-15: Story 1.2 implementation complete — all 8 tasks and 30 subtasks done.
+- 2026-02-15: Code review fixes — email confirmation handling, error type alignment with architecture, email trimming, theme color compliance, retry UX for network errors, accessibility labels.
 
 ### File List
 
@@ -400,3 +422,10 @@ Claude Opus 4.6
 - `src/app/navigation/index.tsx`
 - `src/app/App.tsx`
 - `src/features/auth/index.ts`
+
+**Modified (out-of-scope / formatting only — not part of story tasks):**
+- `app.json` — Added iOS bundleIdentifier and Android package (EAS Build requirement)
+- `package.json` — Changed `expo start --android/ios` to `expo run:android/ios`
+- `src/app/navigation/types.ts` — Formatting only (auto-formatter)
+- `src/app/navigation/MainTabs.tsx` — Formatting only (auto-formatter)
+- `src/app/providers/QueryProvider.tsx` — Formatting only (auto-formatter)

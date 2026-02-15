@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, HelperText, useTheme } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import { useAuthStore } from '@shared/stores/useAuthStore';
 type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
 function PasswordRequirements({ password }: { password: string }) {
+  const theme = useTheme();
   const rules = [
     { label: 'At least 8 characters', met: password.length >= 8 },
     { label: '1 uppercase letter', met: /[A-Z]/.test(password) },
@@ -26,7 +27,7 @@ function PasswordRequirements({ password }: { password: string }) {
         <Text
           key={rule.label}
           variant="labelSmall"
-          style={[styles.requirementText, rule.met && styles.requirementMet]}
+          style={[styles.requirementText, rule.met && { opacity: 1, color: theme.colors.tertiary }]}
         >
           {rule.met ? '✓' : '○'} {rule.label}
         </Text>
@@ -41,6 +42,7 @@ export function RegisterScreen() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const authError = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
+  const needsEmailConfirmation = useAuthStore((s) => s.needsEmailConfirmation);
 
   const [securePassword, setSecurePassword] = useState(true);
   const [secureConfirm, setSecureConfirm] = useState(true);
@@ -58,10 +60,42 @@ export function RegisterScreen() {
 
   const passwordValue = watch('password');
 
+  const isNetworkError = authError?.message?.includes('internet');
+
   const onSubmit = async (data: RegisterFormData) => {
     clearError();
-    await signUp(data.email, data.password);
+    await signUp(data.email.trim(), data.password);
   };
+
+  if (needsEmailConfirmation) {
+    return (
+      <View style={[styles.flex, styles.container]}>
+        <Text variant="headlineMedium" style={styles.title}>
+          Check Your Email
+        </Text>
+        <Text variant="bodyMedium" style={styles.subtitle}>
+          We've sent a confirmation link to your email address. Please check your inbox to complete
+          registration.
+        </Text>
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('Login')}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+        >
+          Go to Login
+        </Button>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('Welcome')}
+          style={styles.loginLink}
+          contentStyle={styles.loginLinkContent}
+        >
+          Back to Welcome
+        </Button>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -78,7 +112,7 @@ export function RegisterScreen() {
 
         {authError && (
           <HelperText type="error" visible style={styles.authError}>
-            {authError}
+            {authError.message}
           </HelperText>
         )}
 
@@ -122,6 +156,7 @@ export function RegisterScreen() {
                   icon={securePassword ? 'eye-off' : 'eye'}
                   onPress={() => setSecurePassword(!securePassword)}
                   forceTextInputFocus={false}
+                  accessibilityLabel={securePassword ? 'Show password' : 'Hide password'}
                 />
               }
             />
@@ -151,6 +186,7 @@ export function RegisterScreen() {
                   icon={secureConfirm ? 'eye-off' : 'eye'}
                   onPress={() => setSecureConfirm(!secureConfirm)}
                   forceTextInputFocus={false}
+                  accessibilityLabel={secureConfirm ? 'Show password' : 'Hide password'}
                 />
               }
             />
@@ -168,7 +204,7 @@ export function RegisterScreen() {
           style={styles.button}
           contentStyle={styles.buttonContent}
         >
-          Create Account
+          {isNetworkError ? 'Try Again' : 'Create Account'}
         </Button>
 
         <Button
@@ -217,10 +253,6 @@ const styles = StyleSheet.create({
   requirementText: {
     opacity: 0.5,
     lineHeight: 18,
-  },
-  requirementMet: {
-    opacity: 1,
-    color: '#10B981',
   },
   button: {
     marginTop: 16,

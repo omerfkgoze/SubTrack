@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import type { User, Session } from '@supabase/supabase-js';
 import { signUpWithEmail } from '@features/auth/services/authService';
+import type { AuthError } from '@features/auth/types';
 
 const storage = createMMKV({ id: 'auth-storage' });
 
@@ -23,7 +24,8 @@ interface AuthState {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  error: string | null;
+  error: AuthError | null;
+  needsEmailConfirmation: boolean;
 }
 
 interface AuthActions {
@@ -44,14 +46,26 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      needsEmailConfirmation: false,
 
       signUp: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, needsEmailConfirmation: false });
 
         const result = await signUpWithEmail(email, password);
 
         if (result.error) {
-          set({ isLoading: false, error: result.error.message });
+          set({ isLoading: false, error: result.error });
+          return;
+        }
+
+        // Email confirmation required: user exists but no session
+        if (result.user && !result.session) {
+          set({
+            user: result.user,
+            needsEmailConfirmation: true,
+            isLoading: false,
+            error: null,
+          });
           return;
         }
 
@@ -68,6 +82,7 @@ export const useAuthStore = create<AuthStore>()(
         set({
           session,
           isAuthenticated: session !== null,
+          needsEmailConfirmation: false,
         });
       },
 
@@ -82,6 +97,7 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
           error: null,
+          needsEmailConfirmation: false,
         });
       },
 
