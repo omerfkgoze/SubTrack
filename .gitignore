@@ -1,0 +1,102 @@
+# ===========================
+# SubTrack .gitignore
+# React Native + Expo + TypeScript + Supabase
+# ===========================
+
+# ---------- Dependencies ----------
+node_modules/
+.pnp/
+.pnp.js
+
+# ---------- Expo ----------
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# ---------- EAS Build ----------
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# ---------- React Native ----------
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+ios/DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+*.apk
+*.aab
+
+# ---------- Metro Bundler ----------
+.metro-health-check*
+
+# ---------- TypeScript ----------
+*.tsbuildinfo
+
+# ---------- Testing ----------
+coverage/
+.jest/
+
+# ---------- Environment & Secrets ----------
+.env
+.env.*
+!.env.example
+*.pem
+
+# ---------- Supabase ----------
+supabase/.temp/
+supabase/.branches/
+
+# ---------- IDE & Editors ----------
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ---------- OS Files ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---------- Debug & Logs ----------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# ---------- BMAD Method ----------
+# Keep _bmad/ (framework config) tracked
+# Keep _bmad-output/ (planning/implementation artifacts) tracked
+# Ignore BMAD memory/cache files
+_bmad/_memory/
+
+# ---------- Claude Code ----------
+.claude/

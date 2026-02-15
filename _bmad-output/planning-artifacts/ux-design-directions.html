@@ -1,0 +1,1722 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SubTrack - Design Direction Showcase</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #6366f1;
+        --primary-light: #a5b4fc;
+        --primary-dark: #4f46e5;
+        --secondary: #8b5cf6;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        --gray-900: #111827;
+        --gray-700: #374151;
+        --gray-500: #6b7280;
+        --gray-300: #d1d5db;
+        --gray-100: #f3f4f6;
+        --white: #ffffff;
+        --background: #f8fafc;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--gray-100);
+        color: var(--gray-900);
+        line-height: 1.5;
+      }
+
+      /* Header */
+      .page-header {
+        background: var(--white);
+        padding: 24px 32px;
+        border-bottom: 1px solid var(--gray-300);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .page-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 8px;
+      }
+
+      .page-header p {
+        color: var(--gray-500);
+        font-size: 14px;
+      }
+
+      /* Navigation */
+      .direction-nav {
+        display: flex;
+        gap: 8px;
+        padding: 16px 32px;
+        background: var(--white);
+        border-bottom: 1px solid var(--gray-300);
+        overflow-x: auto;
+        position: sticky;
+        top: 89px;
+        z-index: 99;
+      }
+
+      .nav-btn {
+        padding: 8px 16px;
+        border: 2px solid var(--gray-300);
+        background: var(--white);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+
+      .nav-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      .nav-btn.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: var(--white);
+      }
+
+      /* Main Content */
+      .main-content {
+        padding: 32px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* Direction Container */
+      .direction-container {
+        display: none;
+      }
+
+      .direction-container.active {
+        display: block;
+      }
+
+      .direction-header {
+        margin-bottom: 24px;
+      }
+
+      .direction-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .direction-header p {
+        color: var(--gray-500);
+      }
+
+      .direction-tags {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .tag {
+        padding: 4px 12px;
+        background: var(--gray-100);
+        border-radius: 16px;
+        font-size: 12px;
+        color: var(--gray-700);
+      }
+
+      /* Phone Mockup */
+      .phone-frame {
+        width: 375px;
+        height: 812px;
+        background: var(--gray-900);
+        border-radius: 40px;
+        padding: 12px;
+        margin: 0 auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        background: var(--background);
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* ==================== */
+      /* DIRECTION 1: Clean Minimal */
+      /* ==================== */
+      .d1 .phone-screen {
+        background: #ffffff;
+      }
+
+      .d1 .app-bar {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ffffff;
+      }
+
+      .d1 .app-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--gray-900);
+      }
+
+      .d1 .notif-badge {
+        width: 40px;
+        height: 40px;
+        background: var(--gray-100);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .d1 .hero-area {
+        padding: 32px 20px;
+        text-align: center;
+      }
+
+      .d1 .hero-label {
+        font-size: 14px;
+        color: var(--gray-500);
+        margin-bottom: 8px;
+      }
+
+      .d1 .hero-number {
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--gray-900);
+        letter-spacing: -0.02em;
+      }
+
+      .d1 .hero-sub {
+        font-size: 16px;
+        color: var(--gray-500);
+        margin-top: 4px;
+      }
+
+      .d1 .content-area {
+        padding: 0 20px;
+      }
+
+      .d1 .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+      }
+
+      .d1 .sub-card {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .d1 .sub-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .d1 .sub-info {
+        flex: 1;
+      }
+
+      .d1 .sub-name {
+        font-weight: 500;
+        color: var(--gray-900);
+      }
+
+      .d1 .sub-date {
+        font-size: 13px;
+        color: var(--gray-500);
+      }
+
+      .d1 .sub-price {
+        font-weight: 600;
+        color: var(--gray-900);
+      }
+
+      .d1 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d1 .nav-item {
+        text-align: center;
+        color: var(--gray-500);
+        font-size: 11px;
+      }
+
+      .d1 .nav-item.active {
+        color: var(--primary);
+      }
+
+      .d1 .nav-icon {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+
+      .d1 .fab {
+        position: absolute;
+        bottom: 96px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: var(--primary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      }
+
+      /* ==================== */
+      /* DIRECTION 2: Bold Numbers */
+      /* ==================== */
+      .d2 .phone-screen {
+        background: var(--background);
+      }
+
+      .d2 .app-bar {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .d2 .app-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-700);
+      }
+
+      .d2 .hero-area {
+        padding: 24px 20px 32px;
+        text-align: center;
+      }
+
+      .d2 .hero-number {
+        font-size: 64px;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+
+      .d2 .hero-currency {
+        font-size: 32px;
+        vertical-align: top;
+      }
+
+      .d2 .hero-label {
+        font-size: 16px;
+        color: var(--gray-500);
+        margin-top: 8px;
+      }
+
+      .d2 .hero-yearly {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 8px 16px;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--primary);
+      }
+
+      .d2 .content-area {
+        background: var(--white);
+        border-radius: 24px 24px 0 0;
+        padding: 24px 20px;
+        min-height: 400px;
+      }
+
+      .d2 .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+
+      .d2 .sub-card {
+        background: var(--gray-100);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .d2 .sub-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+
+      .d2 .sub-name {
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      .d2 .sub-date {
+        font-size: 13px;
+        color: var(--gray-500);
+      }
+
+      .d2 .sub-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .d2 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d2 .fab {
+        position: absolute;
+        bottom: 96px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 28px;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+      }
+
+      /* ==================== */
+      /* DIRECTION 3: Card Heavy */
+      /* ==================== */
+      .d3 .phone-screen {
+        background: #f1f5f9;
+      }
+
+      .d3 .app-bar {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .d3 .app-title {
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .d3 .hero-card {
+        margin: 0 16px 16px;
+        background: var(--white);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .d3 .hero-label {
+        font-size: 13px;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .d3 .hero-number {
+        font-size: 42px;
+        font-weight: 700;
+        margin: 8px 0;
+      }
+
+      .d3 .hero-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--gray-200);
+      }
+
+      .d3 .hero-stat {
+        text-align: center;
+      }
+
+      .d3 .stat-value {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      .d3 .stat-label {
+        font-size: 12px;
+        color: var(--gray-500);
+      }
+
+      .d3 .content-area {
+        padding: 0 16px;
+      }
+
+      .d3 .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--gray-500);
+        margin-bottom: 12px;
+      }
+
+      .d3 .sub-card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .d3 .sub-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .d3 .sub-badge {
+        padding: 4px 8px;
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .d3 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d3 .fab {
+        position: absolute;
+        bottom: 100px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: var(--primary);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+      }
+
+      /* ==================== */
+      /* DIRECTION 4: Gradient Accent */
+      /* ==================== */
+      .d4 .phone-screen {
+        background: var(--white);
+      }
+
+      .d4 .hero-section {
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        padding: 20px 20px 32px;
+        border-radius: 0 0 32px 32px;
+      }
+
+      .d4 .app-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .d4 .app-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .d4 .notif-badge {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .d4 .hero-area {
+        text-align: center;
+        color: white;
+      }
+
+      .d4 .hero-label {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .d4 .hero-number {
+        font-size: 52px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .d4 .hero-sub {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+
+      .d4 .content-area {
+        padding: 24px 20px;
+      }
+
+      .d4 .quick-stats {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .d4 .stat-card {
+        flex: 1;
+        background: var(--gray-100);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .d4 .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      .d4 .stat-label {
+        font-size: 11px;
+        color: var(--gray-500);
+      }
+
+      .d4 .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .d4 .sub-card {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .d4 .sub-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .d4 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d4 .fab {
+        position: absolute;
+        bottom: 96px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+      }
+
+      /* ==================== */
+      /* DIRECTION 5: Dark Accent */
+      /* ==================== */
+      .d5 .phone-screen {
+        background: var(--background);
+      }
+
+      .d5 .header-section {
+        background: var(--gray-900);
+        padding: 20px 20px 28px;
+      }
+
+      .d5 .app-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .d5 .app-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .d5 .notif-badge {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .d5 .hero-area {
+        text-align: center;
+        color: white;
+      }
+
+      .d5 .hero-number {
+        font-size: 48px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .d5 .hero-sub {
+        font-size: 14px;
+        color: var(--success);
+        margin-top: 4px;
+      }
+
+      .d5 .content-area {
+        padding: 20px;
+        margin-top: -12px;
+      }
+
+      .d5 .alert-card {
+        background: var(--warning);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+      }
+
+      .d5 .alert-icon {
+        font-size: 20px;
+      }
+
+      .d5 .alert-text {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .d5 .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+      }
+
+      .d5 .sub-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .d5 .sub-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+
+      .d5 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d5 .fab {
+        position: absolute;
+        bottom: 96px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: var(--gray-900);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      /* ==================== */
+      /* DIRECTION 6: Playful */
+      /* ==================== */
+      .d6 .phone-screen {
+        background: #fafbff;
+      }
+
+      .d6 .app-bar {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .d6 .app-title {
+        font-size: 22px;
+        font-weight: 700;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .d6 .hero-area {
+        padding: 16px 20px 24px;
+        text-align: center;
+      }
+
+      .d6 .hero-card {
+        background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 100%);
+        border-radius: 24px;
+        padding: 24px;
+      }
+
+      .d6 .hero-emoji {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+
+      .d6 .hero-number {
+        font-size: 44px;
+        font-weight: 700;
+        color: var(--gray-900);
+      }
+
+      .d6 .hero-label {
+        font-size: 14px;
+        color: var(--gray-500);
+      }
+
+      .d6 .hero-yearly {
+        margin-top: 12px;
+        font-size: 16px;
+        color: var(--secondary);
+        font-weight: 600;
+      }
+
+      .d6 .content-area {
+        padding: 0 20px;
+      }
+
+      .d6 .category-pills {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+      }
+
+      .d6 .pill {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .d6 .pill.entertainment {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+      }
+      .d6 .pill.music {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+      }
+      .d6 .pill.productivity {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+      }
+
+      .d6 .sub-card {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
+      }
+
+      .d6 .sub-card:hover {
+        border-color: var(--primary-light);
+      }
+
+      .d6 .sub-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+
+      .d6 .sub-price {
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .d6 .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: var(--white);
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: 20px;
+      }
+
+      .d6 .fab {
+        position: absolute;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 28px;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+      }
+
+      /* Common icon colors */
+      .icon-entertainment {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+      }
+      .icon-music {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+      }
+      .icon-productivity {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+      }
+      .icon-storage {
+        background: rgba(249, 115, 22, 0.15);
+        color: #f97316;
+      }
+      .icon-gaming {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+      }
+
+      /* Comparison View */
+      .comparison-view {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
+
+      .comparison-view .phone-frame {
+        transform: scale(0.6);
+        transform-origin: top center;
+        margin-bottom: -300px;
+      }
+
+      .comparison-label {
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--gray-700);
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .comparison-view {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 800px) {
+        .comparison-view {
+          grid-template-columns: 1fr;
+        }
+        .comparison-view .phone-frame {
+          transform: scale(0.8);
+          margin-bottom: -150px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>SubTrack - Design Direction Showcase</h1>
+      <p>
+        Explore different visual approaches for your subscription tracking app
+      </p>
+    </header>
+
+    <nav class="direction-nav">
+      <button class="nav-btn active" onclick="showDirection(1)">
+        1. Clean Minimal
+      </button>
+      <button class="nav-btn" onclick="showDirection(2)">
+        2. Bold Numbers
+      </button>
+      <button class="nav-btn" onclick="showDirection(3)">3. Card Heavy</button>
+      <button class="nav-btn" onclick="showDirection(4)">
+        4. Gradient Accent
+      </button>
+      <button class="nav-btn" onclick="showDirection(5)">5. Dark Accent</button>
+      <button class="nav-btn" onclick="showDirection(6)">6. Playful</button>
+      <button class="nav-btn" onclick="showComparison()">Compare All</button>
+    </nav>
+
+    <main class="main-content">
+      <!-- Direction 1: Clean Minimal -->
+      <div class="direction-container active" id="direction-1">
+        <div class="direction-header">
+          <h2>Direction 1: Clean Minimal</h2>
+          <p>
+            Ultra-clean design with maximum whitespace and subtle visual
+            hierarchy
+          </p>
+          <div class="direction-tags">
+            <span class="tag">Minimalist</span>
+            <span class="tag">Professional</span>
+            <span class="tag">High Readability</span>
+          </div>
+        </div>
+        <div class="phone-frame d1">
+          <div class="phone-screen">
+            <div class="app-bar">
+              <span class="app-title">SubTrack</span>
+              <div class="notif-badge">🔔</div>
+            </div>
+            <div class="hero-area">
+              <div class="hero-label">Monthly Spending</div>
+              <div class="hero-number">€189</div>
+              <div class="hero-sub">= €2,268 per year</div>
+            </div>
+            <div class="content-area">
+              <div class="section-title">Upcoming Renewals</div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div class="sub-info">
+                  <div class="sub-name">Netflix</div>
+                  <div class="sub-date">Renews in 3 days</div>
+                </div>
+                <div class="sub-price">€17.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div class="sub-info">
+                  <div class="sub-name">Spotify</div>
+                  <div class="sub-date">Renews in 5 days</div>
+                </div>
+                <div class="sub-price">€9.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-storage">☁️</div>
+                <div class="sub-info">
+                  <div class="sub-name">iCloud</div>
+                  <div class="sub-date">Renews in 12 days</div>
+                </div>
+                <div class="sub-price">€2.99</div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div class="nav-item active">
+                <div class="nav-icon">🏠</div>
+                Home
+              </div>
+              <div class="nav-item">
+                <div class="nav-icon">📋</div>
+                List
+              </div>
+              <div class="nav-item">
+                <div class="nav-icon">📊</div>
+                Stats
+              </div>
+              <div class="nav-item">
+                <div class="nav-icon">⚙️</div>
+                Settings
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 2: Bold Numbers -->
+      <div class="direction-container" id="direction-2">
+        <div class="direction-header">
+          <h2>Direction 2: Bold Numbers</h2>
+          <p>
+            Number-focused design with maximum visual impact on spending totals
+          </p>
+          <div class="direction-tags">
+            <span class="tag">Bold</span>
+            <span class="tag">Number-First</span>
+            <span class="tag">High Impact</span>
+          </div>
+        </div>
+        <div class="phone-frame d2">
+          <div class="phone-screen">
+            <div class="app-bar">
+              <span class="app-title">SubTrack</span>
+              <div
+                style="
+                  width: 40px;
+                  height: 40px;
+                  background: var(--gray-100);
+                  border-radius: 10px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                🔔
+              </div>
+            </div>
+            <div class="hero-area">
+              <div class="hero-number">
+                <span class="hero-currency">€</span>189
+              </div>
+              <div class="hero-label">per month</div>
+              <div class="hero-yearly">= €2,268 per year</div>
+            </div>
+            <div class="content-area">
+              <div class="section-title">Upcoming Renewals</div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div style="flex: 1">
+                  <div class="sub-name">Netflix</div>
+                  <div class="sub-date">Renews in 3 days</div>
+                </div>
+                <div class="sub-price">€17.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div style="flex: 1">
+                  <div class="sub-name">Spotify</div>
+                  <div class="sub-date">Renews in 5 days</div>
+                </div>
+                <div class="sub-price">€9.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-productivity">💼</div>
+                <div style="flex: 1">
+                  <div class="sub-name">Notion</div>
+                  <div class="sub-date">Renews in 8 days</div>
+                </div>
+                <div class="sub-price">€8.00</div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div class="nav-item active" style="color: var(--primary)">
+                <div class="nav-icon">🏠</div>
+                Home
+              </div>
+              <div class="nav-item" style="color: var(--gray-500)">
+                <div class="nav-icon">📋</div>
+                List
+              </div>
+              <div class="nav-item" style="color: var(--gray-500)">
+                <div class="nav-icon">📊</div>
+                Stats
+              </div>
+              <div class="nav-item" style="color: var(--gray-500)">
+                <div class="nav-icon">⚙️</div>
+                Settings
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 3: Card Heavy -->
+      <div class="direction-container" id="direction-3">
+        <div class="direction-header">
+          <h2>Direction 3: Card Heavy</h2>
+          <p>
+            Layered card design with depth and visual separation between
+            elements
+          </p>
+          <div class="direction-tags">
+            <span class="tag">Layered</span>
+            <span class="tag">Depth</span>
+            <span class="tag">Organized</span>
+          </div>
+        </div>
+        <div class="phone-frame d3">
+          <div class="phone-screen">
+            <div class="app-bar">
+              <span class="app-title">SubTrack</span>
+              <div
+                style="
+                  width: 40px;
+                  height: 40px;
+                  background: var(--white);
+                  border-radius: 12px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                "
+              >
+                🔔
+              </div>
+            </div>
+            <div class="hero-card">
+              <div class="hero-label">Total Monthly</div>
+              <div class="hero-number">€189.00</div>
+              <div class="hero-row">
+                <div class="hero-stat">
+                  <div class="stat-value">12</div>
+                  <div class="stat-label">Active</div>
+                </div>
+                <div class="hero-stat">
+                  <div class="stat-value">3</div>
+                  <div class="stat-label">This Week</div>
+                </div>
+                <div class="hero-stat">
+                  <div class="stat-value" style="color: var(--success)">
+                    €47
+                  </div>
+                  <div class="stat-label">Saved</div>
+                </div>
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="section-title">Renewing Soon</div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">Netflix</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    €17.99/month
+                  </div>
+                </div>
+                <div class="sub-badge">3 days</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">Spotify</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    €9.99/month
+                  </div>
+                </div>
+                <div class="sub-badge">5 days</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-storage">☁️</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">iCloud</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    €2.99/month
+                  </div>
+                </div>
+                <div
+                  class="sub-badge"
+                  style="
+                    background: rgba(16, 185, 129, 0.1);
+                    color: var(--success);
+                  "
+                >
+                  12 days
+                </div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div style="text-align: center; color: var(--primary)">
+                <div style="font-size: 22px; margin-bottom: 4px">🏠</div>
+                <div style="font-size: 11px">Home</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📋</div>
+                <div style="font-size: 11px">List</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📊</div>
+                <div style="font-size: 11px">Stats</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">⚙️</div>
+                <div style="font-size: 11px">Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 4: Gradient Accent -->
+      <div class="direction-container" id="direction-4">
+        <div class="direction-header">
+          <h2>Direction 4: Gradient Accent</h2>
+          <p>Vibrant gradient header with clean content area below</p>
+          <div class="direction-tags">
+            <span class="tag">Gradient</span>
+            <span class="tag">Modern</span>
+            <span class="tag">Vibrant</span>
+          </div>
+        </div>
+        <div class="phone-frame d4">
+          <div class="phone-screen">
+            <div class="hero-section">
+              <div class="app-bar">
+                <span class="app-title">SubTrack</span>
+                <div class="notif-badge">🔔</div>
+              </div>
+              <div class="hero-area">
+                <div class="hero-label">Monthly Spending</div>
+                <div class="hero-number">€189</div>
+                <div class="hero-sub">= €2,268 per year</div>
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="quick-stats">
+                <div class="stat-card">
+                  <div class="stat-value">12</div>
+                  <div class="stat-label">Active</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value">3</div>
+                  <div class="stat-label">This Week</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value" style="color: var(--success)">
+                    €47
+                  </div>
+                  <div class="stat-label">Saved</div>
+                </div>
+              </div>
+              <div class="section-title">Upcoming</div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">Netflix</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    3 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€17.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">Spotify</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    5 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€9.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-storage">☁️</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">iCloud</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    12 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€2.99</div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div style="text-align: center; color: var(--primary)">
+                <div style="font-size: 22px; margin-bottom: 4px">🏠</div>
+                <div style="font-size: 11px">Home</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📋</div>
+                <div style="font-size: 11px">List</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📊</div>
+                <div style="font-size: 11px">Stats</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">⚙️</div>
+                <div style="font-size: 11px">Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 5: Dark Accent -->
+      <div class="direction-container" id="direction-5">
+        <div class="direction-header">
+          <h2>Direction 5: Dark Accent</h2>
+          <p>Dark header section for strong contrast and professional feel</p>
+          <div class="direction-tags">
+            <span class="tag">Professional</span>
+            <span class="tag">High Contrast</span>
+            <span class="tag">Serious</span>
+          </div>
+        </div>
+        <div class="phone-frame d5">
+          <div class="phone-screen">
+            <div class="header-section">
+              <div class="app-bar">
+                <span class="app-title">SubTrack</span>
+                <div class="notif-badge">🔔</div>
+              </div>
+              <div class="hero-area">
+                <div class="hero-number">€189</div>
+                <div class="hero-sub">= €2,268/year • You're saving €47</div>
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="alert-card">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-text">3 renewals this week</div>
+              </div>
+              <div class="section-title">Upcoming Renewals</div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">Netflix</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 3 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€17.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">Spotify</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 5 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€9.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-gaming">🎮</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">Xbox Game Pass</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 7 days
+                  </div>
+                </div>
+                <div style="font-weight: 600">€14.99</div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div style="text-align: center; color: var(--primary)">
+                <div style="font-size: 22px; margin-bottom: 4px">🏠</div>
+                <div style="font-size: 11px">Home</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📋</div>
+                <div style="font-size: 11px">List</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📊</div>
+                <div style="font-size: 11px">Stats</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">⚙️</div>
+                <div style="font-size: 11px">Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction 6: Playful -->
+      <div class="direction-container" id="direction-6">
+        <div class="direction-header">
+          <h2>Direction 6: Playful</h2>
+          <p>Fun and colorful approach with category-driven visual identity</p>
+          <div class="direction-tags">
+            <span class="tag">Playful</span>
+            <span class="tag">Colorful</span>
+            <span class="tag">Friendly</span>
+          </div>
+        </div>
+        <div class="phone-frame d6">
+          <div class="phone-screen">
+            <div class="app-bar">
+              <span class="app-title">SubTrack</span>
+              <div
+                style="
+                  width: 40px;
+                  height: 40px;
+                  background: linear-gradient(135deg, #eef2ff, #fdf4ff);
+                  border-radius: 12px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                🔔
+              </div>
+            </div>
+            <div class="hero-area">
+              <div class="hero-card">
+                <div class="hero-emoji">💸</div>
+                <div class="hero-number">€189</div>
+                <div class="hero-label">per month</div>
+                <div class="hero-yearly">That's €2,268/year!</div>
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="category-pills">
+                <div class="pill entertainment">🎬 Entertainment</div>
+                <div class="pill music">🎵 Music</div>
+                <div class="pill productivity">💼 Work</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-entertainment">🎬</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">Netflix</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 3 days
+                  </div>
+                </div>
+                <div class="sub-price">€17.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-music">🎵</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">Spotify</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 5 days
+                  </div>
+                </div>
+                <div class="sub-price">€9.99</div>
+              </div>
+              <div class="sub-card">
+                <div class="sub-icon icon-productivity">💼</div>
+                <div style="flex: 1">
+                  <div style="font-weight: 600">Notion</div>
+                  <div style="font-size: 13px; color: var(--gray-500)">
+                    Renews in 8 days
+                  </div>
+                </div>
+                <div class="sub-price">€8.00</div>
+              </div>
+            </div>
+            <div class="fab">+</div>
+            <div class="bottom-nav">
+              <div style="text-align: center; color: var(--primary)">
+                <div style="font-size: 22px; margin-bottom: 4px">🏠</div>
+                <div style="font-size: 11px">Home</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📋</div>
+                <div style="font-size: 11px">List</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">📊</div>
+                <div style="font-size: 11px">Stats</div>
+              </div>
+              <div style="text-align: center; color: var(--gray-500)">
+                <div style="font-size: 22px; margin-bottom: 4px">⚙️</div>
+                <div style="font-size: 11px">Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison View -->
+      <div class="direction-container" id="comparison">
+        <div class="direction-header">
+          <h2>Compare All Directions</h2>
+          <p>See all design directions side by side</p>
+        </div>
+        <div class="comparison-view" id="comparison-grid">
+          <!-- Filled by JavaScript -->
+        </div>
+      </div>
+    </main>
+
+    <script>
+      function showDirection(num) {
+        // Hide all
+        document
+          .querySelectorAll('.direction-container')
+          .forEach(d => d.classList.remove('active'));
+        document
+          .querySelectorAll('.nav-btn')
+          .forEach(b => b.classList.remove('active'));
+
+        // Show selected
+        document.getElementById('direction-' + num).classList.add('active');
+        document.querySelectorAll('.nav-btn')[num - 1].classList.add('active');
+      }
+
+      function showComparison() {
+        document
+          .querySelectorAll('.direction-container')
+          .forEach(d => d.classList.remove('active'));
+        document
+          .querySelectorAll('.nav-btn')
+          .forEach(b => b.classList.remove('active'));
+
+        document.getElementById('comparison').classList.add('active');
+        document.querySelectorAll('.nav-btn')[6].classList.add('active');
+
+        // Build comparison grid
+        const grid = document.getElementById('comparison-grid');
+        grid.innerHTML = '';
+
+        for (let i = 1; i <= 6; i++) {
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = `
+                    <div class="comparison-label">Direction ${i}</div>
+                    ${document.querySelector('#direction-' + i + ' .phone-frame').outerHTML}
+                `;
+          grid.appendChild(wrapper);
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+# generated: 2026-02-11
+# project: SubTrack
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-02-11
+project: SubTrack
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Project Foundation & User Authentication
+  epic-1: in-progress
+  1-1-project-initialization-core-infrastructure: ready-for-dev
+  1-2-user-registration-with-email: backlog
+  1-3-user-login-with-email-password: backlog
+  1-4-biometric-authentication-setup: backlog
+  1-5-password-reset-via-email: backlog
+  1-6-session-management-logout: backlog
+  1-7-account-deletion-data-removal: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Subscription Tracking Core
+  epic-2: backlog
+  2-1-add-new-subscription: backlog
+  2-2-view-subscription-list: backlog
+  2-3-edit-subscription-details: backlog
+  2-4-delete-subscription: backlog
+  2-5-trial-period-tracking: backlog
+  2-6-subscription-categories: backlog
+  2-7-subscription-status-management: backlog
+  2-8-subscription-detail-view: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Spending Dashboard & Insights
+  epic-3: backlog
+  3-1-monthly-yearly-cost-summary: backlog
+  3-2-category-spending-breakdown: backlog
+  3-3-visual-spending-summary: backlog
+  3-4-upcoming-renewals-overview: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Smart Reminders & Notifications
+  epic-4: backlog
+  4-1-push-notification-permission-setup: backlog
+  4-2-renewal-reminder-scheduling: backlog
+  4-3-customizable-reminder-timing: backlog
+  4-4-trial-expiry-notifications: backlog
+  4-5-per-subscription-notification-control: backlog
+  4-6-notification-history-health-indicator: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Calendar Integration & Data Management
+  epic-5: backlog
+  5-1-add-subscription-renewals-to-device-calendar: backlog
+  5-2-calendar-selection: backlog
+  5-3-calendar-event-cleanup-on-subscription-delete: backlog
+  5-4-export-subscription-data: backlog
+  5-5-cloud-data-sync: backlog
+  5-6-personal-data-management-gdpr: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Premium & Monetization
+  epic-6: backlog
+  6-1-freemium-subscription-limit: backlog
+  6-2-premium-feature-benefits-display: backlog
+  6-3-in-app-purchase-flow: backlog
+  6-4-restore-previous-purchases: backlog
+  6-5-premium-entitlement-enforcement: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Bank Integration (Phase 2)
+  epic-7: backlog
+  7-1-bank-account-connection-via-open-banking: backlog
+  7-2-supported-banks-list: backlog
+  7-3-automatic-subscription-detection: backlog
+  7-4-review-approve-detected-subscriptions: backlog
+  7-5-match-detected-with-manual-subscriptions: backlog
+  7-6-dismiss-incorrectly-detected-subscriptions: backlog
+  7-7-bank-connection-status-management: backlog
+  7-8-manual-bank-data-refresh: backlog
+  7-9-bank-connection-expiry-notifications: backlog
+  7-10-spending-reconciliation-view: backlog
+  epic-7-retrospective: optional
