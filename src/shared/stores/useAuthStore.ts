@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import type { User, Session } from '@supabase/supabase-js';
-import { signUpWithEmail } from '@features/auth/services/authService';
+import { signUpWithEmail, signInWithEmail } from '@features/auth/services/authService';
 import type { AuthError } from '@features/auth/types';
 
 const storage = createMMKV({ id: 'auth-storage' });
@@ -30,6 +30,7 @@ interface AuthState {
 
 interface AuthActions {
   signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   setSession: (session: Session | null) => void;
   setUser: (user: User | null) => void;
   clearAuth: () => void;
@@ -66,6 +67,25 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
+          return;
+        }
+
+        set({
+          user: result.user,
+          session: result.session,
+          isAuthenticated: result.session !== null,
+          isLoading: false,
+          error: null,
+        });
+      },
+
+      signIn: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+
+        const result = await signInWithEmail(email, password);
+
+        if (result.error) {
+          set({ isLoading: false, error: result.error });
           return;
         }
 

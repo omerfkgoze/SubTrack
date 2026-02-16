@@ -1,6 +1,6 @@
 # Story 1.3: User Login with Email & Password
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,38 +27,38 @@ So that I can access my subscription data.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add login Zod schema and types (AC: #2)
-  - [ ] 1.1 Add `loginSchema` to `src/features/auth/types/schemas.ts` with email (z.email) and password (z.string().min(1)) validation
-  - [ ] 1.2 Add `LoginFormData` type to `src/features/auth/types/index.ts`
-- [ ] Task 2: Add signIn service function (AC: #3, #5, #6, #9)
-  - [ ] 2.1 Add `signInWithEmail(email, password)` function to `src/features/auth/services/authService.ts`
-  - [ ] 2.2 Use `supabase.auth.signInWithPassword({ email, password })` for authentication
-  - [ ] 2.3 Map Supabase auth errors to user-friendly messages: "Invalid login credentials" → "Invalid email or password.", rate limit → "Too many failed attempts. Please try again in 15 minutes.", network error → "No internet connection. Please try again."
-  - [ ] 2.4 Return typed `AuthResult` with `{ user, session, error }` pattern (reuse existing interface)
-- [ ] Task 3: Add signIn action to useAuthStore (AC: #3, #4, #7)
-  - [ ] 3.1 Add `signIn: (email: string, password: string) => Promise<void>` action to `src/shared/stores/useAuthStore.ts`
-  - [ ] 3.2 Follow the exact same pattern as existing `signUp` action: set loading → call service → handle error/success → update state
-  - [ ] 3.3 On success: set `user`, `session`, `isAuthenticated: true`, `isLoading: false`
-  - [ ] 3.4 On error: set `error` with mapped message, `isLoading: false`
-- [ ] Task 4: Implement LoginScreen UI (AC: #1, #2, #8, #10, #11, #12)
-  - [ ] 4.1 Replace placeholder `LoginScreen.tsx` with full login form matching RegisterScreen visual structure
-  - [ ] 4.2 Use `react-hook-form` with `zodResolver(loginSchema)` for form state and validation
-  - [ ] 4.3 Add email `TextInput` with `mode="outlined"`, `keyboardType="email-address"`, `autoCapitalize="none"`, `autoComplete="email"`
-  - [ ] 4.4 Add password `TextInput` with `secureTextEntry` and visibility toggle icon with `accessibilityLabel`
-  - [ ] 4.5 Add "Login" `Button` with loading state (`loading={isLoading}`, `disabled={isLoading}`)
-  - [ ] 4.6 Add "Don't have an account? Register" link navigating to Register screen
-  - [ ] 4.7 Add "Forgot Password?" link (navigates to Welcome or shows info toast — placeholder for Story 1.5)
-  - [ ] 4.8 Wrap in `KeyboardAvoidingView` with `behavior={Platform.OS === 'ios' ? 'padding' : 'height'}` and `ScrollView` with `keyboardShouldPersistTaps="handled"`
-  - [ ] 4.9 Ensure all touch targets are minimum 44x44pt (`minHeight: 44` / `minHeight: 48` for primary button)
-- [ ] Task 5: Connect LoginScreen to auth store (AC: #3, #4, #5, #6, #8, #9)
-  - [ ] 5.1 Wire form submission to `useAuthStore.signIn()` action with `email.trim()` before passing
-  - [ ] 5.2 Display auth errors from store using `HelperText` component (same pattern as RegisterScreen)
-  - [ ] 5.3 Show "Try Again" button text on network errors (same pattern as RegisterScreen)
-  - [ ] 5.4 On success, auth state changes → navigation switches to MainTabs automatically (no manual navigation needed)
-  - [ ] 5.5 Call `clearError()` before each submission attempt
-- [ ] Task 6: Update feature exports (AC: all)
-  - [ ] 6.1 Update `src/features/auth/index.ts` to export `LoginScreen`, `loginSchema`, `LoginFormData`, `signInWithEmail`
-  - [ ] 6.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
+- [x] Task 1: Add login Zod schema and types (AC: #2)
+  - [x] 1.1 Add `loginSchema` to `src/features/auth/types/schemas.ts` with email (z.email) and password (z.string().min(1)) validation
+  - [x] 1.2 Add `LoginFormData` type to `src/features/auth/types/index.ts`
+- [x] Task 2: Add signIn service function (AC: #3, #5, #6, #9)
+  - [x] 2.1 Add `signInWithEmail(email, password)` function to `src/features/auth/services/authService.ts`
+  - [x] 2.2 Use `supabase.auth.signInWithPassword({ email, password })` for authentication
+  - [x] 2.3 Map Supabase auth errors to user-friendly messages: "Invalid login credentials" → "Invalid email or password.", rate limit → "Too many failed attempts. Please try again in 15 minutes.", network error → "No internet connection. Please try again."
+  - [x] 2.4 Return typed `AuthResult` with `{ user, session, error }` pattern (reuse existing interface)
+- [x] Task 3: Add signIn action to useAuthStore (AC: #3, #4, #7)
+  - [x] 3.1 Add `signIn: (email: string, password: string) => Promise<void>` action to `src/shared/stores/useAuthStore.ts`
+  - [x] 3.2 Follow the exact same pattern as existing `signUp` action: set loading → call service → handle error/success → update state
+  - [x] 3.3 On success: set `user`, `session`, `isAuthenticated: true`, `isLoading: false`
+  - [x] 3.4 On error: set `error` with mapped message, `isLoading: false`
+- [x] Task 4: Implement LoginScreen UI (AC: #1, #2, #8, #10, #11, #12)
+  - [x] 4.1 Replace placeholder `LoginScreen.tsx` with full login form matching RegisterScreen visual structure
+  - [x] 4.2 Use `react-hook-form` with `zodResolver(loginSchema)` for form state and validation
+  - [x] 4.3 Add email `TextInput` with `mode="outlined"`, `keyboardType="email-address"`, `autoCapitalize="none"`, `autoComplete="email"`
+  - [x] 4.4 Add password `TextInput` with `secureTextEntry` and visibility toggle icon with `accessibilityLabel`
+  - [x] 4.5 Add "Login" `Button` with loading state (`loading={isLoading}`, `disabled={isLoading}`)
+  - [x] 4.6 Add "Don't have an account? Register" link navigating to Register screen
+  - [x] 4.7 Add "Forgot Password?" link (navigates to Welcome or shows info toast — placeholder for Story 1.5)
+  - [x] 4.8 Wrap in `KeyboardAvoidingView` with `behavior={Platform.OS === 'ios' ? 'padding' : 'height'}` and `ScrollView` with `keyboardShouldPersistTaps="handled"`
+  - [x] 4.9 Ensure all touch targets are minimum 44x44pt (`minHeight: 44` / `minHeight: 48` for primary button)
+- [x] Task 5: Connect LoginScreen to auth store (AC: #3, #4, #5, #6, #8, #9)
+  - [x] 5.1 Wire form submission to `useAuthStore.signIn()` action with `email.trim()` before passing
+  - [x] 5.2 Display auth errors from store using `HelperText` component (same pattern as RegisterScreen)
+  - [x] 5.3 Show "Try Again" button text on network errors (same pattern as RegisterScreen)
+  - [x] 5.4 On success, auth state changes → navigation switches to MainTabs automatically (no manual navigation needed)
+  - [x] 5.5 Call `clearError()` before each submission attempt
+- [x] Task 6: Update feature exports (AC: all)
+  - [x] 6.1 Update `src/features/auth/index.ts` to export `LoginScreen`, `loginSchema`, `LoginFormData`, `signInWithEmail`
+  - [x] 6.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
 
 ## Dev Notes
 
@@ -320,14 +320,35 @@ bd7ef41 created story 1-2
 - [Source: _bmad-output/planning-artifacts/ux-design-specification.md#App Access < 2 seconds]
 - [Source: _bmad-output/implementation-artifacts/1-2-user-registration-with-email.md]
 
+## Change Log
+
+- 2026-02-16: Implemented login functionality — login schema, signIn service with error mapping, signIn store action, full LoginScreen UI with form validation, and updated feature exports.
+
 ## Dev Agent Record
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+No debug issues encountered. TypeScript and ESLint passed on first attempt.
+
 ### Completion Notes List
 
+- Task 1: Added `loginSchema` (z.email + z.string().min(1)) and `LoginFormData` type to auth types.
+- Task 2: Added `signInWithEmail()` to authService.ts using `supabase.auth.signInWithPassword()`. Extended `mapAuthError()` with login-specific error mappings: invalid credentials, email not confirmed, rate limiting, and network errors.
+- Task 3: Added `signIn` action to useAuthStore mirroring the `signUp` pattern — set loading, call service, handle error/success, update auth state.
+- Task 4: Replaced placeholder LoginScreen with full login form matching RegisterScreen visual structure. Includes email input, password input with visibility toggle (with accessibilityLabel), Login button with loading state, "Forgot Password?" link (placeholder navigating to Welcome), "Don't have an account? Register" link, KeyboardAvoidingView + ScrollView with keyboardShouldPersistTaps="handled", and 44/48pt minimum touch targets.
+- Task 5: Connected LoginScreen to auth store — form submission wired to signIn with email.trim(), auth errors displayed via HelperText, "Try Again" button text on network errors, clearError() called before each submission, navigation handled automatically via isAuthenticated state.
+- Task 6: Updated feature exports — LoginScreen, signInWithEmail, LoginFormData, loginSchema all exported from auth index. All imports verified to use path aliases.
+- Auto-login (AC7) requires no additional code — existing AuthProvider + MMKV persistence + onAuthStateChange handles it.
+
 ### File List
+
+- `src/features/auth/types/schemas.ts` — Modified: Added loginSchema and LoginSchemaType
+- `src/features/auth/types/index.ts` — Modified: Added LoginFormData interface
+- `src/features/auth/services/authService.ts` — Modified: Added signInWithEmail() function and extended mapAuthError() with login-specific error mappings
+- `src/shared/stores/useAuthStore.ts` — Modified: Added signIn action and signInWithEmail import
+- `src/features/auth/screens/LoginScreen.tsx` — Modified: Replaced placeholder with full login form
+- `src/features/auth/index.ts` — Modified: Added LoginScreen, signInWithEmail, LoginFormData, loginSchema exports

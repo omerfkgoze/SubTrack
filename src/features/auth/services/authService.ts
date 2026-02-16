@@ -8,13 +8,48 @@ function mapAuthError(error: SupabaseAuthError): string {
   if (msg.includes('already registered') || msg.includes('already been registered')) {
     return 'This email is already registered.';
   }
+  if (msg.includes('invalid login credentials')) {
+    return 'Invalid email or password.';
+  }
   if (msg.includes('invalid') && msg.includes('email')) {
     return 'Please check your email format.';
+  }
+  if (msg.includes('email not confirmed')) {
+    return 'Please confirm your email before logging in.';
+  }
+  if (msg.includes('rate limit') || msg.includes('too many requests')) {
+    return 'Too many failed attempts. Please try again in 15 minutes.';
   }
   if (msg.includes('network') || error.status === 0) {
     return 'No internet connection. Please try again.';
   }
   return 'An error occurred. Please try again.';
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      return {
+        user: null,
+        session: null,
+        error: { message: mapAuthError(error), code: error.message },
+      };
+    }
+
+    return {
+      user: data.user,
+      session: data.session,
+      error: null,
+    };
+  } catch {
+    return {
+      user: null,
+      session: null,
+      error: { message: 'No internet connection. Please try again.' },
+    };
+  }
 }
 
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResult> {
