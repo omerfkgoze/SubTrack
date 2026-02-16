@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -87,6 +87,7 @@ export function LoginScreen() {
               label="Password"
               mode="outlined"
               secureTextEntry={securePassword}
+              autoComplete="current-password"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -120,7 +121,13 @@ export function LoginScreen() {
 
         <Button
           mode="text"
-          onPress={() => navigation.navigate('Welcome')}
+          onPress={() =>
+            Alert.alert(
+              'Coming Soon',
+              'Password reset will be available in a future update.',
+              [{ text: 'OK' }],
+            )
+          }
           style={styles.linkButton}
           contentStyle={styles.linkButtonContent}
         >

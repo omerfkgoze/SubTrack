@@ -26,6 +26,18 @@ function mapAuthError(error: SupabaseAuthError): string {
   return 'An error occurred. Please try again.';
 }
 
+function mapErrorCode(error: SupabaseAuthError): string {
+  const msg = error.message.toLowerCase();
+
+  if (msg.includes('invalid login credentials')) return 'INVALID_CREDENTIALS';
+  if (msg.includes('already registered') || msg.includes('already been registered')) return 'EMAIL_TAKEN';
+  if (msg.includes('email not confirmed')) return 'EMAIL_NOT_CONFIRMED';
+  if (msg.includes('rate limit') || msg.includes('too many requests')) return 'RATE_LIMITED';
+  if (msg.includes('invalid') && msg.includes('email')) return 'INVALID_EMAIL';
+  if (msg.includes('network') || error.status === 0) return 'NETWORK_ERROR';
+  return 'UNKNOWN';
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -34,7 +46,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
       return {
         user: null,
         session: null,
-        error: { message: mapAuthError(error), code: error.message },
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
       };
     }
 
@@ -43,11 +55,17 @@ export async function signInWithEmail(email: string, password: string): Promise<
       session: data.session,
       error: null,
     };
-  } catch {
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
     return {
       user: null,
       session: null,
-      error: { message: 'No internet connection. Please try again.' },
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
     };
   }
 }
@@ -60,7 +78,7 @@ export async function signUpWithEmail(email: string, password: string): Promise<
       return {
         user: null,
         session: null,
-        error: { message: mapAuthError(error), code: error.message },
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
       };
     }
 
@@ -69,11 +87,17 @@ export async function signUpWithEmail(email: string, password: string): Promise<
       session: data.session,
       error: null,
     };
-  } catch {
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
     return {
       user: null,
       session: null,
-      error: { message: 'No internet connection. Please try again.' },
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
     };
   }
 }

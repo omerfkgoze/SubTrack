@@ -1,6 +1,6 @@
 # Story 1.3: User Login with Email & Password
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -323,6 +323,7 @@ bd7ef41 created story 1-2
 ## Change Log
 
 - 2026-02-16: Implemented login functionality — login schema, signIn service with error mapping, signIn store action, full LoginScreen UI with form validation, and updated feature exports.
+- 2026-02-16: Code review (AI) — 5 MEDIUM issues found and fixed: (M1) LoginFormData now derives from z.infer via LoginSchemaType to prevent schema drift, (M2) catch blocks now distinguish TypeError (network) from other exceptions, (M3) error.code now uses structured codes (INVALID_CREDENTIALS, NETWORK_ERROR, etc.) via mapErrorCode(), (M4) Forgot Password placeholder changed from silent navigation to Alert.alert with "Coming Soon" message, (M5) added autoComplete="current-password" to login password field for password manager support. 3 LOW issues noted but not fixed (dead schema type exports, missing returnKeyType/onSubmitEditing, missing iOS textContentType).
 
 ## Dev Agent Record
 
@@ -347,8 +348,37 @@ No debug issues encountered. TypeScript and ESLint passed on first attempt.
 ### File List
 
 - `src/features/auth/types/schemas.ts` — Modified: Added loginSchema and LoginSchemaType
-- `src/features/auth/types/index.ts` — Modified: Added LoginFormData interface
-- `src/features/auth/services/authService.ts` — Modified: Added signInWithEmail() function and extended mapAuthError() with login-specific error mappings
+- `src/features/auth/types/index.ts` — Modified: LoginFormData now type alias of LoginSchemaType (was manual interface)
+- `src/features/auth/services/authService.ts` — Modified: Added signInWithEmail(), mapErrorCode(), improved catch blocks with TypeError detection
 - `src/shared/stores/useAuthStore.ts` — Modified: Added signIn action and signInWithEmail import
-- `src/features/auth/screens/LoginScreen.tsx` — Modified: Replaced placeholder with full login form
+- `src/features/auth/screens/LoginScreen.tsx` — Modified: Full login form with Alert-based Forgot Password placeholder, autoComplete on password
 - `src/features/auth/index.ts` — Modified: Added LoginScreen, signInWithEmail, LoginFormData, loginSchema exports
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Claude Opus 4.6 | **Date:** 2026-02-16 | **Outcome:** Approved with fixes applied
+
+**AC Validation:** All 12 Acceptance Criteria verified as IMPLEMENTED.
+**Task Audit:** All 6 tasks (26 subtasks) verified as genuinely complete.
+**Git Discrepancies:** 0 — File List matches git changes exactly.
+
+**Issues Found & Fixed (5 MEDIUM):**
+
+| ID | Severity | Description | Fix Applied |
+|---|---|---|---|
+| M1 | MEDIUM | `LoginFormData` manual interface could drift from `loginSchema` | Changed to `type LoginFormData = LoginSchemaType` (z.infer) |
+| M2 | MEDIUM | Catch-all blocks assumed all exceptions are network errors | Added `instanceof TypeError` check; non-network errors get generic message |
+| M3 | MEDIUM | `error.code` stored raw message text, not structured code | Added `mapErrorCode()` returning INVALID_CREDENTIALS, NETWORK_ERROR, etc. |
+| M4 | MEDIUM | "Forgot Password?" silently navigated to Welcome screen | Changed to `Alert.alert()` with "Coming Soon" message |
+| M5 | MEDIUM | Login password field missing `autoComplete="current-password"` | Added prop for password manager support |
+
+**Issues Noted (3 LOW — not fixed):**
+
+| ID | Severity | Description |
+|---|---|---|
+| L1 | LOW | `LoginSchemaType` and `RegisterSchemaType` are dead exports in schemas.ts |
+| L2 | LOW | Missing `returnKeyType`/`onSubmitEditing` for keyboard field navigation |
+| L3 | LOW | Missing iOS `textContentType` props for Keychain auto-fill |
+
+**TypeScript:** `npx tsc --noEmit` — PASS (zero errors)
+**ESLint:** `npx eslint src/` — PASS (zero warnings)

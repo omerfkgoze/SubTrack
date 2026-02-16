@@ -1,4 +1,5 @@
 import type { User, Session } from '@supabase/supabase-js';
+import type { LoginSchemaType } from './schemas';
 
 export interface RegisterFormData {
   email: string;
@@ -6,10 +7,7 @@ export interface RegisterFormData {
   confirmPassword: string;
 }
 
-export interface LoginFormData {
-  email: string;
-  password: string;
-}
+export type LoginFormData = LoginSchemaType;
 
 export interface AuthError {
   message: string;

@@ -44,7 +44,7 @@ development_status:
   epic-1: in-progress
   1-1-project-initialization-core-infrastructure: done
   1-2-user-registration-with-email: done
-  1-3-user-login-with-email-password: review
+  1-3-user-login-with-email-password: done
   1-4-biometric-authentication-setup: backlog
   1-5-password-reset-via-email: backlog
   1-6-session-management-logout: backlog
