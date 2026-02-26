@@ -178,7 +178,7 @@ The following will be added after project initialization:
 
 1. **UI Library:** `react-native-paper` + `react-native-safe-area-context`
 2. **Navigation:** `@react-navigation/native` + `@react-navigation/bottom-tabs`
-3. **State Management:** `zustand` + `react-native-mmkv`
+3. **State Management:** `zustand` + `@react-native-async-storage/async-storage`
 4. **Data Fetching:** `@tanstack/react-query` + `axios`
 5. **Forms:** `react-hook-form` + `zod`
 6. **Backend:** `@supabase/supabase-js`
@@ -204,7 +204,7 @@ The following will be added after project initialization:
 
 **Important Decisions (Shape Architecture):**
 
-- State Management: Zustand with MMKV persistence
+- State Management: Zustand with AsyncStorage persistence
 - API Pattern: Hybrid (Supabase Client + Edge Functions)
 - Navigation: React Navigation 6 with AuthStack + MainTabs
 - Push Notifications: Supabase + pg_cron + Expo Push API
@@ -222,7 +222,7 @@ The following will be added after project initialization:
 | ----------------- | ------------------ | ----------------- | ----------------------------------------------------------------------- |
 | Backend Platform  | Supabase           | Latest            | PostgreSQL for financial data, GDPR-friendly, RLS, MCP server available |
 | Database Approach | Database-first     | -                 | SQL migrations, `supabase gen types typescript` for type safety         |
-| Caching           | React Query + MMKV | TanStack Query v5 | API cache + persistent local storage for fast app startup               |
+| Caching           | React Query + AsyncStorage | TanStack Query v5 | API cache + persistent local storage for fast app startup               |
 | File Storage      | Supabase Storage   | -                 | Deferred to Phase 2 (receipts, bank statements)                         |
 
 **Database Schema Strategy:**
@@ -247,7 +247,7 @@ The following will be added after project initialization:
 
 - At Rest: AES-256 (Supabase managed)
 - In Transit: TLS 1.3
-- Local Storage: Encrypted MMKV mode
+- Local Storage: AsyncStorage (encrypted via OS-level storage encryption)
 - Credentials: iOS Keychain / Android Keystore
 - Password Hashing: bcrypt (Supabase managed)
 
@@ -274,7 +274,7 @@ The following will be added after project initialization:
 | ----------------- | ---------------------------------- | ------------------------------------------------- |
 | Project Structure | Feature-based modular              | Clear boundaries, testable, AI-agent friendly     |
 | Component Pattern | Functional + TypeScript interfaces | Modern React, type-safe props                     |
-| State Management  | Zustand with slices                | Lightweight, TypeScript-friendly, persist to MMKV |
+| State Management  | Zustand with slices                | Lightweight, TypeScript-friendly, persist to AsyncStorage |
 | Navigation        | React Navigation 6                 | PRD-specified, deep linking support               |
 
 **Project Structure:**
@@ -460,7 +460,7 @@ interface AppError {
 | Database       | ISO 8601 UTC    | Supabase default       |
 | API Transfer   | ISO 8601 string | `2026-01-30T10:00:00Z` |
 | Display        | Localized       | `date-fns` with locale |
-| Storage (MMKV) | ISO 8601 string | Serializable           |
+| Storage (AsyncStorage) | ISO 8601 string | Serializable           |
 
 ### Communication Patterns
 
@@ -879,7 +879,7 @@ All technology choices validated as compatible:
 
 - Expo SDK 54 + React Native Paper: Fully compatible
 - Supabase + React Query: Complementary caching strategies
-- Zustand + MMKV: Native persist middleware support
+- Zustand + AsyncStorage: Native persist middleware support
 - TypeScript throughout: Consistent type safety
 
 **Pattern Consistency:**
@@ -1015,7 +1015,7 @@ npx create-expo-app@latest SubTrack --template blank-typescript
 # 2. Install core dependencies
 npx expo install react-native-paper react-native-safe-area-context
 npx expo install @react-navigation/native @react-navigation/bottom-tabs
-npx expo install zustand react-native-mmkv
+npx expo install zustand @react-native-async-storage/async-storage
 npx expo install @supabase/supabase-js
 npx expo install @tanstack/react-query
 

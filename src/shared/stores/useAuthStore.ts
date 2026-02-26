@@ -1,23 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { createMMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, Session } from '@supabase/supabase-js';
 import { signUpWithEmail, signInWithEmail } from '@features/auth/services/authService';
 import type { AuthError } from '@features/auth/types';
-
-const storage = createMMKV({ id: 'auth-storage' });
-
-const mmkvStorage = {
-  getItem: (name: string): string | null => {
-    return storage.getString(name) ?? null;
-  },
-  setItem: (name: string, value: string): void => {
-    storage.set(name, value);
-  },
-  removeItem: (name: string): void => {
-    storage.remove(name);
-  },
-};
 
 interface AuthState {
   user: User | null;
@@ -127,7 +113,7 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-session',
-      storage: createJSONStorage(() => mmkvStorage),
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
         session: state.session,

@@ -159,7 +159,7 @@ NFR40: Graceful degradation on bank API failure fallback to manual entry (P1)
 - Backend: Supabase with PostgreSQL, Row Level Security (RLS) on all user tables
 - Database-first approach with auto-generated TypeScript types via `supabase gen types typescript`
 - Feature-based modular project structure under `src/features/`
-- Zustand state management with MMKV persistence
+- Zustand state management with AsyncStorage persistence
 - React Query (TanStack Query v5) for API caching and background refetch
 - Push notification pipeline: Supabase DB → pg_cron → Edge Function → Expo Push API → APNs/FCM
 - Authentication: Supabase Auth + biometric unlock via `react-native-biometrics` + `react-native-keychain`
@@ -168,7 +168,7 @@ NFR40: Graceful degradation on bank API failure fallback to manual entry (P1)
 - Monitoring: Sentry for crash reporting (free tier)
 - 2 environments: development + production
 - Import aliases: `@app/*`, `@features/*`, `@shared/*`, `@config/*`
-- Post-initialization dependencies: react-native-paper, react-navigation, zustand, react-native-mmkv, supabase-js, tanstack/react-query, axios, react-hook-form, zod, notifee, react-native-biometrics, react-native-calendar-events, react-native-keychain, react-native-reanimated, lottie-react-native, react-native-gesture-handler
+- Post-initialization dependencies: react-native-paper, react-navigation, zustand, @react-native-async-storage/async-storage, supabase-js, tanstack/react-query, axios, react-hook-form, zod, notifee, react-native-biometrics, react-native-calendar-events, react-native-keychain, react-native-reanimated, lottie-react-native, react-native-gesture-handler
 
 **From UX Design:**
 
@@ -294,7 +294,7 @@ So that there is a solid foundation for all subsequent feature development.
 **Given** no project exists
 **When** the initialization script is run
 **Then** an Expo TypeScript project is created with `npx create-expo-app@latest SubTrack --template blank-typescript`
-**And** all core dependencies are installed (react-native-paper, react-navigation, zustand, react-native-mmkv, supabase-js, react-query, react-hook-form, zod, react-native-reanimated, react-native-gesture-handler, react-native-safe-area-context)
+**And** all core dependencies are installed (react-native-paper, react-navigation, zustand, @react-native-async-storage/async-storage, supabase-js, react-query, react-hook-form, zod, react-native-reanimated, react-native-gesture-handler, react-native-safe-area-context)
 **And** the feature-based project structure is created under `src/` with `app/`, `features/`, `shared/`, `config/` directories
 **And** import aliases are configured (`@app/*`, `@features/*`, `@shared/*`, `@config/*`)
 **And** Supabase project is initialized with `supabase init`
@@ -1160,7 +1160,7 @@ So that I get the value I'm paying for without interruptions.
 **When** the premium status is checked
 **Then** the `validate-premium` Edge Function verifies entitlement with the store
 **And** the local `usePremiumStore` Zustand store is updated
-**And** premium status is cached locally in MMKV to avoid unnecessary API calls
+**And** premium status is cached locally in AsyncStorage to avoid unnecessary API calls
 
 **Given** the entitlement check fails due to network issues
 **When** the app cannot reach the server
