@@ -1,6 +1,6 @@
 # Story 1.6: Session Management & Logout
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -105,6 +105,17 @@ so that my data stays protected.
   - [x] 7.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
   - [x] 7.3 Run `npx tsc --noEmit` — zero errors
   - [x] 7.4 Run `npx eslint src/` — zero errors/warnings
+
+### Review Follow-ups (AI)
+
+- [ ] [AI-Review][HIGH] Fix race condition: logout() calls signOutService() before clearAuth(), causing AuthProvider to misidentify user-initiated logout as session expiry and briefly showing "session expired" message. Move clearAuth() or set isAuthenticated:false BEFORE signOutService() call. [src/shared/stores/useAuthStore.ts:264-274, src/app/providers/AuthProvider.tsx:19-25]
+- [ ] [AI-Review][HIGH] handleSessionExpired() calls async disableBiometricService() without await — biometric credential cleanup is fire-and-forget. Make action async and await the call, or add .catch() for error handling. [src/shared/stores/useAuthStore.ts:276-280]
+- [ ] [AI-Review][MEDIUM] signOut() return type inconsistency — returns custom inline type instead of AuthResult pattern used by all other authService functions. Align return type for consistent error handling. [src/features/auth/services/authService.ts:164]
+- [ ] [AI-Review][MEDIUM] Double execution: disableBiometricService() and clearAuth() called twice during logout (once by handleSessionExpired via AuthProvider, once by logout action itself). Side effect of HIGH race condition issue — fixing H1 resolves this. [src/shared/stores/useAuthStore.ts:264-274]
+- [ ] [AI-Review][MEDIUM] No automated tests for new store actions (logout, handleSessionExpired, updateLastActive) or UI changes (SettingsScreen Account section, LoginScreen Snackbar). Architecture doc mandates co-located test files.
+- [ ] [AI-Review][LOW] AppState listener useEffect re-subscribes on every lastActiveTimestamp change. Use useAuthStore.getState().lastActiveTimestamp inside callback instead of reactive selector to avoid unnecessary teardown/rebuild. [src/app/navigation/index.tsx:89-121]
+- [ ] [AI-Review][LOW] Timeout Snackbar messages lack explicit accessibilityLiveRegion="polite" for screen reader announcement (AC6 requirement). Verify react-native-paper Snackbar default behavior or add explicit prop. [src/features/auth/screens/LoginScreen.tsx:146-152, src/features/settings/screens/SettingsScreen.tsx:177-183]
+- [ ] [AI-Review][LOW] Redundant setIsBiometricVerified(false) call in inactivity timeout handler — already called when app went to background. Harmless but unnecessary. [src/app/navigation/index.tsx:107]
 
 ## Dev Notes
 
@@ -435,6 +446,7 @@ Claude Opus 4.6 (claude-opus-4-6)
 ### Change Log
 
 - 2026-02-26: Implemented Story 1.6 — Session Management & Logout (all 7 tasks, all 6 ACs)
+- 2026-02-26: Code review completed — 2 HIGH, 3 MEDIUM, 3 LOW issues found. 8 action items added. Status → in-progress.
 
 ### File List
 
