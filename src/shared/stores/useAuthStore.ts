@@ -320,6 +320,11 @@ export const useAuthStore = create<AuthStore>()(
         // Step 1: Biometric verification
         const biometricResult = await authenticateWithBiometricService();
         if (!biometricResult.success) {
+          // Don't show error when user voluntarily cancels biometric prompt
+          if (biometricResult.error?.code === 'USER_CANCELLED') {
+            set({ isDeleting: false });
+            return false;
+          }
           set({
             error: { message: 'Biometric verification failed.', code: 'AUTH_FAILED' },
             isDeleting: false,

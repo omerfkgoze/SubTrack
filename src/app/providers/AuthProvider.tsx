@@ -16,6 +16,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      // Skip all auth events during account deletion to prevent race condition:
+      // deleteAccount calls signInWithEmail for re-verification, which fires SIGNED_IN
+      // and could override isAuthenticated:false set by the deletion flow.
+      if (useAuthStore.getState().isDeleting) return;
+
       if (event === 'SIGNED_OUT') {
         const wasAuthenticated = useAuthStore.getState().isAuthenticated;
         if (wasAuthenticated) {

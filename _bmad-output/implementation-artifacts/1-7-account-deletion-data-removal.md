@@ -1,6 +1,6 @@
 # Story 1.7: Account Deletion & Data Removal
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -565,6 +565,12 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-02-26: Implemented Story 1.7 — Account Deletion & Data Removal (all 6 tasks, all 10 ACs)
+- 2026-02-26: Code Review (AI) — 1 HIGH, 4 MEDIUM, 4 LOW issues found. All HIGH and MEDIUM issues fixed:
+  - Fixed race condition in AuthProvider (isDeleting guard for SIGNED_IN events)
+  - Fixed biometric cancellation showing misleading error (USER_CANCELLED handling)
+  - Fixed store error duplicate display in Security section (clearError after copy to local state)
+  - Fixed fragile error type casting in authService (FunctionsHttpError instanceof check)
+  - Added GDPR audit logging to Edge Function (structured log for account deletion events)
 
 ### File List
 
@@ -572,8 +578,9 @@ Claude Opus 4.6
 - `supabase/functions/delete-account/index.ts` — Supabase Edge Function for server-side account deletion
 
 **Modified:**
-- `src/features/auth/services/authService.ts` — Added `deleteAccount()` service method
-- `src/shared/stores/useAuthStore.ts` — Added `isDeleting` state, `deleteAccount`, `deleteAccountWithBiometric` actions, updated `clearAuth`
-- `src/features/settings/screens/SettingsScreen.tsx` — Added Delete Account button, confirmation dialog, verification dialog with password + biometric options
+- `src/features/auth/services/authService.ts` — Added `deleteAccount()` service method; Review: FunctionsHttpError instanceof check
+- `src/shared/stores/useAuthStore.ts` — Added `isDeleting` state, `deleteAccount`, `deleteAccountWithBiometric` actions, updated `clearAuth`; Review: USER_CANCELLED handling in deleteAccountWithBiometric
+- `src/features/settings/screens/SettingsScreen.tsx` — Added Delete Account button, confirmation dialog, verification dialog with password + biometric options; Review: clearError after delete failure
+- `src/app/providers/AuthProvider.tsx` — Review: Added isDeleting guard to skip auth events during account deletion
 - `src/features/auth/index.ts` — Exported `deleteAccount` from authService
 - `tsconfig.json` — Added `supabase/functions` to exclude (Deno runtime incompatible with Node.js tsc)

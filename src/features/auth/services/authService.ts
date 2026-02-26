@@ -1,5 +1,6 @@
 import { supabase } from '@shared/services/supabase';
 import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getResetPasswordRedirectUrl } from '@shared/services/deepLinking';
 import type { AuthResult } from '../types';
 
@@ -168,8 +169,7 @@ export async function deleteAccount(): Promise<AuthResult> {
     });
 
     if (error) {
-      const status = (error as { context?: { status?: number } }).context?.status;
-      if (status === 401) {
+      if (error instanceof FunctionsHttpError && error.context?.status === 401) {
         return {
           user: null,
           session: null,

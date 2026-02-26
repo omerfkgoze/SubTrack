@@ -88,6 +88,7 @@ export function SettingsScreen() {
     const success = await deleteAccount(deletePassword);
     if (!success) {
       setDeleteError(useAuthStore.getState().error?.message ?? 'Deletion failed.');
+      clearError(); // Clear store error to prevent duplicate display in Security section
     }
   };
 
@@ -95,6 +96,7 @@ export function SettingsScreen() {
     const success = await deleteAccountWithBiometric();
     if (!success) {
       setDeleteError(useAuthStore.getState().error?.message ?? 'Verification failed.');
+      clearError(); // Clear store error to prevent duplicate display in Security section
     }
   };
 

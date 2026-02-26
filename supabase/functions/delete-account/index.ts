@@ -63,6 +63,13 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    // GDPR audit trail — logged to Supabase Dashboard logs
+    console.log(JSON.stringify({
+      event: 'account_deletion',
+      user_id: user.id,
+      timestamp: new Date().toISOString(),
+    }))
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
