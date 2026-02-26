@@ -15,6 +15,7 @@ import { useAuthStore } from '@shared/stores/useAuthStore';
 
 export function SettingsScreen() {
   const theme = useTheme();
+  const user = useAuthStore((s) => s.user);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const biometryType = useAuthStore((s) => s.biometryType);
@@ -24,9 +25,13 @@ export function SettingsScreen() {
   const enableBiometric = useAuthStore((s) => s.enableBiometric);
   const disableBiometric = useAuthStore((s) => s.disableBiometric);
   const clearError = useAuthStore((s) => s.clearError);
+  const logout = useAuthStore((s) => s.logout);
+  const sessionExpiredMessage = useAuthStore((s) => s.sessionExpiredMessage);
+  const clearSessionExpiredMessage = useAuthStore((s) => s.clearSessionExpiredMessage);
 
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   useEffect(() => {
     checkBiometricAvailability();
@@ -67,6 +72,11 @@ export function SettingsScreen() {
     setSnackbarMessage('Biometric login disabled');
   };
 
+  const handleConfirmLogout = async () => {
+    setShowLogoutDialog(false);
+    await logout();
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView>
@@ -103,6 +113,26 @@ export function SettingsScreen() {
             </HelperText>
           )}
         </List.Section>
+
+        <List.Section>
+          <List.Subheader>Account</List.Subheader>
+          <List.Item
+            title={user?.email ?? ''}
+            left={(props) => <List.Icon {...props} icon="email-outline" />}
+            style={styles.listItem}
+            accessibilityLabel={`Email: ${user?.email ?? ''}`}
+          />
+          <List.Item
+            title="Log Out"
+            titleStyle={{ color: theme.colors.error }}
+            left={(props) => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
+            onPress={() => setShowLogoutDialog(true)}
+            disabled={isLoading}
+            style={styles.listItem}
+            accessibilityLabel="Log Out"
+            accessibilityRole="button"
+          />
+        </List.Section>
       </ScrollView>
 
       <Portal>
@@ -120,6 +150,20 @@ export function SettingsScreen() {
             </Button>
           </Dialog.Actions>
         </Dialog>
+        <Dialog visible={showLogoutDialog} onDismiss={() => setShowLogoutDialog(false)}>
+          <Dialog.Title>Log Out</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Are you sure you want to log out?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowLogoutDialog(false)}>Cancel</Button>
+            <Button onPress={handleConfirmLogout} textColor={theme.colors.error}>
+              Log Out
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
 
       <Snackbar
@@ -128,6 +172,14 @@ export function SettingsScreen() {
         duration={3000}
       >
         {snackbarMessage}
+      </Snackbar>
+
+      <Snackbar
+        visible={!!sessionExpiredMessage}
+        onDismiss={clearSessionExpiredMessage}
+        duration={5000}
+      >
+        {sessionExpiredMessage ?? ''}
       </Snackbar>
     </View>
   );

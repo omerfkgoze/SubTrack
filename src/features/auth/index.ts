@@ -11,6 +11,7 @@ export {
   requestPasswordReset,
   updatePassword,
   setSessionFromTokens,
+  signOut,
 } from './services/authService';
 export {
   checkBiometricAvailability,

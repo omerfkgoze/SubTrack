@@ -10,11 +10,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const setSession = useAuthStore((s) => s.setSession);
   const setUser = useAuthStore((s) => s.setUser);
   const checkBiometricAvailability = useAuthStore((s) => s.checkBiometricAvailability);
+  const handleSessionExpired = useAuthStore((s) => s.handleSessionExpired);
 
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        const wasAuthenticated = useAuthStore.getState().isAuthenticated;
+        if (wasAuthenticated) {
+          handleSessionExpired('Your session has expired. Please log in again.');
+        }
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -22,7 +30,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setSession, setUser]);
+  }, [setSession, setUser, handleSessionExpired]);
 
   // Check biometric availability after auth state is initialized
   useEffect(() => {

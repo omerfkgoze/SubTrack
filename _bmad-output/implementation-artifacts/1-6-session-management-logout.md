@@ -1,6 +1,6 @@
 # Story 1.6: Session Management & Logout
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -26,85 +26,85 @@ so that my data stays protected.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add signOut Service Method (AC: #1, #4)
-  - [ ] 1.1 Add `signOut(): Promise<{ error: AuthError | null }>` to `src/features/auth/services/authService.ts`
+- [x] Task 1: Add signOut Service Method (AC: #1, #4)
+  - [x] 1.1 Add `signOut(): Promise<{ error: AuthError | null }>` to `src/features/auth/services/authService.ts`
     - Calls `supabase.auth.signOut()`
     - Returns mapped error if signOut fails (network error etc.)
-  - [ ] 1.2 Reuse existing `mapAuthError`/`mapErrorCode` pattern for error mapping
+  - [x] 1.2 Reuse existing `mapAuthError`/`mapErrorCode` pattern for error mapping
 
-- [ ] Task 2: Add Logout and Session Management to useAuthStore (AC: #1, #2, #4)
-  - [ ] 2.1 Import `signOut as signOutService` from authService and `disableBiometric` from biometricService in `src/shared/stores/useAuthStore.ts`
-  - [ ] 2.2 Add `lastActiveTimestamp: number | null` state field (NOT persisted — transient, in-memory only)
-  - [ ] 2.3 Add `sessionExpiredMessage: string | null` state field (NOT persisted — transient UI state)
-  - [ ] 2.4 Add `logout(): Promise<void>` action:
+- [x] Task 2: Add Logout and Session Management to useAuthStore (AC: #1, #2, #4)
+  - [x] 2.1 Import `signOut as signOutService` from authService and `disableBiometric` from biometricService in `src/shared/stores/useAuthStore.ts`
+  - [x] 2.2 Add `lastActiveTimestamp: number | null` state field (NOT persisted — transient, in-memory only)
+  - [x] 2.3 Add `sessionExpiredMessage: string | null` state field (NOT persisted — transient UI state)
+  - [x] 2.4 Add `logout(): Promise<void>` action:
     - `set({ isLoading: true, error: null })`
     - Call `signOutService()` (Supabase signOut)
     - Call `disableBiometricService()` (clear Keychain)
     - Call `clearAuth()` to reset all state
     - `set({ isLoading: false })`
     - On error: still call `clearAuth()` (force local cleanup even if network fails)
-  - [ ] 2.5 Add `handleSessionExpired(message: string): void` action:
+  - [x] 2.5 Add `handleSessionExpired(message: string): void` action:
     - Call `disableBiometricService()` (clear Keychain)
     - Call `clearAuth()` to reset all state
     - `set({ sessionExpiredMessage: message })`
-  - [ ] 2.6 Add `updateLastActive(): void` action — `set({ lastActiveTimestamp: Date.now() })`
-  - [ ] 2.7 Add `clearSessionExpiredMessage(): void` action — `set({ sessionExpiredMessage: null })`
-  - [ ] 2.8 Update `clearAuth()` to also set `lastActiveTimestamp: null, sessionExpiredMessage: null`
-  - [ ] 2.9 Add `lastActiveTimestamp`, `sessionExpiredMessage` to exclusion in `partialize` (do NOT persist)
-  - [ ] 2.10 Add `logout` and `handleSessionExpired` to AuthActions interface
+  - [x] 2.6 Add `updateLastActive(): void` action — `set({ lastActiveTimestamp: Date.now() })`
+  - [x] 2.7 Add `clearSessionExpiredMessage(): void` action — `set({ sessionExpiredMessage: null })`
+  - [x] 2.8 Update `clearAuth()` to also set `lastActiveTimestamp: null, sessionExpiredMessage: null`
+  - [x] 2.9 Add `lastActiveTimestamp`, `sessionExpiredMessage` to exclusion in `partialize` (do NOT persist)
+  - [x] 2.10 Add `logout` and `handleSessionExpired` to AuthActions interface
 
-- [ ] Task 3: Implement Inactivity Timeout in RootNavigator (AC: #2)
-  - [ ] 3.1 In `src/app/navigation/index.tsx`, add inactivity timeout logic:
+- [x] Task 3: Implement Inactivity Timeout in RootNavigator (AC: #2)
+  - [x] 3.1 In `src/app/navigation/index.tsx`, add inactivity timeout logic:
     - Import `useAuthStore` selectors for `lastActiveTimestamp`, `updateLastActive`, `handleSessionExpired`, `logout`
     - Define `INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000` (30 minutes)
-  - [ ] 3.2 Update the existing AppState listener:
+  - [x] 3.2 Update the existing AppState listener:
     - On app going to `background`: record `lastActiveTimestamp` via `updateLastActive()`
     - On app coming to `active` from background: check if `Date.now() - lastActiveTimestamp > INACTIVITY_TIMEOUT_MS`
     - If timeout exceeded AND user is authenticated:
       - If biometric is enabled: only reset `isBiometricVerified` to false (existing behavior — biometric gate will show)
       - If biometric is NOT enabled: call `handleSessionExpired('Your session has expired due to inactivity. Please log in again.')` to sign out
-  - [ ] 3.3 Ensure the existing `setIsBiometricVerified(false)` on background still works for biometric users (short background transitions)
+  - [x] 3.3 Ensure the existing `setIsBiometricVerified(false)` on background still works for biometric users (short background transitions)
 
-- [ ] Task 4: Handle Session Expired Events in AuthProvider (AC: #4)
-  - [ ] 4.1 Update `src/app/providers/AuthProvider.tsx`:
+- [x] Task 4: Handle Session Expired Events in AuthProvider (AC: #4)
+  - [x] 4.1 Update `src/app/providers/AuthProvider.tsx`:
     - Import `handleSessionExpired` from useAuthStore
     - In `onAuthStateChange` callback, add handling for `SIGNED_OUT` event:
       - When event is `SIGNED_OUT` and `isAuthenticated` was true (unexpected signout), call `handleSessionExpired('Your session has expired. Please log in again.')`
     - Keep existing behavior for other events (session sync)
-  - [ ] 4.2 IMPORTANT: Do NOT trigger `handleSessionExpired` for user-initiated logout (when `logout()` action already calls `clearAuth()` — use a flag or check `isAuthenticated` before processing `SIGNED_OUT`)
+  - [x] 4.2 IMPORTANT: Do NOT trigger `handleSessionExpired` for user-initiated logout (when `logout()` action already calls `clearAuth()` — use a flag or check `isAuthenticated` before processing `SIGNED_OUT`)
 
-- [ ] Task 5: Add Logout UI to Settings Screen (AC: #1, #5, #6)
-  - [ ] 5.1 Update `src/features/settings/screens/SettingsScreen.tsx`:
+- [x] Task 5: Add Logout UI to Settings Screen (AC: #1, #5, #6)
+  - [x] 5.1 Update `src/features/settings/screens/SettingsScreen.tsx`:
     - Import `user` from useAuthStore for email display
     - Import `logout` from useAuthStore
     - Import `sessionExpiredMessage`, `clearSessionExpiredMessage` from useAuthStore
-  - [ ] 5.2 Add "Account" section below existing "Security" section:
+  - [x] 5.2 Add "Account" section below existing "Security" section:
     - `List.Subheader` with "Account"
     - `List.Item` showing user's email (title: user email, left icon: "email-outline")
     - `List.Item` for "Log Out" button (title: "Log Out", left icon: "logout", `onPress` opens confirmation dialog)
     - Style: "Log Out" text uses `theme.colors.error` for visual prominence
-  - [ ] 5.3 Add logout confirmation dialog (using existing `Portal` + `Dialog` pattern):
+  - [x] 5.3 Add logout confirmation dialog (using existing `Portal` + `Dialog` pattern):
     - Title: "Log Out"
     - Content: "Are you sure you want to log out?"
     - Actions: "Cancel" (dismiss) and "Log Out" (calls `logout()` action, uses `theme.colors.error`)
-  - [ ] 5.4 Show session expired message via Snackbar when `sessionExpiredMessage` is not null:
+  - [x] 5.4 Show session expired message via Snackbar when `sessionExpiredMessage` is not null:
     - Display the message
     - On dismiss: call `clearSessionExpiredMessage()`
     - This handles the case where the user is redirected to login due to timeout/expiry and then logs back in — the message appears on the login screen instead (see Task 6)
-  - [ ] 5.5 Accessibility: all new items have `accessibilityLabel` and `accessibilityRole`, min 44x44pt touch targets
+  - [x] 5.5 Accessibility: all new items have `accessibilityLabel` and `accessibilityRole`, min 44x44pt touch targets
 
-- [ ] Task 6: Show Session Expired Message on Login Screen (AC: #2, #4)
-  - [ ] 6.1 Update `src/features/auth/screens/LoginScreen.tsx`:
+- [x] Task 6: Show Session Expired Message on Login Screen (AC: #2, #4)
+  - [x] 6.1 Update `src/features/auth/screens/LoginScreen.tsx`:
     - Import `sessionExpiredMessage`, `clearSessionExpiredMessage` from useAuthStore
     - Add Snackbar component to display `sessionExpiredMessage` when not null
     - On dismiss or on successful login: call `clearSessionExpiredMessage()`
-  - [ ] 6.2 Snackbar should use default styling (informational, not error)
+  - [x] 6.2 Snackbar should use default styling (informational, not error)
 
-- [ ] Task 7: Update Feature Exports and Verify (AC: all)
-  - [ ] 7.1 Update `src/features/auth/index.ts` to export new `signOut` service method
-  - [ ] 7.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
-  - [ ] 7.3 Run `npx tsc --noEmit` — zero errors
-  - [ ] 7.4 Run `npx eslint src/` — zero errors/warnings
+- [x] Task 7: Update Feature Exports and Verify (AC: all)
+  - [x] 7.1 Update `src/features/auth/index.ts` to export new `signOut` service method
+  - [x] 7.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
+  - [x] 7.3 Run `npx tsc --noEmit` — zero errors
+  - [x] 7.4 Run `npx eslint src/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -416,10 +416,32 @@ ebad3c5 ready-for-dev 1.5
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6 (claude-opus-4-6)
 
 ### Debug Log References
 
+- No debug issues encountered during implementation
+
 ### Completion Notes List
 
+- Task 1: Added `signOut()` method to authService.ts using existing `mapAuthError`/`mapErrorCode` pattern. Returns mapped error on failure.
+- Task 2: Added `logout`, `handleSessionExpired`, `updateLastActive`, `clearSessionExpiredMessage` actions to useAuthStore. Added `lastActiveTimestamp` and `sessionExpiredMessage` transient state fields (NOT persisted via partialize). Updated `clearAuth()` to reset new fields. Logout forces local cleanup even on network failure.
+- Task 3: Added inactivity timeout logic (30min / NFR10) to RootNavigator's AppState listener. On background → records timestamp; on foreground → checks elapsed time. Biometric users get biometric gate; non-biometric users get signed out with message. Short background transitions work normally.
+- Task 4: Updated AuthProvider's `onAuthStateChange` to distinguish user-initiated logout from server-side session expiry. Uses `isAuthenticated` check: if still true when `SIGNED_OUT` fires, it's unexpected (session expired); if false, logout action already handled it.
+- Task 5: Added Account section to SettingsScreen with user email display and Log Out button (red, error color). Logout confirmation dialog with Cancel/Log Out actions. Session expired Snackbar for messages. All elements have accessibility labels.
+- Task 6: Added session expired Snackbar to LoginScreen. Clears message on dismiss or successful login. Uses default (informational) styling.
+- Task 7: Exported `signOut` from auth feature index. All imports use path aliases. TypeScript compiles with zero errors. ESLint passes with zero errors/warnings.
+
+### Change Log
+
+- 2026-02-26: Implemented Story 1.6 — Session Management & Logout (all 7 tasks, all 6 ACs)
+
 ### File List
+
+- `src/features/auth/services/authService.ts` (modified — added signOut method)
+- `src/shared/stores/useAuthStore.ts` (modified — added logout, handleSessionExpired, updateLastActive, clearSessionExpiredMessage actions; lastActiveTimestamp, sessionExpiredMessage state; updated clearAuth)
+- `src/app/navigation/index.tsx` (modified — added inactivity timeout logic with INACTIVITY_TIMEOUT_MS constant)
+- `src/app/providers/AuthProvider.tsx` (modified — added SIGNED_OUT event handling for session expiry)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Account section with email display, logout button, confirmation dialog, session expired Snackbar)
+- `src/features/auth/screens/LoginScreen.tsx` (modified — added session expired Snackbar)
+- `src/features/auth/index.ts` (modified — exported signOut)

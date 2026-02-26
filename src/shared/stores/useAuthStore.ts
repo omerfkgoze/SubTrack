@@ -7,6 +7,7 @@ import {
   signInWithEmail,
   requestPasswordReset as requestPasswordResetService,
   updatePassword as updatePasswordService,
+  signOut as signOutService,
 } from '@features/auth/services/authService';
 import {
   checkBiometricAvailability as checkBiometricAvailabilityService,
@@ -29,6 +30,8 @@ interface AuthState {
   isBiometricAvailable: boolean;
   isBiometricEnabled: boolean;
   biometryType: string | null;
+  lastActiveTimestamp: number | null;
+  sessionExpiredMessage: string | null;
 }
 
 interface AuthActions {
@@ -46,6 +49,10 @@ interface AuthActions {
   enableBiometric: () => Promise<void>;
   disableBiometric: () => Promise<void>;
   authenticateWithBiometric: () => Promise<boolean>;
+  logout: () => Promise<void>;
+  handleSessionExpired: (message: string) => void;
+  updateLastActive: () => void;
+  clearSessionExpiredMessage: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -64,6 +71,8 @@ export const useAuthStore = create<AuthStore>()(
       isBiometricAvailable: false,
       isBiometricEnabled: false,
       biometryType: null,
+      lastActiveTimestamp: null,
+      sessionExpiredMessage: null,
 
       signUp: async (email: string, password: string) => {
         set({ isLoading: true, error: null, needsEmailConfirmation: false });
@@ -252,6 +261,32 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      logout: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          await signOutService();
+          await disableBiometricService();
+        } catch {
+          // Force local cleanup even if network fails
+        }
+        get().clearAuth();
+        set({ isLoading: false });
+      },
+
+      handleSessionExpired: (message: string) => {
+        disableBiometricService();
+        get().clearAuth();
+        set({ sessionExpiredMessage: message });
+      },
+
+      updateLastActive: () => {
+        set({ lastActiveTimestamp: Date.now() });
+      },
+
+      clearSessionExpiredMessage: () => {
+        set({ sessionExpiredMessage: null });
+      },
+
       clearAuth: () => {
         set({
           user: null,
@@ -264,6 +299,8 @@ export const useAuthStore = create<AuthStore>()(
           pendingPasswordReset: false,
           isBiometricEnabled: false,
           biometryType: null,
+          lastActiveTimestamp: null,
+          sessionExpiredMessage: null,
         });
       },
 

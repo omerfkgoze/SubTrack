@@ -161,6 +161,30 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
   }
 }
 
+export async function signOut(): Promise<{ error: { message: string; code: string } | null }> {
+  try {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return {
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
+      };
+    }
+
+    return { error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
+    };
+  }
+}
+
 export async function setSessionFromTokens(
   accessToken: string,
   refreshToken: string,

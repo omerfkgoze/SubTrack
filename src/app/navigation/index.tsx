@@ -16,11 +16,16 @@ import { supabase } from '@shared/services/supabase';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (NFR10)
+
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const setPendingPasswordReset = useAuthStore((s) => s.setPendingPasswordReset);
+  const lastActiveTimestamp = useAuthStore((s) => s.lastActiveTimestamp);
+  const updateLastActive = useAuthStore((s) => s.updateLastActive);
+  const handleSessionExpired = useAuthStore((s) => s.handleSessionExpired);
   const theme = useTheme();
 
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
@@ -88,12 +93,32 @@ export function RootNavigator() {
         nextAppState === 'background'
       ) {
         setIsBiometricVerified(false);
+        updateLastActive();
       }
+
+      if (
+        appStateRef.current.match(/background/) &&
+        nextAppState === 'active'
+      ) {
+        if (lastActiveTimestamp && isAuthenticated) {
+          const elapsed = Date.now() - lastActiveTimestamp;
+          if (elapsed > INACTIVITY_TIMEOUT_MS) {
+            if (isBiometricEnabled) {
+              setIsBiometricVerified(false);
+            } else {
+              handleSessionExpired(
+                'Your session has expired due to inactivity. Please log in again.',
+              );
+            }
+          }
+        }
+      }
+
       appStateRef.current = nextAppState;
     });
 
     return () => subscription.remove();
-  }, []);
+  }, [lastActiveTimestamp, isAuthenticated, isBiometricEnabled, updateLastActive, handleSessionExpired]);
 
   // Reset verification when biometric is disabled
   useEffect(() => {

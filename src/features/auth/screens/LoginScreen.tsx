@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, HelperText, Snackbar } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +18,8 @@ export function LoginScreen() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const authError = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
+  const sessionExpiredMessage = useAuthStore((s) => s.sessionExpiredMessage);
+  const clearSessionExpiredMessage = useAuthStore((s) => s.clearSessionExpiredMessage);
 
   const [securePassword, setSecurePassword] = useState(true);
 
@@ -35,6 +37,7 @@ export function LoginScreen() {
 
   const onSubmit = async (data: LoginFormData) => {
     clearError();
+    clearSessionExpiredMessage();
     await signIn(data.email.trim(), data.password);
   };
 
@@ -139,6 +142,14 @@ export function LoginScreen() {
           Don't have an account? Register
         </Button>
       </ScrollView>
+
+      <Snackbar
+        visible={!!sessionExpiredMessage}
+        onDismiss={clearSessionExpiredMessage}
+        duration={5000}
+      >
+        {sessionExpiredMessage ?? ''}
+      </Snackbar>
     </KeyboardAvoidingView>
   );
 }
