@@ -168,6 +168,7 @@ export function SettingsScreen() {
         visible={!!snackbarMessage}
         onDismiss={() => setSnackbarMessage('')}
         duration={3000}
+        accessibilityLiveRegion="polite"
       >
         {snackbarMessage}
       </Snackbar>

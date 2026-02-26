@@ -1,6 +1,6 @@
 # Story 1.6: Session Management & Logout
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -124,6 +124,15 @@ so that my data stays protected.
 - [x] [AI-Review-2][LOW] clearAuth() resets biometryType:null — device-level capability, not user state. Causes brief label flash ("Biometric Login" instead of "Face ID"/"Fingerprint") until checkBiometricAvailability() re-runs. [src/shared/stores/useAuthStore.ts:305]
 - [x] [AI-Review-2][LOW] handleSessionExpired calls clearAuth() which sets sessionExpiredMessage:null, then immediately overrides with set({ sessionExpiredMessage: message }). Would be cleaner as single operation. [src/shared/stores/useAuthStore.ts:281-283]
 - [x] [AI-Review-2][LOW] Redundant set({ isLoading: false }) after clearAuth() in logout — already resolved as part of M1 fix.
+
+#### Review 3 Follow-ups (AI)
+
+- [x] [AI-Review-3][HIGH] handleSessionExpired() doesn't call supabase.auth.signOut(), leaving Supabase's internally persisted session active (persistSession:true + autoRefreshToken:true). After inactivity timeout, Supabase auto-refresh fires TOKEN_REFRESHED, causing AuthProvider to re-authenticate user and bypass timeout. Fixed by adding signOutService() call and setting state BEFORE cleanup to prevent AuthProvider re-entry. [src/shared/stores/useAuthStore.ts:277-296]
+- [ ] [AI-Review-3][MEDIUM] AC2 "no interaction" clause not implemented — only background-to-foreground transitions tracked. Foreground idle time (app open, no touch for 30min) doesn't trigger timeout. Design-level gap requiring touch/interaction tracking infrastructure. [src/app/navigation/index.tsx:86-115]
+- [x] [AI-Review-3][MEDIUM] updatePassword() calls supabase.auth.signOut() directly instead of signOutService(), bypassing standardized error handling pattern. Fixed to use signOutService(). [src/shared/stores/useAuthStore.ts:165-166]
+- [x] [AI-Review-3][LOW] signOutService() and disableBiometricService() in logout() called sequentially but are independent — parallelized with Promise.all(). [src/shared/stores/useAuthStore.ts:269-270]
+- [x] [AI-Review-3][LOW] SettingsScreen biometric Snackbar missing accessibilityLiveRegion="polite", inconsistent with LoginScreen Snackbar. Fixed. [src/features/settings/screens/SettingsScreen.tsx:167-173]
+- [x] [AI-Review-3][LOW] LoginScreen Snackbar uses redundant {sessionExpiredMessage ?? ''} when visible prop already gates on !!sessionExpiredMessage. Removed ?? ''. [src/features/auth/screens/LoginScreen.tsx:152]
 
 ## Dev Notes
 
@@ -463,6 +472,11 @@ Claude Opus 4.6 (claude-opus-4-6)
 - ✅ Resolved review 2 finding [LOW]: Removed biometryType:null from clearAuth() — device-level capability should persist across logout, preventing brief "Biometric Login" label flash.
 - ✅ Resolved review 2 finding [LOW]: Refactored handleSessionExpired to use single set() call with sessionExpiredMessage:message inline instead of clearAuth()+override pattern.
 - ✅ Resolved review 2 finding [LOW]: Redundant set({ isLoading: false }) already resolved as part of M1 fix — confirmed no redundant call exists.
+- ✅ Resolved review 3 finding [HIGH]: handleSessionExpired() now calls signOutService() to clear Supabase's internally persisted session, preventing auto-refresh from bypassing inactivity timeout. State set BEFORE cleanup to prevent AuthProvider re-entry loop.
+- ✅ Resolved review 3 finding [MEDIUM]: updatePassword() now uses signOutService() instead of direct supabase.auth.signOut() call — consistent with service layer pattern.
+- ✅ Resolved review 3 finding [LOW]: logout() now uses Promise.all() for parallel signOut+biometric cleanup.
+- ✅ Resolved review 3 finding [LOW]: SettingsScreen biometric Snackbar now has accessibilityLiveRegion="polite".
+- ✅ Resolved review 3 finding [LOW]: Removed redundant ?? '' from LoginScreen Snackbar content.
 
 ### Change Log
 
@@ -471,13 +485,14 @@ Claude Opus 4.6 (claude-opus-4-6)
 - 2026-02-26: Addressed code review findings — 7 of 7 items resolved (2 HIGH, 2 MEDIUM, 3 LOW).
 - 2026-02-26: Code review 2 completed — 1 HIGH, 2 MEDIUM, 4 LOW issues found. Fixed 1 HIGH (updatePassword regression) and 1 MEDIUM (logout loading state leak). 4 LOW noted.
 - 2026-02-26: Addressed remaining code review 2 findings — 4 of 4 LOW items resolved (dead Snackbar removal, biometryType preservation, handleSessionExpired single-op, redundant isLoading confirmed resolved).
+- 2026-02-26: Code review 3 completed — 1 HIGH, 2 MEDIUM, 3 LOW issues found. Fixed 1 HIGH (Supabase session not cleared on timeout), 1 MEDIUM (service pattern inconsistency), 3 LOW. 1 MEDIUM (AC2 foreground idle tracking) deferred as design-level change.
 
 ### File List
 
 - `src/features/auth/services/authService.ts` (modified — added signOut method; review: aligned return type to AuthResult)
-- `src/shared/stores/useAuthStore.ts` (modified — added logout, handleSessionExpired, updateLastActive, clearSessionExpiredMessage actions; lastActiveTimestamp, sessionExpiredMessage state; updated clearAuth; review: fixed race condition in logout, made handleSessionExpired async with await)
+- `src/shared/stores/useAuthStore.ts` (modified — added logout, handleSessionExpired, updateLastActive, clearSessionExpiredMessage actions; lastActiveTimestamp, sessionExpiredMessage state; updated clearAuth; review: fixed race condition in logout, made handleSessionExpired async with await; review3: added signOutService to handleSessionExpired, parallelized logout cleanup, updatePassword uses signOutService)
 - `src/app/navigation/index.tsx` (modified — added inactivity timeout logic with INACTIVITY_TIMEOUT_MS constant; review: removed reactive selectors from AppState useEffect, use getState() instead; removed redundant setIsBiometricVerified)
 - `src/app/providers/AuthProvider.tsx` (modified — added SIGNED_OUT event handling for session expiry)
-- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Account section with email display, logout button, confirmation dialog, session expired Snackbar; review: added accessibilityLiveRegion)
-- `src/features/auth/screens/LoginScreen.tsx` (modified — added session expired Snackbar; review: added accessibilityLiveRegion)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Account section with email display, logout button, confirmation dialog; review3: added accessibilityLiveRegion to biometric Snackbar)
+- `src/features/auth/screens/LoginScreen.tsx` (modified — added session expired Snackbar; review: added accessibilityLiveRegion; review3: removed redundant null coalescing)
 - `src/features/auth/index.ts` (modified — exported signOut)

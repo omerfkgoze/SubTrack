@@ -163,7 +163,7 @@ export const useAuthStore = create<AuthStore>()(
         // Set isAuthenticated: false BEFORE signOut to prevent AuthProvider from
         // triggering handleSessionExpired with misleading "session expired" message.
         set({ isAuthenticated: false });
-        await supabase.auth.signOut();
+        await signOutService();
         set({ isLoading: false });
         return true;
       },
@@ -266,8 +266,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         set({ error: null, isAuthenticated: false });
         try {
-          await signOutService();
-          await disableBiometricService();
+          await Promise.all([signOutService(), disableBiometricService()]);
         } catch {
           // Force local cleanup even if network fails
         }
@@ -275,11 +274,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       handleSessionExpired: async (message: string) => {
-        try {
-          await disableBiometricService();
-        } catch {
-          // Biometric cleanup failure shouldn't prevent session expiry handling
-        }
+        // Set state BEFORE signOut to prevent AuthProvider re-entry:
+        // signOut fires SIGNED_OUT event, AuthProvider checks isAuthenticated —
+        // if already false, it skips handleSessionExpired (no infinite loop).
         set({
           user: null,
           session: null,
@@ -293,6 +290,11 @@ export const useAuthStore = create<AuthStore>()(
           lastActiveTimestamp: null,
           sessionExpiredMessage: message,
         });
+        try {
+          await Promise.all([signOutService(), disableBiometricService()]);
+        } catch {
+          // Cleanup failure shouldn't prevent session expiry handling
+        }
       },
 
       updateLastActive: () => {

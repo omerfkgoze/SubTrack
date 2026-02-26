@@ -149,7 +149,7 @@ export function LoginScreen() {
         duration={5000}
         accessibilityLiveRegion="polite"
       >
-        {sessionExpiredMessage ?? ''}
+        {sessionExpiredMessage}
       </Snackbar>
     </KeyboardAvoidingView>
   );
