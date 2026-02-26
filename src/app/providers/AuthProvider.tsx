@@ -9,6 +9,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const setSession = useAuthStore((s) => s.setSession);
   const setUser = useAuthStore((s) => s.setUser);
+  const checkBiometricAvailability = useAuthStore((s) => s.checkBiometricAvailability);
 
   useEffect(() => {
     const {
@@ -22,6 +23,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.unsubscribe();
     };
   }, [setSession, setUser]);
+
+  // Check biometric availability after auth state is initialized
+  useEffect(() => {
+    checkBiometricAvailability();
+  }, [checkBiometricAvailability]);
 
   return <>{children}</>;
 }

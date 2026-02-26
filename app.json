@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.brave.blandness619.SubTrack"
+      "bundleIdentifier": "com.brave.blandness619.SubTrack",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Log in to SubTrack securely with Face ID"
+      }
     },
     "android": {
       "adaptiveIcon": {

@@ -1,6 +1,6 @@
 # Story 1.4: Biometric Authentication Setup
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,74 +28,74 @@ So that I can access my app quickly and securely without typing my password.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install biometric dependencies (AC: #1, #2, #5)
-  - [ ] 1.1 Install `react-native-biometrics` via `npx expo install react-native-biometrics`
-  - [ ] 1.2 Install `react-native-keychain` via `npx expo install react-native-keychain`
-  - [ ] 1.3 Add `NSFaceIDUsageDescription` permission string to `app.json` plugins/infoPlist: "Log in to SubTrack securely with Face ID"
-  - [ ] 1.4 Verify both libraries are compatible with Expo SDK 54 (may need development build — NOT Expo Go)
-  - [ ] 1.5 Run `npx expo prebuild` if needed to generate native modules config
+- [x] Task 1: Install biometric dependencies (AC: #1, #2, #5)
+  - [x] 1.1 Install `react-native-biometrics` via `npx expo install react-native-biometrics`
+  - [x] 1.2 Install `react-native-keychain` via `npx expo install react-native-keychain`
+  - [x] 1.3 Add `NSFaceIDUsageDescription` permission string to `app.json` plugins/infoPlist: "Log in to SubTrack securely with Face ID"
+  - [x] 1.4 Verify both libraries are compatible with Expo SDK 54 (may need development build — NOT Expo Go)
+  - [x] 1.5 Run `npx expo prebuild` if needed to generate native modules config
 
-- [ ] Task 2: Create biometric service (AC: #1, #2, #3, #4, #5, #6)
-  - [ ] 2.1 Create `src/features/auth/services/biometricService.ts`
-  - [ ] 2.2 Implement `checkBiometricAvailability(): Promise<BiometricCheckResult>` — calls `ReactNativeBiometrics.isSensorAvailable()`, returns `{ available: boolean, biometryType: 'FaceID' | 'TouchID' | 'Biometrics' | null }`
-  - [ ] 2.3 Implement `enrollBiometric(refreshToken: string): Promise<BiometricResult>` — calls `createKeys()`, stores refresh token in Keychain via `Keychain.setGenericPassword('biometric_token', refreshToken, { accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY, accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY })`
-  - [ ] 2.4 Implement `authenticateWithBiometric(): Promise<BiometricAuthResult>` — calls `simplePrompt({ promptMessage: 'Log in to SubTrack', cancelButtonText: 'Use Password' })`, on success retrieves token from Keychain, returns `{ success: boolean, refreshToken: string | null, error: BiometricError | null }`
-  - [ ] 2.5 Implement `disableBiometric(): Promise<void>` — calls `deleteKeys()`, calls `Keychain.resetGenericPassword()`, clears all biometric state
-  - [ ] 2.6 Implement `getStoredToken(): Promise<string | null>` — retrieves refresh token from Keychain without biometric prompt (for checking existence)
-  - [ ] 2.7 Map biometric errors to user-friendly messages: sensor not available → "Your device does not support biometric authentication", no biometrics enrolled → "No biometrics enrolled on this device", authentication failed → "Biometric authentication failed", user cancelled → null (silent)
+- [x] Task 2: Create biometric service (AC: #1, #2, #3, #4, #5, #6)
+  - [x] 2.1 Create `src/features/auth/services/biometricService.ts`
+  - [x] 2.2 Implement `checkBiometricAvailability(): Promise<BiometricCheckResult>` — calls `ReactNativeBiometrics.isSensorAvailable()`, returns `{ available: boolean, biometryType: 'FaceID' | 'TouchID' | 'Biometrics' | null }`
+  - [x] 2.3 Implement `enrollBiometric(refreshToken: string): Promise<BiometricResult>` — calls `createKeys()`, stores refresh token in Keychain via `Keychain.setGenericPassword('biometric_token', refreshToken, { accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY, accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY })`
+  - [x] 2.4 Implement `authenticateWithBiometric(): Promise<BiometricAuthResult>` — calls `simplePrompt({ promptMessage: 'Log in to SubTrack', cancelButtonText: 'Use Password' })`, on success retrieves token from Keychain, returns `{ success: boolean, refreshToken: string | null, error: BiometricError | null }`
+  - [x] 2.5 Implement `disableBiometric(): Promise<void>` — calls `deleteKeys()`, calls `Keychain.resetGenericPassword()`, clears all biometric state
+  - [x] 2.6 Implement `getStoredToken(): Promise<string | null>` — retrieves refresh token from Keychain without biometric prompt (for checking existence)
+  - [x] 2.7 Map biometric errors to user-friendly messages: sensor not available → "Your device does not support biometric authentication", no biometrics enrolled → "No biometrics enrolled on this device", authentication failed → "Biometric authentication failed", user cancelled → null (silent)
 
-- [ ] Task 3: Add biometric types (AC: all)
-  - [ ] 3.1 Add biometric types to `src/features/auth/types/index.ts`: `BiometricCheckResult`, `BiometricResult`, `BiometricAuthResult`, `BiometricError`
-  - [ ] 3.2 Define `BiometricError` interface: `{ message: string, code: 'NOT_AVAILABLE' | 'NOT_ENROLLED' | 'AUTH_FAILED' | 'USER_CANCELLED' | 'SESSION_EXPIRED' | 'KEYCHAIN_ERROR' | 'UNKNOWN' }`
+- [x] Task 3: Add biometric types (AC: all)
+  - [x] 3.1 Add biometric types to `src/features/auth/types/index.ts`: `BiometricCheckResult`, `BiometricResult`, `BiometricAuthResult`, `BiometricError`
+  - [x] 3.2 Define `BiometricError` interface: `{ message: string, code: 'NOT_AVAILABLE' | 'NOT_ENROLLED' | 'AUTH_FAILED' | 'USER_CANCELLED' | 'SESSION_EXPIRED' | 'KEYCHAIN_ERROR' | 'UNKNOWN' }`
 
-- [ ] Task 4: Extend useAuthStore with biometric state (AC: #1, #2, #4, #5)
-  - [ ] 4.1 Add biometric state fields to `src/shared/stores/useAuthStore.ts`: `isBiometricAvailable: boolean`, `isBiometricEnabled: boolean`, `biometryType: string | null`
-  - [ ] 4.2 Add `checkBiometricAvailability(): Promise<void>` action — calls biometricService.checkBiometricAvailability(), updates store
-  - [ ] 4.3 Add `enableBiometric(): Promise<void>` action — calls biometricService.enrollBiometric(session.refresh_token), sets `isBiometricEnabled: true` on success
-  - [ ] 4.4 Add `disableBiometric(): Promise<void>` action — calls biometricService.disableBiometric(), sets `isBiometricEnabled: false`
-  - [ ] 4.5 Add `authenticateWithBiometric(): Promise<boolean>` action — calls biometricService.authenticateWithBiometric(), on success calls `supabase.auth.setSession()` with retrieved refresh token, returns success boolean
-  - [ ] 4.6 Persist `isBiometricEnabled` and `biometryType` in AsyncStorage partialize config (add to existing persisted fields)
-  - [ ] 4.7 Update `clearAuth()` to reset biometric state (`isBiometricEnabled: false`, `biometryType: null`) but NOT `isBiometricAvailable` (device capability doesn't change)
+- [x] Task 4: Extend useAuthStore with biometric state (AC: #1, #2, #4, #5)
+  - [x] 4.1 Add biometric state fields to `src/shared/stores/useAuthStore.ts`: `isBiometricAvailable: boolean`, `isBiometricEnabled: boolean`, `biometryType: string | null`
+  - [x] 4.2 Add `checkBiometricAvailability(): Promise<void>` action — calls biometricService.checkBiometricAvailability(), updates store
+  - [x] 4.3 Add `enableBiometric(): Promise<void>` action — calls biometricService.enrollBiometric(session.refresh_token), sets `isBiometricEnabled: true` on success
+  - [x] 4.4 Add `disableBiometric(): Promise<void>` action — calls biometricService.disableBiometric(), sets `isBiometricEnabled: false`
+  - [x] 4.5 Add `authenticateWithBiometric(): Promise<boolean>` action — calls biometricService.authenticateWithBiometric(), on success calls `supabase.auth.setSession()` with retrieved refresh token, returns success boolean
+  - [x] 4.6 Persist `isBiometricEnabled` and `biometryType` in AsyncStorage partialize config (add to existing persisted fields)
+  - [x] 4.7 Update `clearAuth()` to reset biometric state (`isBiometricEnabled: false`, `biometryType: null`) but NOT `isBiometricAvailable` (device capability doesn't change)
 
-- [ ] Task 5: Implement BiometricPromptScreen (AC: #2, #3, #6)
-  - [ ] 5.1 Create `src/features/auth/screens/BiometricPromptScreen.tsx`
-  - [ ] 5.2 Screen shows on app open when `isAuthenticated && isBiometricEnabled` — before MainTabs
-  - [ ] 5.3 Auto-trigger `authenticateWithBiometric()` on mount via `useEffect`
-  - [ ] 5.4 Show SubTrack logo + "Verifying your identity..." text during biometric prompt
-  - [ ] 5.5 On success: navigate to MainTabs (or let auth state handle it)
-  - [ ] 5.6 On failure: show "Biometric authentication failed" message with "Use Password" button and "Try Again" button
-  - [ ] 5.7 "Use Password" button: calls `clearAuth()` and navigates to Login screen
-  - [ ] 5.8 "Try Again" button: re-triggers biometric prompt
-  - [ ] 5.9 On session expired (AC6): show "Session expired. Please log in with your password." message, clear Keychain, redirect to Login
+- [x] Task 5: Implement BiometricPromptScreen (AC: #2, #3, #6)
+  - [x] 5.1 Create `src/features/auth/screens/BiometricPromptScreen.tsx`
+  - [x] 5.2 Screen shows on app open when `isAuthenticated && isBiometricEnabled` — before MainTabs
+  - [x] 5.3 Auto-trigger `authenticateWithBiometric()` on mount via `useEffect`
+  - [x] 5.4 Show SubTrack logo + "Verifying your identity..." text during biometric prompt
+  - [x] 5.5 On success: navigate to MainTabs (or let auth state handle it)
+  - [x] 5.6 On failure: show "Biometric authentication failed" message with "Use Password" button and "Try Again" button
+  - [x] 5.7 "Use Password" button: calls `clearAuth()` and navigates to Login screen
+  - [x] 5.8 "Try Again" button: re-triggers biometric prompt
+  - [x] 5.9 On session expired (AC6): show "Session expired. Please log in with your password." message, clear Keychain, redirect to Login
 
-- [ ] Task 6: Implement Settings biometric toggle (AC: #1, #4, #5, #7)
-  - [ ] 6.1 Update `src/features/settings/screens/SettingsScreen.tsx` — replace placeholder with actual settings UI
-  - [ ] 6.2 Add "Security" section with biometric toggle using `react-native-paper` `Switch` component
-  - [ ] 6.3 Toggle label shows biometry type: "Face ID" / "Fingerprint" / "Biometric Login" based on `biometryType` from store
-  - [ ] 6.4 Toggle is disabled when `isBiometricAvailable === false` with helper text explaining why
-  - [ ] 6.5 Toggle on: calls `enableBiometric()` from store, shows loading indicator during enrollment
-  - [ ] 6.6 Toggle off: shows confirmation dialog "Disable biometric login?", on confirm calls `disableBiometric()` from store
-  - [ ] 6.7 Show success Snackbar "Biometric login enabled" / "Biometric login disabled" after toggle action
-  - [ ] 6.8 Call `checkBiometricAvailability()` on screen mount to ensure latest device state
-  - [ ] 6.9 Add `accessibilityLabel` and `accessibilityRole="switch"` to toggle (AC7)
-  - [ ] 6.10 Ensure all elements have minimum 44x44pt touch targets
+- [x] Task 6: Implement Settings biometric toggle (AC: #1, #4, #5, #7)
+  - [x] 6.1 Update `src/features/settings/screens/SettingsScreen.tsx` — replace placeholder with actual settings UI
+  - [x] 6.2 Add "Security" section with biometric toggle using `react-native-paper` `Switch` component
+  - [x] 6.3 Toggle label shows biometry type: "Face ID" / "Fingerprint" / "Biometric Login" based on `biometryType` from store
+  - [x] 6.4 Toggle is disabled when `isBiometricAvailable === false` with helper text explaining why
+  - [x] 6.5 Toggle on: calls `enableBiometric()` from store, shows loading indicator during enrollment
+  - [x] 6.6 Toggle off: shows confirmation dialog "Disable biometric login?", on confirm calls `disableBiometric()` from store
+  - [x] 6.7 Show success Snackbar "Biometric login enabled" / "Biometric login disabled" after toggle action
+  - [x] 6.8 Call `checkBiometricAvailability()` on screen mount to ensure latest device state
+  - [x] 6.9 Add `accessibilityLabel` and `accessibilityRole="switch"` to toggle (AC7)
+  - [x] 6.10 Ensure all elements have minimum 44x44pt touch targets
 
-- [ ] Task 7: Update navigation for biometric flow (AC: #2, #3)
-  - [ ] 7.1 Update `src/app/navigation/index.tsx` (RootNavigator) to handle biometric gate: when `isAuthenticated && isBiometricEnabled`, show BiometricPromptScreen before MainTabs
-  - [ ] 7.2 Add `isBiometricVerified: boolean` state (NOT persisted) to control biometric gate — resets to `false` on app restart via `AppState` listener
-  - [ ] 7.3 Navigation flow: `isAuthenticated === false` → AuthStack | `isAuthenticated && isBiometricEnabled && !isBiometricVerified` → BiometricPromptScreen | `isAuthenticated && (!isBiometricEnabled || isBiometricVerified)` → MainTabs
-  - [ ] 7.4 Add `BiometricPrompt` to navigation types if needed
+- [x] Task 7: Update navigation for biometric flow (AC: #2, #3)
+  - [x] 7.1 Update `src/app/navigation/index.tsx` (RootNavigator) to handle biometric gate: when `isAuthenticated && isBiometricEnabled`, show BiometricPromptScreen before MainTabs
+  - [x] 7.2 Add `isBiometricVerified: boolean` state (NOT persisted) to control biometric gate — resets to `false` on app restart via `AppState` listener
+  - [x] 7.3 Navigation flow: `isAuthenticated === false` → AuthStack | `isAuthenticated && isBiometricEnabled && !isBiometricVerified` → BiometricPromptScreen | `isAuthenticated && (!isBiometricEnabled || isBiometricVerified)` → MainTabs
+  - [x] 7.4 Add `BiometricPrompt` to navigation types if needed
 
-- [ ] Task 8: Update AuthProvider for biometric initialization (AC: #5)
-  - [ ] 8.1 In `src/app/providers/AuthProvider.tsx`, call `checkBiometricAvailability()` once on mount to populate `isBiometricAvailable` and `biometryType` in store
-  - [ ] 8.2 Ensure this runs AFTER auth state is initialized (after onAuthStateChange fires)
+- [x] Task 8: Update AuthProvider for biometric initialization (AC: #5)
+  - [x] 8.1 In `src/app/providers/AuthProvider.tsx`, call `checkBiometricAvailability()` once on mount to populate `isBiometricAvailable` and `biometryType` in store
+  - [x] 8.2 Ensure this runs AFTER auth state is initialized (after onAuthStateChange fires)
 
-- [ ] Task 9: Update feature exports and verify (AC: all)
-  - [ ] 9.1 Update `src/features/auth/index.ts` to export BiometricPromptScreen, biometric types, biometric service functions
-  - [ ] 9.2 Update `src/features/settings/index.ts` to export SettingsScreen
-  - [ ] 9.3 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
-  - [ ] 9.4 Run `npx tsc --noEmit` — zero errors
-  - [ ] 9.5 Run `npx eslint src/` — zero errors/warnings
+- [x] Task 9: Update feature exports and verify (AC: all)
+  - [x] 9.1 Update `src/features/auth/index.ts` to export BiometricPromptScreen, biometric types, biometric service functions
+  - [x] 9.2 Update `src/features/settings/index.ts` to export SettingsScreen
+  - [x] 9.3 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
+  - [x] 9.4 Run `npx tsc --noEmit` — zero errors
+  - [x] 9.5 Run `npx eslint src/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -412,14 +412,48 @@ bae950a story 1.3 ready for review
 - [Source: _bmad-output/planning-artifacts/ux-design-specification.md#App Access < 2 seconds]
 - [Source: _bmad-output/implementation-artifacts/1-3-user-login-with-email-password.md]
 
+## Change Log
+
+- 2026-02-26: Story 1.4 implementation complete — biometric authentication (Face ID/Fingerprint) with enrollment, login gate, session expiry fallback, and settings toggle
+
 ## Dev Agent Record
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- TypeScript compilation: zero errors (`npx tsc --noEmit`)
+- ESLint: zero errors/warnings (`npx eslint src/`)
+- Dependencies installed: react-native-biometrics@3.0.1, react-native-keychain@10.0.0
+
 ### Completion Notes List
 
+- **Task 1:** Installed react-native-biometrics and react-native-keychain via npx expo install. Added NSFaceIDUsageDescription to app.json iOS infoPlist. Both packages are compatible with Expo SDK 54 (require development build, not Expo Go).
+- **Task 2:** Created biometricService.ts with 5 functions: checkBiometricAvailability, enrollBiometric, authenticateWithBiometric, disableBiometric, getStoredToken. Error mapping translates native errors to user-friendly messages with typed error codes. Uses dedicated Keychain service name (com.subtrack.biometric).
+- **Task 3:** Added BiometricCheckResult, BiometricResult, BiometricAuthResult, BiometricError, and BiometricErrorCode types to auth types index.
+- **Task 4:** Extended useAuthStore with isBiometricAvailable, isBiometricEnabled, biometryType state fields. Added checkBiometricAvailability, enableBiometric, disableBiometric, authenticateWithBiometric actions. authenticateWithBiometric retrieves refresh token from Keychain and restores Supabase session. clearAuth resets biometric state (except isBiometricAvailable). Persist config includes isBiometricEnabled and biometryType.
+- **Task 5:** Created BiometricPromptScreen with auto-trigger on mount, "Verifying your identity..." loading state, error display with "Try Again" and "Use Password" buttons, and session expiry handling with dedicated message and password redirect.
+- **Task 6:** Replaced SettingsScreen placeholder with full Security section. Biometric toggle shows device-appropriate label (Face ID/Fingerprint/Biometric Login), disabled state with explanation for unsupported devices, confirmation dialog for disabling, and Snackbar feedback. Accessibility labels and minimum 44pt touch targets applied.
+- **Task 7:** Updated RootNavigator with biometric gate: BiometricPromptScreen renders before MainTabs when biometric is enabled and not yet verified. AppState listener resets verification on background, requiring re-authentication on app resume.
+- **Task 8:** AuthProvider now calls checkBiometricAvailability on mount to populate device capability state.
+- **Task 9:** Updated auth and settings feature exports. All imports use path aliases. TypeScript and ESLint pass with zero errors.
+
 ### File List
+
+**New Files:**
+- src/features/auth/services/biometricService.ts
+- src/features/auth/screens/BiometricPromptScreen.tsx
+
+**Modified Files:**
+- src/features/auth/types/index.ts
+- src/shared/stores/useAuthStore.ts
+- src/features/settings/screens/SettingsScreen.tsx
+- src/features/settings/index.ts
+- src/features/auth/index.ts
+- src/app/navigation/index.tsx
+- src/app/providers/AuthProvider.tsx
+- app.json
+- package.json
+- package-lock.json

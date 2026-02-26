@@ -21,3 +21,34 @@ export interface AuthResult {
 }
 
 export type { User, Session };
+
+// Biometric types
+export type BiometricErrorCode =
+  | 'NOT_AVAILABLE'
+  | 'NOT_ENROLLED'
+  | 'AUTH_FAILED'
+  | 'USER_CANCELLED'
+  | 'SESSION_EXPIRED'
+  | 'KEYCHAIN_ERROR'
+  | 'UNKNOWN';
+
+export interface BiometricError {
+  message: string;
+  code: BiometricErrorCode;
+}
+
+export interface BiometricCheckResult {
+  available: boolean;
+  biometryType: 'FaceID' | 'TouchID' | 'Biometrics' | null;
+}
+
+export interface BiometricResult {
+  success: boolean;
+  error: BiometricError | null;
+}
+
+export interface BiometricAuthResult {
+  success: boolean;
+  refreshToken: string | null;
+  error: BiometricError | null;
+}
