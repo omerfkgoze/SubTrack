@@ -160,7 +160,9 @@ export const useAuthStore = create<AuthStore>()(
 
         // Sign out to invalidate the recovery session after password update.
         // User should re-authenticate with their new password (AC4).
-        // AuthProvider's onAuthStateChange will set isAuthenticated = false.
+        // Set isAuthenticated: false BEFORE signOut to prevent AuthProvider from
+        // triggering handleSessionExpired with misleading "session expired" message.
+        set({ isAuthenticated: false });
         await supabase.auth.signOut();
         set({ isLoading: false });
         return true;
@@ -262,7 +264,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        set({ isLoading: true, error: null, isAuthenticated: false });
+        set({ error: null, isAuthenticated: false });
         try {
           await signOutService();
           await disableBiometricService();
@@ -270,7 +272,6 @@ export const useAuthStore = create<AuthStore>()(
           // Force local cleanup even if network fails
         }
         get().clearAuth();
-        set({ isLoading: false });
       },
 
       handleSessionExpired: async (message: string) => {
