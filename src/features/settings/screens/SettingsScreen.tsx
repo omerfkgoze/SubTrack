@@ -9,6 +9,8 @@ import {
   Dialog,
   Portal,
   Button,
+  TextInput,
+  Divider,
   useTheme,
 } from 'react-native-paper';
 import { useAuthStore } from '@shared/stores/useAuthStore';
@@ -24,12 +26,19 @@ export function SettingsScreen() {
   const checkBiometricAvailability = useAuthStore((s) => s.checkBiometricAvailability);
   const enableBiometric = useAuthStore((s) => s.enableBiometric);
   const disableBiometric = useAuthStore((s) => s.disableBiometric);
+  const isDeleting = useAuthStore((s) => s.isDeleting);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const deleteAccountWithBiometric = useAuthStore((s) => s.deleteAccountWithBiometric);
   const clearError = useAuthStore((s) => s.clearError);
   const logout = useAuthStore((s) => s.logout);
 
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeleteVerification, setShowDeleteVerification] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     checkBiometricAvailability();
@@ -73,6 +82,26 @@ export function SettingsScreen() {
   const handleConfirmLogout = async () => {
     setShowLogoutDialog(false);
     await logout();
+  };
+
+  const handleDeleteWithPassword = async () => {
+    const success = await deleteAccount(deletePassword);
+    if (!success) {
+      setDeleteError(useAuthStore.getState().error?.message ?? 'Deletion failed.');
+    }
+  };
+
+  const handleDeleteWithBiometric = async () => {
+    const success = await deleteAccountWithBiometric();
+    if (!success) {
+      setDeleteError(useAuthStore.getState().error?.message ?? 'Verification failed.');
+    }
+  };
+
+  const dismissDeleteVerification = () => {
+    setShowDeleteVerification(false);
+    setDeletePassword('');
+    setDeleteError('');
   };
 
   return (
@@ -125,9 +154,19 @@ export function SettingsScreen() {
             titleStyle={{ color: theme.colors.error }}
             left={(props) => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
             onPress={() => setShowLogoutDialog(true)}
-            disabled={isLoading}
+            disabled={isLoading || isDeleting}
             style={styles.listItem}
             accessibilityLabel="Log Out"
+            accessibilityRole="button"
+          />
+          <List.Item
+            title="Delete Account"
+            titleStyle={{ color: theme.colors.error }}
+            left={(props) => <List.Icon {...props} icon="delete-forever" color={theme.colors.error} />}
+            onPress={() => setShowDeleteDialog(true)}
+            disabled={isLoading || isDeleting}
+            style={styles.listItem}
+            accessibilityLabel="Delete Account"
             accessibilityRole="button"
           />
         </List.Section>
@@ -159,6 +198,96 @@ export function SettingsScreen() {
             <Button onPress={() => setShowLogoutDialog(false)}>Cancel</Button>
             <Button onPress={handleConfirmLogout} textColor={theme.colors.error}>
               Log Out
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog visible={showDeleteDialog} onDismiss={() => setShowDeleteDialog(false)}>
+          <Dialog.Title>Delete Account</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              {'This action is permanent and cannot be undone.\n\nAll your data will be permanently deleted:\n\u2022 Your account and profile\n\u2022 All subscriptions and settings\n\u2022 All notification preferences'}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowDeleteDialog(false)} accessibilityLabel="Cancel" accessibilityRole="button">
+              Cancel
+            </Button>
+            <Button
+              onPress={() => {
+                setShowDeleteDialog(false);
+                setShowDeleteVerification(true);
+                setDeletePassword('');
+                setDeleteError('');
+              }}
+              textColor={theme.colors.error}
+              accessibilityLabel="Continue"
+              accessibilityRole="button"
+            >
+              Continue
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={showDeleteVerification}
+          onDismiss={dismissDeleteVerification}
+          dismissable={!isDeleting}
+        >
+          <Dialog.Title>Verify Your Identity</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={styles.verificationText}>
+              Enter your password to confirm account deletion.
+            </Text>
+            <TextInput
+              mode="outlined"
+              label="Password"
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              secureTextEntry
+              disabled={isDeleting}
+              autoFocus
+              accessibilityLabel="Password"
+              accessibilityRole="text"
+            />
+            {!!deleteError && (
+              <HelperText type="error" accessibilityLiveRegion="polite">
+                {deleteError}
+              </HelperText>
+            )}
+            {isBiometricEnabled && isBiometricAvailable && (
+              <>
+                <Divider style={styles.divider} />
+                <Button
+                  mode="outlined"
+                  icon={biometryType === 'FaceID' ? 'face-recognition' : 'fingerprint'}
+                  onPress={handleDeleteWithBiometric}
+                  disabled={isDeleting}
+                  style={styles.biometricButton}
+                  accessibilityLabel={`Verify with ${biometricLabel}`}
+                  accessibilityRole="button"
+                >
+                  {`Verify with ${biometricLabel}`}
+                </Button>
+              </>
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={dismissDeleteVerification}
+              disabled={isDeleting}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+            >
+              Cancel
+            </Button>
+            <Button
+              onPress={handleDeleteWithPassword}
+              textColor={theme.colors.error}
+              disabled={isDeleting || !deletePassword.trim()}
+              loading={isDeleting}
+              accessibilityLabel="Delete My Account"
+              accessibilityRole="button"
+            >
+              Delete My Account
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -194,5 +323,14 @@ const styles = StyleSheet.create({
   },
   helperText: {
     paddingHorizontal: 16,
+  },
+  verificationText: {
+    marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  biometricButton: {
+    minHeight: 44,
   },
 });

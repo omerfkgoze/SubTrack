@@ -161,6 +161,44 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
   }
 }
 
+export async function deleteAccount(): Promise<AuthResult> {
+  try {
+    const { error } = await supabase.functions.invoke('delete-account', {
+      method: 'POST',
+    });
+
+    if (error) {
+      const status = (error as { context?: { status?: number } }).context?.status;
+      if (status === 401) {
+        return {
+          user: null,
+          session: null,
+          error: { message: 'Session expired. Please log in again.', code: 'AUTH_ERROR' },
+        };
+      }
+      return {
+        user: null,
+        session: null,
+        error: { message: 'Failed to delete account. Please try again.', code: 'DELETE_FAILED' },
+      };
+    }
+
+    return { user: null, session: null, error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      user: null,
+      session: null,
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'Failed to delete account. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'DELETE_FAILED',
+      },
+    };
+  }
+}
+
 export async function signOut(): Promise<AuthResult> {
   try {
     const { error } = await supabase.auth.signOut();

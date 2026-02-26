@@ -12,6 +12,7 @@ export {
   updatePassword,
   setSessionFromTokens,
   signOut,
+  deleteAccount,
 } from './services/authService';
 export {
   checkBiometricAvailability,

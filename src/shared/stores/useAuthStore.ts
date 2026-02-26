@@ -8,6 +8,7 @@ import {
   requestPasswordReset as requestPasswordResetService,
   updatePassword as updatePasswordService,
   signOut as signOutService,
+  deleteAccount as deleteAccountService,
 } from '@features/auth/services/authService';
 import {
   checkBiometricAvailability as checkBiometricAvailabilityService,
@@ -23,6 +24,7 @@ interface AuthState {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isDeleting: boolean;
   error: AuthError | null;
   needsEmailConfirmation: boolean;
   isResetEmailSent: boolean;
@@ -50,6 +52,8 @@ interface AuthActions {
   disableBiometric: () => Promise<void>;
   authenticateWithBiometric: () => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<boolean>;
+  deleteAccountWithBiometric: () => Promise<boolean>;
   handleSessionExpired: (message: string) => Promise<void>;
   updateLastActive: () => void;
   clearSessionExpiredMessage: () => void;
@@ -64,6 +68,7 @@ export const useAuthStore = create<AuthStore>()(
       session: null,
       isAuthenticated: false,
       isLoading: false,
+      isDeleting: false,
       error: null,
       needsEmailConfirmation: false,
       isResetEmailSent: false,
@@ -273,6 +278,75 @@ export const useAuthStore = create<AuthStore>()(
         get().clearAuth();
       },
 
+      deleteAccount: async (password: string) => {
+        set({ isDeleting: true, error: null });
+
+        const user = get().user;
+        if (!user?.email) {
+          set({ isDeleting: false, error: { message: 'No active session.', code: 'AUTH_ERROR' } });
+          return false;
+        }
+
+        // Step 1: Re-verify password
+        const verifyResult = await signInWithEmail(user.email, password);
+        if (verifyResult.error) {
+          set({ error: verifyResult.error, isDeleting: false });
+          return false;
+        }
+
+        // Step 2: Set isAuthenticated:false BEFORE deletion
+        set({ isAuthenticated: false });
+
+        // Step 3: Call Edge Function
+        const deleteResult = await deleteAccountService();
+        if (deleteResult.error) {
+          set({ isAuthenticated: true, error: deleteResult.error, isDeleting: false });
+          return false;
+        }
+
+        // Step 4: Local cleanup
+        await disableBiometricService();
+        await AsyncStorage.clear();
+
+        // Step 5: Reset store
+        get().clearAuth();
+        set({ isDeleting: false });
+        return true;
+      },
+
+      deleteAccountWithBiometric: async () => {
+        set({ isDeleting: true, error: null });
+
+        // Step 1: Biometric verification
+        const biometricResult = await authenticateWithBiometricService();
+        if (!biometricResult.success) {
+          set({
+            error: { message: 'Biometric verification failed.', code: 'AUTH_FAILED' },
+            isDeleting: false,
+          });
+          return false;
+        }
+
+        // Step 2: Set isAuthenticated:false BEFORE deletion
+        set({ isAuthenticated: false });
+
+        // Step 3: Call Edge Function
+        const deleteResult = await deleteAccountService();
+        if (deleteResult.error) {
+          set({ isAuthenticated: true, error: deleteResult.error, isDeleting: false });
+          return false;
+        }
+
+        // Step 4: Local cleanup
+        await disableBiometricService();
+        await AsyncStorage.clear();
+
+        // Step 5: Reset store
+        get().clearAuth();
+        set({ isDeleting: false });
+        return true;
+      },
+
       handleSessionExpired: async (message: string) => {
         // Set state BEFORE signOut to prevent AuthProvider re-entry:
         // signOut fires SIGNED_OUT event, AuthProvider checks isAuthenticated —
@@ -311,6 +385,7 @@ export const useAuthStore = create<AuthStore>()(
           session: null,
           isAuthenticated: false,
           isLoading: false,
+          isDeleting: false,
           error: null,
           needsEmailConfirmation: false,
           isResetEmailSent: false,

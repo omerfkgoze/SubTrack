@@ -1,6 +1,6 @@
 # Story 1.7: Account Deletion & Data Removal
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -42,8 +42,8 @@ so that my personal information is completely removed per GDPR requirements.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Supabase Edge Function for Account Deletion (AC: #5)
-  - [ ] 1.1 Create `supabase/functions/delete-account/index.ts` Edge Function
+- [x] Task 1: Create Supabase Edge Function for Account Deletion (AC: #5)
+  - [x] 1.1 Create `supabase/functions/delete-account/index.ts` Edge Function
     - Import `createClient` from `@supabase/supabase-js` (Deno/JSR import)
     - Accept POST requests only, reject other methods with 405
     - Extract JWT from `Authorization` header
@@ -56,24 +56,24 @@ so that my personal information is completely removed per GDPR requirements.
     - If delete fails → return 500 `{ error: deleteError.message }`
     - On success → return 200 `{ success: true }`
     - Add CORS headers for Supabase client compatibility
-  - [ ] 1.2 Test Edge Function locally with `supabase functions serve delete-account`
+  - [x] 1.2 Test Edge Function locally with `supabase functions serve delete-account`
 
-- [ ] Task 2: Add deleteAccount Service Method to authService (AC: #5, #9)
-  - [ ] 2.1 Add `deleteAccount(): Promise<AuthResult>` to `src/features/auth/services/authService.ts`
+- [x] Task 2: Add deleteAccount Service Method to authService (AC: #5, #9)
+  - [x] 2.1 Add `deleteAccount(): Promise<AuthResult>` to `src/features/auth/services/authService.ts`
     - Call `supabase.functions.invoke('delete-account', { method: 'POST' })`
     - The Supabase client automatically sends the user's JWT in the Authorization header
     - Map errors: network errors, server errors, unauthorized
     - Return `AuthResult` (consistent with all other authService methods)
-  - [ ] 2.2 Add error mapping for Edge Function specific errors:
+  - [x] 2.2 Add error mapping for Edge Function specific errors:
     - 401 → `{ message: 'Session expired. Please log in again.', code: 'AUTH_ERROR' }`
     - 500 → `{ message: 'Failed to delete account. Please try again.', code: 'DELETE_FAILED' }`
     - Network → existing `NETWORK_ERROR` pattern
 
-- [ ] Task 3: Add deleteAccount Action to useAuthStore (AC: #3, #4, #5, #6, #7, #9)
-  - [ ] 3.1 Import `deleteAccount as deleteAccountService` from authService in `src/shared/stores/useAuthStore.ts`
-  - [ ] 3.2 Import `AsyncStorage` from `@react-native-async-storage/async-storage`
-  - [ ] 3.3 Add `isDeleting: boolean` state field (NOT persisted — transient, distinguishes from isLoading)
-  - [ ] 3.4 Add `deleteAccount(password: string): Promise<boolean>` action:
+- [x] Task 3: Add deleteAccount Action to useAuthStore (AC: #3, #4, #5, #6, #7, #9)
+  - [x] 3.1 Import `deleteAccount as deleteAccountService` from authService in `src/shared/stores/useAuthStore.ts`
+  - [x] 3.2 Import `AsyncStorage` from `@react-native-async-storage/async-storage`
+  - [x] 3.3 Add `isDeleting: boolean` state field (NOT persisted — transient, distinguishes from isLoading)
+  - [x] 3.4 Add `deleteAccount(password: string): Promise<boolean>` action:
     - `set({ isDeleting: true, error: null })`
     - **Step 1 — Re-verify password:** Call `signInWithEmail(user.email, password)` to verify credentials
     - If signIn returns error → `set({ error: signInResult.error, isDeleting: false })`, return false
@@ -83,27 +83,27 @@ so that my personal information is completely removed per GDPR requirements.
     - **Step 4 — Local cleanup:** `await disableBiometricService()` (clear Keychain), `await AsyncStorage.clear()` (clear ALL local data)
     - **Step 5 — Reset store:** `clearAuth()` + `set({ isDeleting: false })`
     - Return true
-  - [ ] 3.5 Add `deleteAccountWithBiometric(): Promise<boolean>` action:
+  - [x] 3.5 Add `deleteAccountWithBiometric(): Promise<boolean>` action:
     - `set({ isDeleting: true, error: null })`
     - **Step 1 — Biometric verification:** Call `authenticateWithBiometricService()`
     - If biometric fails → `set({ error: { message: 'Biometric verification failed.', code: 'AUTH_FAILED' }, isDeleting: false })`, return false
     - **Steps 2-5:** Same as `deleteAccount` steps 2-5 (set isAuthenticated:false, call Edge Function, local cleanup, reset store)
     - Return true
-  - [ ] 3.6 Add `isDeleting` to `AuthState` interface and `partialize` exclusion (do NOT persist)
-  - [ ] 3.7 Add `deleteAccount` and `deleteAccountWithBiometric` to `AuthActions` interface
-  - [ ] 3.8 Update `clearAuth()` to also reset `isDeleting: false`
+  - [x] 3.6 Add `isDeleting` to `AuthState` interface and `partialize` exclusion (do NOT persist)
+  - [x] 3.7 Add `deleteAccount` and `deleteAccountWithBiometric` to `AuthActions` interface
+  - [x] 3.8 Update `clearAuth()` to also reset `isDeleting: false`
 
-- [ ] Task 4: Add Delete Account UI to SettingsScreen (AC: #1, #2, #3, #4, #8, #10)
-  - [ ] 4.1 Update `src/features/settings/screens/SettingsScreen.tsx`:
+- [x] Task 4: Add Delete Account UI to SettingsScreen (AC: #1, #2, #3, #4, #8, #10)
+  - [x] 4.1 Update `src/features/settings/screens/SettingsScreen.tsx`:
     - Import `TextInput` from `react-native-paper`
     - Import `deleteAccount`, `deleteAccountWithBiometric`, `isDeleting` from useAuthStore
     - Import `isBiometricVerified` from useAuthStore (if needed to determine biometric availability for delete)
-  - [ ] 4.2 Add local state:
+  - [x] 4.2 Add local state:
     - `showDeleteDialog: boolean` (false) — controls confirmation dialog visibility
     - `showDeleteVerification: boolean` (false) — controls re-verification step visibility
     - `deletePassword: string` ('') — password input value
     - `deleteError: string` ('') — local error message for password field
-  - [ ] 4.3 Add "Delete Account" `List.Item` to Account section (BELOW the "Log Out" item):
+  - [x] 4.3 Add "Delete Account" `List.Item` to Account section (BELOW the "Log Out" item):
     - Title: "Delete Account"
     - titleStyle: `{ color: theme.colors.error }` (red/danger color)
     - Left icon: "delete-forever" with `color: theme.colors.error`
@@ -112,14 +112,14 @@ so that my personal information is completely removed per GDPR requirements.
     - `accessibilityLabel`: "Delete Account"
     - `accessibilityRole`: "button"
     - `style`: `styles.listItem`
-  - [ ] 4.4 Add Step 1 confirmation dialog (inside existing `<Portal>`):
+  - [x] 4.4 Add Step 1 confirmation dialog (inside existing `<Portal>`):
     - `visible`: `showDeleteDialog`
     - `onDismiss`: `() => setShowDeleteDialog(false)`
     - Title: "Delete Account"
     - Content: Warning text:
       "This action is permanent and cannot be undone.\n\nAll your data will be permanently deleted:\n• Your account and profile\n• All subscriptions and settings\n• All notification preferences"
     - Actions: "Cancel" → dismiss dialog, "Continue" → `setShowDeleteDialog(false); setShowDeleteVerification(true); setDeletePassword(''); setDeleteError('');`
-  - [ ] 4.5 Add Step 2 re-verification dialog (inside existing `<Portal>`):
+  - [x] 4.5 Add Step 2 re-verification dialog (inside existing `<Portal>`):
     - `visible`: `showDeleteVerification`
     - `onDismiss`: `() => { setShowDeleteVerification(false); setDeletePassword(''); setDeleteError(''); }`
     - `dismissable`: `!isDeleting` (prevent dismiss during deletion)
@@ -132,26 +132,26 @@ so that my personal information is completely removed per GDPR requirements.
     - Actions:
       - "Cancel" → dismiss, clear password/error
       - "Delete My Account" → `handleDeleteWithPassword()`, `textColor: theme.colors.error`, `disabled: isDeleting || !deletePassword.trim()`
-  - [ ] 4.6 Add handler functions:
+  - [x] 4.6 Add handler functions:
     - `handleDeleteWithPassword`: call `deleteAccount(deletePassword)`, if returns false → `setDeleteError(useAuthStore.getState().error?.message ?? 'Deletion failed.')`, if returns true → dialog auto-closes (user navigated away)
     - `handleDeleteWithBiometric`: call `deleteAccountWithBiometric()`, if returns false → `setDeleteError(useAuthStore.getState().error?.message ?? 'Verification failed.')`, if returns true → dialog auto-closes
-  - [ ] 4.7 Accessibility: all new items and dialog elements have `accessibilityLabel`, `accessibilityRole`, min 44x44pt touch targets
+  - [x] 4.7 Accessibility: all new items and dialog elements have `accessibilityLabel`, `accessibilityRole`, min 44x44pt touch targets
 
-- [ ] Task 5: Handle Post-Deletion in AuthProvider (AC: #7)
-  - [ ] 5.1 Verify existing AuthProvider SIGNED_OUT handling works for deletion flow:
+- [x] Task 5: Handle Post-Deletion in AuthProvider (AC: #7)
+  - [x] 5.1 Verify existing AuthProvider SIGNED_OUT handling works for deletion flow:
     - `deleteAccount` sets `isAuthenticated: false` BEFORE calling Edge Function
     - When `SIGNED_OUT` fires (from session invalidation after user deletion), AuthProvider checks `isAuthenticated` → already false → no "session expired" message
     - **No changes to AuthProvider should be needed** — verify this works correctly
-  - [ ] 5.2 Verify RootNavigator redirects to AuthStack after `clearAuth()`:
+  - [x] 5.2 Verify RootNavigator redirects to AuthStack after `clearAuth()`:
     - `isAuthenticated: false` → RootNavigator shows AuthStack → user sees Login/Welcome screen
     - **No changes to navigation should be needed** — verify state-driven navigation works
 
-- [ ] Task 6: Update Feature Exports and Verify (AC: all)
-  - [ ] 6.1 Update `src/features/auth/index.ts` to export `deleteAccount` service method
-  - [ ] 6.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
-  - [ ] 6.3 Run `npx tsc --noEmit` — zero errors
-  - [ ] 6.4 Run `npx eslint src/` — zero errors/warnings
-  - [ ] 6.5 Test Edge Function deployment: `supabase functions deploy delete-account`
+- [x] Task 6: Update Feature Exports and Verify (AC: all)
+  - [x] 6.1 Update `src/features/auth/index.ts` to export `deleteAccount` service method
+  - [x] 6.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
+  - [x] 6.3 Run `npx tsc --noEmit` — zero errors
+  - [x] 6.4 Run `npx eslint src/` — zero errors/warnings
+  - [x] 6.5 Test Edge Function deployment: `supabase functions deploy delete-account`
 
 ## Dev Notes
 
@@ -547,10 +547,33 @@ This two-step approach prevents accidental deletion while keeping the flow clear
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Edge Function TypeScript errors (Deno runtime types not found by Node.js tsc) — resolved by adding `supabase/functions` to tsconfig.json exclude list.
+
 ### Completion Notes List
 
+- **Task 1:** Created Supabase Edge Function `supabase/functions/delete-account/index.ts` — POST-only, JWT verification via user client, admin client for user deletion, CORS headers, extensible comments for future data table deletions (Epic 2+).
+- **Task 2:** Added `deleteAccount()` to authService — invokes Edge Function via `supabase.functions.invoke()`, maps 401/500/network errors to user-friendly messages with appropriate error codes.
+- **Task 3:** Added `deleteAccount(password)` and `deleteAccountWithBiometric()` actions to useAuthStore — follows 5-step flow: re-verify identity → set isAuthenticated:false → call Edge Function → local cleanup (biometric + AsyncStorage.clear) → reset store. Added `isDeleting` transient state (not persisted). Updated `clearAuth()` to reset `isDeleting`.
+- **Task 4:** Added Delete Account UI to SettingsScreen — two-step dialog flow (confirmation with consequences → identity verification with password + optional biometric). All elements have accessibility labels/roles and min touch targets.
+- **Task 5:** Verified AuthProvider and RootNavigator work correctly for deletion flow without any changes — `isAuthenticated: false` set before Edge Function call prevents "session expired" message, state-driven navigation redirects to AuthStack automatically.
+- **Task 6:** Exported `deleteAccount` from `src/features/auth/index.ts`. All imports use path aliases. TypeScript: zero errors. ESLint: zero errors. Added `supabase/functions` to tsconfig.json exclude (Deno runtime files).
+
+### Change Log
+
+- 2026-02-26: Implemented Story 1.7 — Account Deletion & Data Removal (all 6 tasks, all 10 ACs)
+
 ### File List
+
+**Created:**
+- `supabase/functions/delete-account/index.ts` — Supabase Edge Function for server-side account deletion
+
+**Modified:**
+- `src/features/auth/services/authService.ts` — Added `deleteAccount()` service method
+- `src/shared/stores/useAuthStore.ts` — Added `isDeleting` state, `deleteAccount`, `deleteAccountWithBiometric` actions, updated `clearAuth`
+- `src/features/settings/screens/SettingsScreen.tsx` — Added Delete Account button, confirmation dialog, verification dialog with password + biometric options
+- `src/features/auth/index.ts` — Exported `deleteAccount` from authService
+- `tsconfig.json` — Added `supabase/functions` to exclude (Deno runtime incompatible with Node.js tsc)
