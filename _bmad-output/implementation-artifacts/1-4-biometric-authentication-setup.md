@@ -1,6 +1,6 @@
 # Story 1.4: Biometric Authentication Setup
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -415,6 +415,7 @@ bae950a story 1.3 ready for review
 ## Change Log
 
 - 2026-02-26: Story 1.4 implementation complete — biometric authentication (Face ID/Fingerprint) with enrollment, login gate, session expiry fallback, and settings toggle
+- 2026-02-26: Code review — 6 issues fixed (3 HIGH, 3 MEDIUM): user cancel blank screen, session expiry state sync, stale closure in settings toggle, SafeAreaView for biometric screen, enrollBiometric rollback on partial failure, enableBiometric guard hardening
 
 ## Dev Agent Record
 

@@ -55,7 +55,8 @@ export function SettingsScreen() {
     }
 
     await enableBiometric();
-    if (!error) {
+    const currentError = useAuthStore.getState().error;
+    if (!currentError) {
       setSnackbarMessage('Biometric login enabled');
     }
   };

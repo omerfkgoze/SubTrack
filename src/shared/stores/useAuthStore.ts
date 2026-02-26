@@ -135,8 +135,11 @@ export const useAuthStore = create<AuthStore>()(
 
         const result = await enrollBiometric(session.refresh_token);
 
-        if (!result.success && result.error) {
-          set({ isLoading: false, error: { message: result.error.message, code: result.error.code } });
+        if (!result.success) {
+          set({
+            isLoading: false,
+            error: result.error ? { message: result.error.message, code: result.error.code } : { message: 'Biometric enrollment failed' },
+          });
           return;
         }
 
@@ -178,6 +181,7 @@ export const useAuthStore = create<AuthStore>()(
             await disableBiometricService();
             set({
               isLoading: false,
+              isBiometricEnabled: false,
               error: { message: 'Session expired. Please log in with your password.', code: 'SESSION_EXPIRED' },
             });
             return false;
@@ -189,6 +193,7 @@ export const useAuthStore = create<AuthStore>()(
           await disableBiometricService();
           set({
             isLoading: false,
+            isBiometricEnabled: false,
             error: { message: 'Session expired. Please log in with your password.', code: 'SESSION_EXPIRED' },
           });
           return false;

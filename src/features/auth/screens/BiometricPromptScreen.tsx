@@ -1,5 +1,6 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, useTheme } from 'react-native-paper';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 
@@ -19,13 +20,18 @@ export function BiometricPromptScreen({
   const error = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
 
+  const [wasCancelled, setWasCancelled] = useState(false);
+
   const isSessionExpired = error?.code === 'SESSION_EXPIRED';
 
   const handleBiometricAuth = useCallback(async () => {
     clearError();
+    setWasCancelled(false);
     const success = await authenticateWithBiometric();
     if (success) {
       onSuccess();
+    } else if (!useAuthStore.getState().error) {
+      setWasCancelled(true);
     }
   }, [authenticateWithBiometric, clearError, onSuccess]);
 
@@ -38,8 +44,10 @@ export function BiometricPromptScreen({
     onFallbackToPassword();
   };
 
+  const showActions = error || wasCancelled;
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text
         variant="headlineMedium"
         style={[styles.title, { color: theme.colors.primary }]}
@@ -47,18 +55,18 @@ export function BiometricPromptScreen({
         SubTrack
       </Text>
 
-      {isLoading && !error && (
+      {isLoading && !error && !wasCancelled && (
         <Text variant="bodyLarge" style={styles.statusText}>
           Verifying your identity...
         </Text>
       )}
 
-      {error && (
+      {showActions && (
         <View style={styles.errorContainer}>
-          <Text variant="bodyLarge" style={[styles.errorText, { color: theme.colors.error }]}>
+          <Text variant="bodyLarge" style={[styles.errorText, { color: error ? theme.colors.error : theme.colors.onSurface }]}>
             {isSessionExpired
               ? 'Session expired. Please log in with your password.'
-              : error.message || 'Biometric authentication failed'}
+              : error?.message || 'Biometric authentication failed'}
           </Text>
 
           <View style={styles.buttonContainer}>
@@ -88,7 +96,7 @@ export function BiometricPromptScreen({
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

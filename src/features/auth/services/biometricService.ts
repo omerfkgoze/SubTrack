@@ -74,11 +74,21 @@ export async function enrollBiometric(refreshToken: string): Promise<BiometricRe
   try {
     await rnBiometrics.createKeys();
 
-    await Keychain.setGenericPassword('biometric_token', refreshToken, {
-      accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
-      accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
-      service: KEYCHAIN_SERVICE,
-    });
+    try {
+      await Keychain.setGenericPassword('biometric_token', refreshToken, {
+        accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
+        accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+        service: KEYCHAIN_SERVICE,
+      });
+    } catch (keychainError) {
+      // Rollback: clean up keys if keychain storage fails
+      try {
+        await rnBiometrics.deleteKeys();
+      } catch {
+        // Best-effort cleanup
+      }
+      return { success: false, error: mapBiometricError(keychainError) };
+    }
 
     return { success: true, error: null };
   } catch (error) {
