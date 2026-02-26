@@ -2,7 +2,12 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, Session } from '@supabase/supabase-js';
-import { signUpWithEmail, signInWithEmail } from '@features/auth/services/authService';
+import {
+  signUpWithEmail,
+  signInWithEmail,
+  requestPasswordReset as requestPasswordResetService,
+  updatePassword as updatePasswordService,
+} from '@features/auth/services/authService';
 import {
   checkBiometricAvailability as checkBiometricAvailabilityService,
   enrollBiometric,
@@ -19,6 +24,8 @@ interface AuthState {
   isLoading: boolean;
   error: AuthError | null;
   needsEmailConfirmation: boolean;
+  isResetEmailSent: boolean;
+  pendingPasswordReset: boolean;
   isBiometricAvailable: boolean;
   isBiometricEnabled: boolean;
   biometryType: string | null;
@@ -31,6 +38,10 @@ interface AuthActions {
   setUser: (user: User | null) => void;
   clearAuth: () => void;
   clearError: () => void;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
+  setPendingPasswordReset: (pending: boolean) => void;
+  clearResetState: () => void;
   checkBiometricAvailability: () => Promise<void>;
   enableBiometric: () => Promise<void>;
   disableBiometric: () => Promise<void>;
@@ -48,6 +59,8 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
       needsEmailConfirmation: false,
+      isResetEmailSent: false,
+      pendingPasswordReset: false,
       isBiometricAvailable: false,
       isBiometricEnabled: false,
       biometryType: null,
@@ -111,6 +124,41 @@ export const useAuthStore = create<AuthStore>()(
 
       setUser: (user: User | null) => {
         set({ user });
+      },
+
+      requestPasswordReset: async (email: string) => {
+        set({ isLoading: true, error: null, isResetEmailSent: false });
+
+        const result = await requestPasswordResetService(email);
+
+        if (result.error) {
+          set({ isLoading: false, error: result.error });
+          return;
+        }
+
+        set({ isLoading: false, isResetEmailSent: true });
+      },
+
+      updatePassword: async (newPassword: string) => {
+        set({ isLoading: true, error: null });
+
+        const result = await updatePasswordService(newPassword);
+
+        if (result.error) {
+          set({ isLoading: false, error: result.error });
+          return false;
+        }
+
+        set({ isLoading: false, pendingPasswordReset: false });
+        return true;
+      },
+
+      setPendingPasswordReset: (pending: boolean) => {
+        set({ pendingPasswordReset: pending });
+      },
+
+      clearResetState: () => {
+        set({ isResetEmailSent: false, pendingPasswordReset: false, error: null });
       },
 
       checkBiometricAvailability: async () => {
@@ -208,6 +256,8 @@ export const useAuthStore = create<AuthStore>()(
           isLoading: false,
           error: null,
           needsEmailConfirmation: false,
+          isResetEmailSent: false,
+          pendingPasswordReset: false,
           isBiometricEnabled: false,
           biometryType: null,
         });

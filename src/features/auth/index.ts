@@ -1,8 +1,17 @@
 // Feature public exports
 export { RegisterScreen } from './screens/RegisterScreen';
 export { LoginScreen } from './screens/LoginScreen';
+export { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
+export { ResetPasswordScreen } from './screens/ResetPasswordScreen';
 export { BiometricPromptScreen } from './screens/BiometricPromptScreen';
-export { signUpWithEmail, signInWithEmail } from './services/authService';
+export { PasswordRequirements } from './components/PasswordRequirements';
+export {
+  signUpWithEmail,
+  signInWithEmail,
+  requestPasswordReset,
+  updatePassword,
+  setSessionFromTokens,
+} from './services/authService';
 export {
   checkBiometricAvailability,
   enrollBiometric,
@@ -13,6 +22,9 @@ export {
 export type {
   RegisterFormData,
   LoginFormData,
+  ForgotPasswordFormData,
+  ResetPasswordFormData,
+  DeepLinkResult,
   AuthError,
   AuthResult,
   BiometricCheckResult,
@@ -21,4 +33,9 @@ export type {
   BiometricError,
   BiometricErrorCode,
 } from './types';
-export { registerSchema, loginSchema } from './types/schemas';
+export {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from './types/schemas';

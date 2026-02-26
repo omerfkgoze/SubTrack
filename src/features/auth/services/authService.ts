@@ -1,5 +1,6 @@
 import { supabase } from '@shared/services/supabase';
 import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js';
+import { getResetPasswordRedirectUrl } from '@shared/services/deepLinking';
 import type { AuthResult } from '../types';
 
 function mapAuthError(error: SupabaseAuthError): string {
@@ -87,6 +88,98 @@ export async function signUpWithEmail(email: string, password: string): Promise<
       session: data.session,
       error: null,
     };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      user: null,
+      session: null,
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
+    };
+  }
+}
+
+export async function requestPasswordReset(email: string): Promise<AuthResult> {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getResetPasswordRedirectUrl(),
+    });
+
+    if (error) {
+      return {
+        user: null,
+        session: null,
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
+      };
+    }
+
+    return { user: null, session: null, error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      user: null,
+      session: null,
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
+    };
+  }
+}
+
+export async function updatePassword(newPassword: string): Promise<AuthResult> {
+  try {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      return {
+        user: null,
+        session: null,
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
+      };
+    }
+
+    return { user: data.user, session: null, error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      user: null,
+      session: null,
+      error: {
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+      },
+    };
+  }
+}
+
+export async function setSessionFromTokens(
+  accessToken: string,
+  refreshToken: string,
+): Promise<AuthResult> {
+  try {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (error) {
+      return {
+        user: null,
+        session: null,
+        error: { message: mapAuthError(error), code: mapErrorCode(error) },
+      };
+    }
+
+    return { user: data.user, session: data.session, error: null };
   } catch (err) {
     const isNetwork = err instanceof TypeError;
     return {

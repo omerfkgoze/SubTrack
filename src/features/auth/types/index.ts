@@ -22,6 +22,22 @@ export interface AuthResult {
 
 export type { User, Session };
 
+// Password reset types
+export interface ForgotPasswordFormData {
+  email: string;
+}
+
+export interface ResetPasswordFormData {
+  password: string;
+  confirmPassword: string;
+}
+
+export interface DeepLinkResult {
+  type: 'recovery' | 'unknown';
+  accessToken?: string;
+  refreshToken?: string;
+}
+
 // Biometric types
 export type BiometricErrorCode =
   | 'NOT_AVAILABLE'

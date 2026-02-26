@@ -1,6 +1,6 @@
 # Story 1.5: Password Reset via Email
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,111 +28,111 @@ so that I can regain access to my account.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Configure Deep Linking for Expo (AC: #3, #5)
-  - [ ] 1.1 Add `"scheme": "subtrack"` to `app.json` under the `expo` key
-  - [ ] 1.2 Install `expo-linking` via `npx expo install expo-linking`
-  - [ ] 1.3 Add Supabase redirect URL configuration: In Supabase Dashboard → Authentication → URL Configuration → Redirect URLs, add `subtrack://reset-password` (document this as a manual setup step in Dev Notes)
-  - [ ] 1.4 Create `src/shared/services/deepLinking.ts` utility with:
+- [x] Task 1: Configure Deep Linking for Expo (AC: #3, #5)
+  - [x] 1.1 Add `"scheme": "subtrack"` to `app.json` under the `expo` key
+  - [x] 1.2 Install `expo-linking` via `npx expo install expo-linking`
+  - [x] 1.3 Add Supabase redirect URL configuration: In Supabase Dashboard → Authentication → URL Configuration → Redirect URLs, add `subtrack://reset-password` (document this as a manual setup step in Dev Notes)
+  - [x] 1.4 Create `src/shared/services/deepLinking.ts` utility with:
     - `getResetPasswordRedirectUrl()` function that returns the deep link URL for password reset (`subtrack://reset-password`)
     - `parseSupabaseDeepLink(url: string): DeepLinkResult` function that extracts tokens and type from incoming Supabase redirect URLs
-  - [ ] 1.5 Update `src/app/navigation/index.tsx` (RootNavigator) to handle incoming deep links:
+  - [x] 1.5 Update `src/app/navigation/index.tsx` (RootNavigator) to handle incoming deep links:
     - Import `Linking` from `expo-linking`
     - Add `useEffect` that listens for incoming URLs via `Linking.addEventListener('url', handler)`
     - Also check initial URL on mount via `Linking.getInitialURL()`
     - When a `subtrack://reset-password` URL is received with token params, parse tokens and attempt session establishment
     - On `PASSWORD_RECOVERY` event from `onAuthStateChange`, set a `pendingPasswordReset: boolean` state to trigger navigation to ResetPasswordScreen
 
-- [ ] Task 2: Add Password Reset Service Methods (AC: #1, #2, #4, #5)
-  - [ ] 2.1 Add `requestPasswordReset(email: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
+- [x] Task 2: Add Password Reset Service Methods (AC: #1, #2, #4, #5)
+  - [x] 2.1 Add `requestPasswordReset(email: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
     - Calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: getResetPasswordRedirectUrl() })`
     - Returns `{ user: null, session: null, error: null }` on success (always succeeds regardless of email existence — Supabase does not reveal if email exists)
     - Maps errors using existing `mapAuthError()` pattern for network/rate-limit errors
-  - [ ] 2.2 Add `updatePassword(newPassword: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
+  - [x] 2.2 Add `updatePassword(newPassword: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
     - Calls `supabase.auth.updateUser({ password: newPassword })`
     - Returns `{ user, session: null, error: null }` on success
     - Maps errors for invalid password, session expired, etc.
-  - [ ] 2.3 Add `setSessionFromTokens(accessToken: string, refreshToken: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
+  - [x] 2.3 Add `setSessionFromTokens(accessToken: string, refreshToken: string): Promise<AuthResult>` to `src/features/auth/services/authService.ts`:
     - Calls `supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })`
     - Used for establishing session from deep link tokens during password recovery
     - Returns `{ user, session, error }` result
 
-- [ ] Task 3: Add Password Reset Types (AC: all)
-  - [ ] 3.1 Add `ResetPasswordFormData` type to `src/features/auth/types/index.ts`: `{ password: string; confirmPassword: string }`
-  - [ ] 3.2 Add `ForgotPasswordFormData` type to `src/features/auth/types/index.ts`: `{ email: string }`
-  - [ ] 3.3 Add `DeepLinkResult` type to `src/shared/types/` or `src/features/auth/types/index.ts`: `{ type: 'recovery' | 'unknown'; accessToken?: string; refreshToken?: string }`
-  - [ ] 3.4 Add Zod schemas to `src/features/auth/types/schemas.ts`:
+- [x] Task 3: Add Password Reset Types (AC: all)
+  - [x] 3.1 Add `ResetPasswordFormData` type to `src/features/auth/types/index.ts`: `{ password: string; confirmPassword: string }`
+  - [x] 3.2 Add `ForgotPasswordFormData` type to `src/features/auth/types/index.ts`: `{ email: string }`
+  - [x] 3.3 Add `DeepLinkResult` type to `src/shared/types/` or `src/features/auth/types/index.ts`: `{ type: 'recovery' | 'unknown'; accessToken?: string; refreshToken?: string }`
+  - [x] 3.4 Add Zod schemas to `src/features/auth/types/schemas.ts`:
     - `forgotPasswordSchema`: `{ email: z.email() }` (same email validation as login)
     - `resetPasswordSchema`: `{ password: <same rules as registerSchema>, confirmPassword: <must match password> }` — reuse the password validation logic from `registerSchema`
 
-- [ ] Task 4: Extend useAuthStore with Password Reset State (AC: #1, #4, #5)
-  - [ ] 4.1 Add state fields to `src/shared/stores/useAuthStore.ts`:
+- [x] Task 4: Extend useAuthStore with Password Reset State (AC: #1, #4, #5)
+  - [x] 4.1 Add state fields to `src/shared/stores/useAuthStore.ts`:
     - `isResetEmailSent: boolean` (tracks if the reset email was sent successfully)
     - `pendingPasswordReset: boolean` (set to true when a PASSWORD_RECOVERY deep link is received, triggers navigation)
-  - [ ] 4.2 Add `requestPasswordReset(email: string): Promise<void>` action:
+  - [x] 4.2 Add `requestPasswordReset(email: string): Promise<void>` action:
     - `set({ isLoading: true, error: null, isResetEmailSent: false })`
     - Calls `authService.requestPasswordReset(email)`
     - On success: `set({ isLoading: false, isResetEmailSent: true })`
     - On error: `set({ isLoading: false, error })` (only for network/rate-limit errors)
-  - [ ] 4.3 Add `updatePassword(newPassword: string): Promise<boolean>` action:
+  - [x] 4.3 Add `updatePassword(newPassword: string): Promise<boolean>` action:
     - `set({ isLoading: true, error: null })`
     - Calls `authService.updatePassword(newPassword)`
     - On success: `set({ isLoading: false, pendingPasswordReset: false })`, return `true`
     - On error: `set({ isLoading: false, error })`, return `false`
-  - [ ] 4.4 Add `setPendingPasswordReset(pending: boolean): void` action — simple setter for navigation trigger
-  - [ ] 4.5 Add `clearResetState(): void` action — resets `isResetEmailSent: false`, `pendingPasswordReset: false`, `error: null`
-  - [ ] 4.6 Do NOT persist `isResetEmailSent` or `pendingPasswordReset` — these are transient UI states (add to exclusion in `partialize`)
+  - [x] 4.4 Add `setPendingPasswordReset(pending: boolean): void` action — simple setter for navigation trigger
+  - [x] 4.5 Add `clearResetState(): void` action — resets `isResetEmailSent: false`, `pendingPasswordReset: false`, `error: null`
+  - [x] 4.6 Do NOT persist `isResetEmailSent` or `pendingPasswordReset` — these are transient UI states (add to exclusion in `partialize`)
 
-- [ ] Task 5: Create ForgotPasswordScreen (AC: #1, #2, #7)
-  - [ ] 5.1 Create `src/features/auth/screens/ForgotPasswordScreen.tsx`
-  - [ ] 5.2 UI Layout:
+- [x] Task 5: Create ForgotPasswordScreen (AC: #1, #2, #7)
+  - [x] 5.1 Create `src/features/auth/screens/ForgotPasswordScreen.tsx`
+  - [x] 5.2 UI Layout:
     - Screen title: "Reset Password"
     - Descriptive text: "Enter your email address and we'll send you a link to reset your password."
     - Email input (TextInput from react-native-paper) with email keyboard type
     - "Send Reset Link" button (Button from react-native-paper) — disabled when email is empty or invalid, shows loading state
     - "Back to Login" text button below
-  - [ ] 5.3 Use `react-hook-form` + Zod (`forgotPasswordSchema`) for email validation
-  - [ ] 5.4 On submit: call `requestPasswordReset(email.trim().toLowerCase())` from useAuthStore
-  - [ ] 5.5 After successful submission (`isResetEmailSent === true`): show a confirmation view (same screen, different state):
+  - [x] 5.3 Use `react-hook-form` + Zod (`forgotPasswordSchema`) for email validation
+  - [x] 5.4 On submit: call `requestPasswordReset(email.trim().toLowerCase())` from useAuthStore
+  - [x] 5.5 After successful submission (`isResetEmailSent === true`): show a confirmation view (same screen, different state):
     - Icon: email/checkmark icon
     - Title: "Check Your Email"
     - Text: "We've sent password reset instructions to {email}. If you don't see it, check your spam folder."
     - "Back to Login" button
     - "Didn't receive it? Send again" text button (with 60-second cooldown timer to prevent spam)
-  - [ ] 5.6 Error display: show Supabase errors (rate limit, network error) via HelperText below the form
-  - [ ] 5.7 Accessibility: all inputs have accessibilityLabel, button has accessibilityRole, min 44x44pt touch targets
-  - [ ] 5.8 Use theme colors via `useTheme()` — no hardcoded hex values
+  - [x] 5.6 Error display: show Supabase errors (rate limit, network error) via HelperText below the form
+  - [x] 5.7 Accessibility: all inputs have accessibilityLabel, button has accessibilityRole, min 44x44pt touch targets
+  - [x] 5.8 Use theme colors via `useTheme()` — no hardcoded hex values
 
-- [ ] Task 6: Create ResetPasswordScreen (AC: #4, #5, #6, #7)
-  - [ ] 6.1 Create `src/features/auth/screens/ResetPasswordScreen.tsx`
-  - [ ] 6.2 UI Layout:
+- [x] Task 6: Create ResetPasswordScreen (AC: #4, #5, #6, #7)
+  - [x] 6.1 Create `src/features/auth/screens/ResetPasswordScreen.tsx`
+  - [x] 6.2 UI Layout:
     - Screen title: "Create New Password"
     - New password input with show/hide toggle
     - Confirm password input with show/hide toggle
     - PasswordRequirements component (REUSE from RegisterScreen — if not already extracted as shared component, extract it first)
     - "Update Password" button — disabled until all validation passes
-  - [ ] 6.3 Use `react-hook-form` + Zod (`resetPasswordSchema`) for password validation
-  - [ ] 6.4 On submit: call `updatePassword(newPassword)` from useAuthStore
-  - [ ] 6.5 On success: show success message ("Password updated successfully!") via Snackbar or Alert, then navigate to Login screen after brief delay (2 seconds)
-  - [ ] 6.6 On error: show error message (session expired, network error, etc.) with option to request new reset link
-  - [ ] 6.7 If session is invalid/expired when screen opens: immediately show error state (AC5) — "This reset link has expired or is invalid." with "Request New Link" button that navigates to ForgotPasswordScreen
-  - [ ] 6.8 Accessibility: all inputs have accessibilityLabel, min 44x44pt touch targets
-  - [ ] 6.9 Use theme colors via `useTheme()`
+  - [x] 6.3 Use `react-hook-form` + Zod (`resetPasswordSchema`) for password validation
+  - [x] 6.4 On submit: call `updatePassword(newPassword)` from useAuthStore
+  - [x] 6.5 On success: show success message ("Password updated successfully!") via Snackbar or Alert, then navigate to Login screen after brief delay (2 seconds)
+  - [x] 6.6 On error: show error message (session expired, network error, etc.) with option to request new reset link
+  - [x] 6.7 If session is invalid/expired when screen opens: immediately show error state (AC5) — "This reset link has expired or is invalid." with "Request New Link" button that navigates to ForgotPasswordScreen
+  - [x] 6.8 Accessibility: all inputs have accessibilityLabel, min 44x44pt touch targets
+  - [x] 6.9 Use theme colors via `useTheme()`
 
-- [ ] Task 7: Update Navigation for Password Reset Flow (AC: #1, #3, #5)
-  - [ ] 7.1 Add `ForgotPassword` and `ResetPassword` routes to `src/app/navigation/types.ts` in `AuthStackParamList`
-  - [ ] 7.2 Add both screens to `src/app/navigation/AuthStack.tsx`
-  - [ ] 7.3 Update `src/app/navigation/index.tsx` (RootNavigator):
+- [x] Task 7: Update Navigation for Password Reset Flow (AC: #1, #3, #5)
+  - [x] 7.1 Add `ForgotPassword` and `ResetPassword` routes to `src/app/navigation/types.ts` in `AuthStackParamList`
+  - [x] 7.2 Add both screens to `src/app/navigation/AuthStack.tsx`
+  - [x] 7.3 Update `src/app/navigation/index.tsx` (RootNavigator):
     - Add deep link URL listener for `subtrack://reset-password`
     - On receiving recovery deep link: parse tokens → call `setSessionFromTokens()` → on success set `pendingPasswordReset: true` → navigate to ResetPassword screen in AuthStack
     - Listen for `PASSWORD_RECOVERY` event in `onAuthStateChange` as a secondary detection method
-  - [ ] 7.4 Handle navigation to ResetPasswordScreen when `pendingPasswordReset` becomes true
-  - [ ] 7.5 Update LoginScreen: change "Forgot Password?" button from `Alert.alert('Coming Soon', ...)` to `navigation.navigate('ForgotPassword')`
+  - [x] 7.4 Handle navigation to ResetPasswordScreen when `pendingPasswordReset` becomes true
+  - [x] 7.5 Update LoginScreen: change "Forgot Password?" button from `Alert.alert('Coming Soon', ...)` to `navigation.navigate('ForgotPassword')`
 
-- [ ] Task 8: Update Feature Exports and Verify (AC: all)
-  - [ ] 8.1 Update `src/features/auth/index.ts` to export ForgotPasswordScreen, ResetPasswordScreen, new types, new schemas
-  - [ ] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
-  - [ ] 8.3 Run `npx tsc --noEmit` — zero errors
-  - [ ] 8.4 Run `npx eslint src/` — zero errors/warnings
+- [x] Task 8: Update Feature Exports and Verify (AC: all)
+  - [x] 8.1 Update `src/features/auth/index.ts` to export ForgotPasswordScreen, ResetPasswordScreen, new types, new schemas
+  - [x] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`, `@app/*`)
+  - [x] 8.3 Run `npx tsc --noEmit` — zero errors
+  - [x] 8.4 Run `npx eslint src/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -476,10 +476,54 @@ b8eea4b project setup in new device
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- TypeScript compilation: zero errors (`npx tsc --noEmit`)
+- ESLint check: zero errors/warnings (`npx eslint src/`)
+
 ### Completion Notes List
 
+- Implemented complete password reset flow via email using Supabase Auth API
+- Created deep linking infrastructure with `subtrack://` custom scheme in app.json
+- Installed `expo-linking` for deep link URL handling
+- Created `deepLinking.ts` service with URL fragment parser for Supabase recovery tokens
+- Added 3 new service methods: `requestPasswordReset`, `updatePassword`, `setSessionFromTokens`
+- Added types: `ForgotPasswordFormData`, `ResetPasswordFormData`, `DeepLinkResult`
+- Added Zod schemas: `forgotPasswordSchema`, `resetPasswordSchema` (reuses shared `passwordValidation`)
+- Extended `useAuthStore` with `isResetEmailSent`, `pendingPasswordReset` state and 4 new actions
+- Transient state (`isResetEmailSent`, `pendingPasswordReset`) correctly excluded from persist
+- Created `ForgotPasswordScreen` with email form, confirmation view, and 60-second resend cooldown
+- Created `ResetPasswordScreen` with password form, PasswordRequirements, success snackbar, and expired link handling
+- Extracted `PasswordRequirements` component from `RegisterScreen` to shared component
+- Updated `RootNavigator` with deep link listener (expo-linking) and `PASSWORD_RECOVERY` auth state change listener
+- Updated `LoginScreen` "Forgot Password?" from `Alert.alert` placeholder to `navigation.navigate('ForgotPassword')`
+- All screens use `useTheme()` colors, `accessibilityLabel`, `accessibilityRole`, and 44x44pt min touch targets
+- No email enumeration: same confirmation message shown regardless of email existence (AC2)
+
 ### File List
+
+**New Files:**
+- `src/shared/services/deepLinking.ts` — Deep link URL builder + Supabase fragment parser
+- `src/features/auth/screens/ForgotPasswordScreen.tsx` — Password reset email request screen
+- `src/features/auth/screens/ResetPasswordScreen.tsx` — New password entry screen after deep link
+- `src/features/auth/components/PasswordRequirements.tsx` — Extracted shared password validation UI
+
+**Modified Files:**
+- `app.json` — Added `"scheme": "subtrack"` for deep linking
+- `package.json` — Added `expo-linking` dependency
+- `src/features/auth/services/authService.ts` — Added `requestPasswordReset`, `updatePassword`, `setSessionFromTokens`
+- `src/features/auth/types/index.ts` — Added `ForgotPasswordFormData`, `ResetPasswordFormData`, `DeepLinkResult`
+- `src/features/auth/types/schemas.ts` — Added `forgotPasswordSchema`, `resetPasswordSchema`, extracted shared `passwordValidation`
+- `src/shared/stores/useAuthStore.ts` — Added password reset state fields and actions
+- `src/app/navigation/types.ts` — Added `ForgotPassword` and `ResetPassword` to `AuthStackParamList`
+- `src/app/navigation/AuthStack.tsx` — Registered ForgotPassword and ResetPassword screens
+- `src/app/navigation/index.tsx` — Added deep link listener and PASSWORD_RECOVERY event handler
+- `src/features/auth/screens/LoginScreen.tsx` — Changed "Forgot Password?" from Alert to navigation
+- `src/features/auth/screens/RegisterScreen.tsx` — Replaced inline PasswordRequirements with shared component import
+- `src/features/auth/index.ts` — Added new screen, component, service, type, and schema exports
+
+## Change Log
+
+- 2026-02-26: Implemented Story 1.5 — Password Reset via Email. Full password reset flow with deep linking, ForgotPasswordScreen, ResetPasswordScreen, Supabase Auth integration, and extracted shared PasswordRequirements component.

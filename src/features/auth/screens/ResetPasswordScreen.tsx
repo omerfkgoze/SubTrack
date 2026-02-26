@@ -1,74 +1,102 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { TextInput, Button, Text, HelperText, Snackbar, useTheme } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { registerSchema } from '../types/schemas';
-import type { RegisterFormData } from '../types';
+import { resetPasswordSchema } from '../types/schemas';
+import type { ResetPasswordFormData } from '../types';
 import type { AuthStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { PasswordRequirements } from '../components/PasswordRequirements';
 
-type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
+type ResetPasswordNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;
 
-export function RegisterScreen() {
-  const navigation = useNavigation<RegisterNavigationProp>();
-  const signUp = useAuthStore((s) => s.signUp);
+export function ResetPasswordScreen() {
+  const navigation = useNavigation<ResetPasswordNavigationProp>();
+  const theme = useTheme();
+  const updatePassword = useAuthStore((s) => s.updatePassword);
   const isLoading = useAuthStore((s) => s.isLoading);
   const authError = useAuthStore((s) => s.error);
+  const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const clearError = useAuthStore((s) => s.clearError);
-  const needsEmailConfirmation = useAuthStore((s) => s.needsEmailConfirmation);
+  const clearResetState = useAuthStore((s) => s.clearResetState);
 
   const [securePassword, setSecurePassword] = useState(true);
   const [secureConfirm, setSecureConfirm] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     control,
     handleSubmit,
     watch,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { email: '', password: '', confirmPassword: '' },
+    formState: { errors, isValid },
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
     mode: 'onChange',
   });
 
   const passwordValue = watch('password');
 
-  const isNetworkError = authError?.message?.includes('internet');
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (data: ResetPasswordFormData) => {
     clearError();
-    await signUp(data.email.trim(), data.password);
+    const success = await updatePassword(data.password);
+
+    if (success) {
+      setShowSuccess(true);
+      redirectTimerRef.current = setTimeout(() => {
+        clearResetState();
+        navigation.navigate('Login');
+      }, 2000);
+    }
   };
 
-  if (needsEmailConfirmation) {
+  // If no pending password reset session, show expired/invalid state
+  if (!pendingPasswordReset) {
     return (
       <View style={[styles.flex, styles.container]}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Check Your Email
+        <Text
+          variant="headlineMedium"
+          style={[styles.title, { color: theme.colors.error }]}
+          accessibilityRole="header"
+        >
+          Link Expired
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          We've sent a confirmation link to your email address. Please check your inbox to complete
-          registration.
+          This reset link has expired or is invalid. Please request a new one.
         </Text>
+
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation.navigate('ForgotPassword')}
           style={styles.button}
           contentStyle={styles.buttonContent}
+          accessibilityLabel="Request New Link"
+          accessibilityRole="button"
         >
-          Go to Login
+          Request New Link
         </Button>
+
         <Button
           mode="text"
-          onPress={() => navigation.navigate('Welcome')}
-          style={styles.loginLink}
-          contentStyle={styles.loginLinkContent}
+          onPress={() => navigation.navigate('Login')}
+          style={styles.linkButton}
+          contentStyle={styles.linkButtonContent}
+          accessibilityLabel="Back to Login"
+          accessibilityRole="button"
         >
-          Back to Welcome
+          Back to Login
         </Button>
       </View>
     );
@@ -80,11 +108,15 @@ export function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text variant="headlineMedium" style={styles.title}>
-          Create Account
+        <Text
+          variant="headlineMedium"
+          style={styles.title}
+          accessibilityRole="header"
+        >
+          Create New Password
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          Start tracking your subscriptions
+          Enter your new password below.
         </Text>
 
         {authError && (
@@ -95,32 +127,10 @@ export function RegisterScreen() {
 
         <Controller
           control={control}
-          name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Email"
-              mode="outlined"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={!!errors.email}
-              style={styles.input}
-            />
-          )}
-        />
-        <HelperText type="error" visible={!!errors.email}>
-          {errors.email?.message}
-        </HelperText>
-
-        <Controller
-          control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextInput
-              label="Password"
+              label="New Password"
               mode="outlined"
               secureTextEntry={securePassword}
               value={value}
@@ -128,6 +138,7 @@ export function RegisterScreen() {
               onBlur={onBlur}
               error={!!errors.password}
               style={styles.input}
+              accessibilityLabel="New password"
               right={
                 <TextInput.Icon
                   icon={securePassword ? 'eye-off' : 'eye'}
@@ -158,6 +169,7 @@ export function RegisterScreen() {
               onBlur={onBlur}
               error={!!errors.confirmPassword}
               style={styles.input}
+              accessibilityLabel="Confirm new password"
               right={
                 <TextInput.Icon
                   icon={secureConfirm ? 'eye-off' : 'eye'}
@@ -177,22 +189,39 @@ export function RegisterScreen() {
           mode="contained"
           onPress={handleSubmit(onSubmit)}
           loading={isLoading}
-          disabled={isLoading}
+          disabled={isLoading || !isValid}
           style={styles.button}
           contentStyle={styles.buttonContent}
+          accessibilityLabel="Update Password"
+          accessibilityRole="button"
         >
-          {isNetworkError ? 'Try Again' : 'Create Account'}
+          Update Password
         </Button>
 
-        <Button
-          mode="text"
-          onPress={() => navigation.navigate('Login')}
-          style={styles.loginLink}
-          contentStyle={styles.loginLinkContent}
-        >
-          Already have an account? Login
-        </Button>
+        {authError && (
+          <Button
+            mode="text"
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={styles.linkButton}
+            contentStyle={styles.linkButtonContent}
+            accessibilityLabel="Request New Reset Link"
+            accessibilityRole="button"
+          >
+            Request New Reset Link
+          </Button>
+        )}
       </ScrollView>
+
+      <Snackbar
+        visible={showSuccess}
+        onDismiss={() => setShowSuccess(false)}
+        duration={2000}
+        style={{ backgroundColor: theme.colors.primaryContainer }}
+      >
+        <Text style={{ color: theme.colors.onPrimaryContainer }}>
+          Password updated successfully!
+        </Text>
+      </Snackbar>
     </KeyboardAvoidingView>
   );
 }
@@ -230,10 +259,10 @@ const styles = StyleSheet.create({
   buttonContent: {
     minHeight: 48,
   },
-  loginLink: {
+  linkButton: {
     marginTop: 12,
   },
-  loginLinkContent: {
+  linkButtonContent: {
     minHeight: 44,
   },
 });

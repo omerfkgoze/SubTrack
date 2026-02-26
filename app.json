@@ -3,6 +3,7 @@
     "name": "SubTrack",
     "slug": "SubTrack",
     "version": "1.0.0",
+    "scheme": "subtrack",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
