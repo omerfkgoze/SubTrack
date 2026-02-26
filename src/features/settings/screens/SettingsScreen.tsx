@@ -26,8 +26,6 @@ export function SettingsScreen() {
   const disableBiometric = useAuthStore((s) => s.disableBiometric);
   const clearError = useAuthStore((s) => s.clearError);
   const logout = useAuthStore((s) => s.logout);
-  const sessionExpiredMessage = useAuthStore((s) => s.sessionExpiredMessage);
-  const clearSessionExpiredMessage = useAuthStore((s) => s.clearSessionExpiredMessage);
 
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [showDisableDialog, setShowDisableDialog] = useState(false);
@@ -174,14 +172,6 @@ export function SettingsScreen() {
         {snackbarMessage}
       </Snackbar>
 
-      <Snackbar
-        visible={!!sessionExpiredMessage}
-        onDismiss={clearSessionExpiredMessage}
-        duration={5000}
-        accessibilityLiveRegion="polite"
-      >
-        {sessionExpiredMessage ?? ''}
-      </Snackbar>
     </View>
   );
 }

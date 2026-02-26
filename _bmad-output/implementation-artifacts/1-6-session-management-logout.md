@@ -1,6 +1,6 @@
 # Story 1.6: Session Management & Logout
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -120,10 +120,10 @@ so that my data stays protected.
 
 - [x] [AI-Review-2][HIGH] updatePassword signout regression: updatePassword() calls supabase.auth.signOut() without first setting isAuthenticated:false, causing AuthProvider's new SIGNED_OUT handler to trigger handleSessionExpired with misleading "session expired" message after successful password update. Fixed by adding set({ isAuthenticated: false }) before signOut call. [src/shared/stores/useAuthStore.ts:161-165]
 - [x] [AI-Review-2][MEDIUM] logout() sets isLoading:true alongside isAuthenticated:false, causing LoginScreen to mount with loading/disabled Login button until async signOut+biometric cleanup completes (~0.5-1s). Fixed by removing isLoading:true from logout action and removing redundant set({ isLoading: false }) after clearAuth(). [src/shared/stores/useAuthStore.ts:266-275]
-- [ ] [AI-Review-2][LOW] SettingsScreen session expired Snackbar (lines 177-184) is dead code — session expiry sets isAuthenticated:false, unmounting SettingsScreen before Snackbar can render. [src/features/settings/screens/SettingsScreen.tsx:177-184]
-- [ ] [AI-Review-2][LOW] clearAuth() resets biometryType:null — device-level capability, not user state. Causes brief label flash ("Biometric Login" instead of "Face ID"/"Fingerprint") until checkBiometricAvailability() re-runs. [src/shared/stores/useAuthStore.ts:305]
-- [ ] [AI-Review-2][LOW] handleSessionExpired calls clearAuth() which sets sessionExpiredMessage:null, then immediately overrides with set({ sessionExpiredMessage: message }). Would be cleaner as single operation. [src/shared/stores/useAuthStore.ts:281-283]
-- [ ] [AI-Review-2][LOW] Redundant set({ isLoading: false }) after clearAuth() in logout — already resolved as part of M1 fix.
+- [x] [AI-Review-2][LOW] SettingsScreen session expired Snackbar (lines 177-184) is dead code — session expiry sets isAuthenticated:false, unmounting SettingsScreen before Snackbar can render. [src/features/settings/screens/SettingsScreen.tsx:177-184]
+- [x] [AI-Review-2][LOW] clearAuth() resets biometryType:null — device-level capability, not user state. Causes brief label flash ("Biometric Login" instead of "Face ID"/"Fingerprint") until checkBiometricAvailability() re-runs. [src/shared/stores/useAuthStore.ts:305]
+- [x] [AI-Review-2][LOW] handleSessionExpired calls clearAuth() which sets sessionExpiredMessage:null, then immediately overrides with set({ sessionExpiredMessage: message }). Would be cleaner as single operation. [src/shared/stores/useAuthStore.ts:281-283]
+- [x] [AI-Review-2][LOW] Redundant set({ isLoading: false }) after clearAuth() in logout — already resolved as part of M1 fix.
 
 ## Dev Notes
 
@@ -459,7 +459,10 @@ Claude Opus 4.6 (claude-opus-4-6)
 - ✅ Resolved review finding [LOW]: Removed redundant setIsBiometricVerified(false) in inactivity timeout handler — biometric gate already active from background transition.
 - ✅ Resolved review 2 finding [HIGH]: updatePassword() signout regression — added set({ isAuthenticated: false }) before supabase.auth.signOut() to prevent misleading "session expired" message after password update.
 - ✅ Resolved review 2 finding [MEDIUM]: Removed isLoading:true from logout() action — prevents LoginScreen from showing loading state after logout redirect. Also removed redundant set({ isLoading: false }).
-- ℹ️ Noted review 2 findings [LOW]: SettingsScreen dead Snackbar, clearAuth biometryType reset, handleSessionExpired double-set. Harmless — deferred.
+- ✅ Resolved review 2 finding [LOW]: Removed dead session expired Snackbar from SettingsScreen — component unmounts before Snackbar can render due to isAuthenticated:false.
+- ✅ Resolved review 2 finding [LOW]: Removed biometryType:null from clearAuth() — device-level capability should persist across logout, preventing brief "Biometric Login" label flash.
+- ✅ Resolved review 2 finding [LOW]: Refactored handleSessionExpired to use single set() call with sessionExpiredMessage:message inline instead of clearAuth()+override pattern.
+- ✅ Resolved review 2 finding [LOW]: Redundant set({ isLoading: false }) already resolved as part of M1 fix — confirmed no redundant call exists.
 
 ### Change Log
 
@@ -467,6 +470,7 @@ Claude Opus 4.6 (claude-opus-4-6)
 - 2026-02-26: Code review completed — 2 HIGH, 3 MEDIUM, 3 LOW issues found. 8 action items added. Status → in-progress.
 - 2026-02-26: Addressed code review findings — 7 of 7 items resolved (2 HIGH, 2 MEDIUM, 3 LOW).
 - 2026-02-26: Code review 2 completed — 1 HIGH, 2 MEDIUM, 4 LOW issues found. Fixed 1 HIGH (updatePassword regression) and 1 MEDIUM (logout loading state leak). 4 LOW noted.
+- 2026-02-26: Addressed remaining code review 2 findings — 4 of 4 LOW items resolved (dead Snackbar removal, biometryType preservation, handleSessionExpired single-op, redundant isLoading confirmed resolved).
 
 ### File List
 

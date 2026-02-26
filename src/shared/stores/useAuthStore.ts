@@ -280,8 +280,19 @@ export const useAuthStore = create<AuthStore>()(
         } catch {
           // Biometric cleanup failure shouldn't prevent session expiry handling
         }
-        get().clearAuth();
-        set({ sessionExpiredMessage: message });
+        set({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          needsEmailConfirmation: false,
+          isResetEmailSent: false,
+          pendingPasswordReset: false,
+          isBiometricEnabled: false,
+          lastActiveTimestamp: null,
+          sessionExpiredMessage: message,
+        });
       },
 
       updateLastActive: () => {
@@ -303,7 +314,6 @@ export const useAuthStore = create<AuthStore>()(
           isResetEmailSent: false,
           pendingPasswordReset: false,
           isBiometricEnabled: false,
-          biometryType: null,
           lastActiveTimestamp: null,
           sessionExpiredMessage: null,
         });
