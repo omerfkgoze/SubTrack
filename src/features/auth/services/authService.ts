@@ -161,20 +161,24 @@ export async function updatePassword(newPassword: string): Promise<AuthResult> {
   }
 }
 
-export async function signOut(): Promise<{ error: { message: string; code: string } | null }> {
+export async function signOut(): Promise<AuthResult> {
   try {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
       return {
+        user: null,
+        session: null,
         error: { message: mapAuthError(error), code: mapErrorCode(error) },
       };
     }
 
-    return { error: null };
+    return { user: null, session: null, error: null };
   } catch (err) {
     const isNetwork = err instanceof TypeError;
     return {
+      user: null,
+      session: null,
       error: {
         message: isNetwork
           ? 'No internet connection. Please try again.'

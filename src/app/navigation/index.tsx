@@ -23,9 +23,6 @@ export function RootNavigator() {
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const setPendingPasswordReset = useAuthStore((s) => s.setPendingPasswordReset);
-  const lastActiveTimestamp = useAuthStore((s) => s.lastActiveTimestamp);
-  const updateLastActive = useAuthStore((s) => s.updateLastActive);
-  const handleSessionExpired = useAuthStore((s) => s.handleSessionExpired);
   const theme = useTheme();
 
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
@@ -93,23 +90,20 @@ export function RootNavigator() {
         nextAppState === 'background'
       ) {
         setIsBiometricVerified(false);
-        updateLastActive();
+        useAuthStore.getState().updateLastActive();
       }
 
       if (
         appStateRef.current.match(/background/) &&
         nextAppState === 'active'
       ) {
-        if (lastActiveTimestamp && isAuthenticated) {
-          const elapsed = Date.now() - lastActiveTimestamp;
-          if (elapsed > INACTIVITY_TIMEOUT_MS) {
-            if (isBiometricEnabled) {
-              setIsBiometricVerified(false);
-            } else {
-              handleSessionExpired(
-                'Your session has expired due to inactivity. Please log in again.',
-              );
-            }
+        const state = useAuthStore.getState();
+        if (state.lastActiveTimestamp && state.isAuthenticated) {
+          const elapsed = Date.now() - state.lastActiveTimestamp;
+          if (elapsed > INACTIVITY_TIMEOUT_MS && !state.isBiometricEnabled) {
+            state.handleSessionExpired(
+              'Your session has expired due to inactivity. Please log in again.',
+            );
           }
         }
       }
@@ -118,7 +112,7 @@ export function RootNavigator() {
     });
 
     return () => subscription.remove();
-  }, [lastActiveTimestamp, isAuthenticated, isBiometricEnabled, updateLastActive, handleSessionExpired]);
+  }, []);
 
   // Reset verification when biometric is disabled
   useEffect(() => {

@@ -178,6 +178,7 @@ export function SettingsScreen() {
         visible={!!sessionExpiredMessage}
         onDismiss={clearSessionExpiredMessage}
         duration={5000}
+        accessibilityLiveRegion="polite"
       >
         {sessionExpiredMessage ?? ''}
       </Snackbar>

@@ -50,7 +50,7 @@ interface AuthActions {
   disableBiometric: () => Promise<void>;
   authenticateWithBiometric: () => Promise<boolean>;
   logout: () => Promise<void>;
-  handleSessionExpired: (message: string) => void;
+  handleSessionExpired: (message: string) => Promise<void>;
   updateLastActive: () => void;
   clearSessionExpiredMessage: () => void;
 }
@@ -262,7 +262,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, isAuthenticated: false });
         try {
           await signOutService();
           await disableBiometricService();
@@ -273,8 +273,12 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: false });
       },
 
-      handleSessionExpired: (message: string) => {
-        disableBiometricService();
+      handleSessionExpired: async (message: string) => {
+        try {
+          await disableBiometricService();
+        } catch {
+          // Biometric cleanup failure shouldn't prevent session expiry handling
+        }
         get().clearAuth();
         set({ sessionExpiredMessage: message });
       },

@@ -1,6 +1,6 @@
 # Story 1.6: Session Management & Logout
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -108,14 +108,14 @@ so that my data stays protected.
 
 ### Review Follow-ups (AI)
 
-- [ ] [AI-Review][HIGH] Fix race condition: logout() calls signOutService() before clearAuth(), causing AuthProvider to misidentify user-initiated logout as session expiry and briefly showing "session expired" message. Move clearAuth() or set isAuthenticated:false BEFORE signOutService() call. [src/shared/stores/useAuthStore.ts:264-274, src/app/providers/AuthProvider.tsx:19-25]
-- [ ] [AI-Review][HIGH] handleSessionExpired() calls async disableBiometricService() without await — biometric credential cleanup is fire-and-forget. Make action async and await the call, or add .catch() for error handling. [src/shared/stores/useAuthStore.ts:276-280]
-- [ ] [AI-Review][MEDIUM] signOut() return type inconsistency — returns custom inline type instead of AuthResult pattern used by all other authService functions. Align return type for consistent error handling. [src/features/auth/services/authService.ts:164]
-- [ ] [AI-Review][MEDIUM] Double execution: disableBiometricService() and clearAuth() called twice during logout (once by handleSessionExpired via AuthProvider, once by logout action itself). Side effect of HIGH race condition issue — fixing H1 resolves this. [src/shared/stores/useAuthStore.ts:264-274]
-- [ ] [AI-Review][MEDIUM] No automated tests for new store actions (logout, handleSessionExpired, updateLastActive) or UI changes (SettingsScreen Account section, LoginScreen Snackbar). Architecture doc mandates co-located test files.
-- [ ] [AI-Review][LOW] AppState listener useEffect re-subscribes on every lastActiveTimestamp change. Use useAuthStore.getState().lastActiveTimestamp inside callback instead of reactive selector to avoid unnecessary teardown/rebuild. [src/app/navigation/index.tsx:89-121]
-- [ ] [AI-Review][LOW] Timeout Snackbar messages lack explicit accessibilityLiveRegion="polite" for screen reader announcement (AC6 requirement). Verify react-native-paper Snackbar default behavior or add explicit prop. [src/features/auth/screens/LoginScreen.tsx:146-152, src/features/settings/screens/SettingsScreen.tsx:177-183]
-- [ ] [AI-Review][LOW] Redundant setIsBiometricVerified(false) call in inactivity timeout handler — already called when app went to background. Harmless but unnecessary. [src/app/navigation/index.tsx:107]
+- [x] [AI-Review][HIGH] Fix race condition: logout() calls signOutService() before clearAuth(), causing AuthProvider to misidentify user-initiated logout as session expiry and briefly showing "session expired" message. Move clearAuth() or set isAuthenticated:false BEFORE signOutService() call. [src/shared/stores/useAuthStore.ts:264-274, src/app/providers/AuthProvider.tsx:19-25]
+- [x] [AI-Review][HIGH] handleSessionExpired() calls async disableBiometricService() without await — biometric credential cleanup is fire-and-forget. Make action async and await the call, or add .catch() for error handling. [src/shared/stores/useAuthStore.ts:276-280]
+- [x] [AI-Review][MEDIUM] signOut() return type inconsistency — returns custom inline type instead of AuthResult pattern used by all other authService functions. Align return type for consistent error handling. [src/features/auth/services/authService.ts:164]
+- [x] [AI-Review][MEDIUM] Double execution: disableBiometricService() and clearAuth() called twice during logout (once by handleSessionExpired via AuthProvider, once by logout action itself). Side effect of HIGH race condition issue — fixing H1 resolves this. [src/shared/stores/useAuthStore.ts:264-274]
+- [ ] [AI-Review][MEDIUM] No automated tests for new store actions (logout, handleSessionExpired, updateLastActive) or UI changes (SettingsScreen Account section, LoginScreen Snackbar). Architecture doc mandates co-located test files. **DEFERRED: No test framework configured in project. Requires new dependencies (jest, jest-expo, @testing-library/react-native) beyond story scope.**
+- [x] [AI-Review][LOW] AppState listener useEffect re-subscribes on every lastActiveTimestamp change. Use useAuthStore.getState().lastActiveTimestamp inside callback instead of reactive selector to avoid unnecessary teardown/rebuild. [src/app/navigation/index.tsx:89-121]
+- [x] [AI-Review][LOW] Timeout Snackbar messages lack explicit accessibilityLiveRegion="polite" for screen reader announcement (AC6 requirement). Verify react-native-paper Snackbar default behavior or add explicit prop. [src/features/auth/screens/LoginScreen.tsx:146-152, src/features/settings/screens/SettingsScreen.tsx:177-183]
+- [x] [AI-Review][LOW] Redundant setIsBiometricVerified(false) call in inactivity timeout handler — already called when app went to background. Harmless but unnecessary. [src/app/navigation/index.tsx:107]
 
 ## Dev Notes
 
@@ -442,18 +442,27 @@ Claude Opus 4.6 (claude-opus-4-6)
 - Task 5: Added Account section to SettingsScreen with user email display and Log Out button (red, error color). Logout confirmation dialog with Cancel/Log Out actions. Session expired Snackbar for messages. All elements have accessibility labels.
 - Task 6: Added session expired Snackbar to LoginScreen. Clears message on dismiss or successful login. Uses default (informational) styling.
 - Task 7: Exported `signOut` from auth feature index. All imports use path aliases. TypeScript compiles with zero errors. ESLint passes with zero errors/warnings.
+- ✅ Resolved review finding [HIGH]: Fixed race condition — logout() now sets isAuthenticated:false BEFORE signOutService() call, preventing AuthProvider from misidentifying user-initiated logout as session expiry.
+- ✅ Resolved review finding [HIGH]: handleSessionExpired() now properly awaits disableBiometricService() with try/catch error handling instead of fire-and-forget.
+- ✅ Resolved review finding [MEDIUM]: signOut() return type aligned to AuthResult pattern for consistency with all other authService functions.
+- ✅ Resolved review finding [MEDIUM]: Double execution of disableBiometricService()/clearAuth() resolved — side effect of H1 race condition fix.
+- ✅ Resolved review finding [LOW]: AppState listener useEffect no longer re-subscribes on lastActiveTimestamp changes — uses useAuthStore.getState() inside callback instead of reactive selectors.
+- ✅ Resolved review finding [LOW]: Added accessibilityLiveRegion="polite" to session expired Snackbar components on both LoginScreen and SettingsScreen for AC6 compliance.
+- ✅ Resolved review finding [LOW]: Removed redundant setIsBiometricVerified(false) in inactivity timeout handler — biometric gate already active from background transition.
+- ⏸️ Deferred review finding [MEDIUM]: No automated tests — project has no test framework configured. Requires new dependencies beyond story scope.
 
 ### Change Log
 
 - 2026-02-26: Implemented Story 1.6 — Session Management & Logout (all 7 tasks, all 6 ACs)
 - 2026-02-26: Code review completed — 2 HIGH, 3 MEDIUM, 3 LOW issues found. 8 action items added. Status → in-progress.
+- 2026-02-26: Addressed code review findings — 7 of 8 items resolved (2 HIGH, 2 MEDIUM, 3 LOW). 1 MEDIUM deferred (no test framework in project).
 
 ### File List
 
-- `src/features/auth/services/authService.ts` (modified — added signOut method)
-- `src/shared/stores/useAuthStore.ts` (modified — added logout, handleSessionExpired, updateLastActive, clearSessionExpiredMessage actions; lastActiveTimestamp, sessionExpiredMessage state; updated clearAuth)
-- `src/app/navigation/index.tsx` (modified — added inactivity timeout logic with INACTIVITY_TIMEOUT_MS constant)
+- `src/features/auth/services/authService.ts` (modified — added signOut method; review: aligned return type to AuthResult)
+- `src/shared/stores/useAuthStore.ts` (modified — added logout, handleSessionExpired, updateLastActive, clearSessionExpiredMessage actions; lastActiveTimestamp, sessionExpiredMessage state; updated clearAuth; review: fixed race condition in logout, made handleSessionExpired async with await)
+- `src/app/navigation/index.tsx` (modified — added inactivity timeout logic with INACTIVITY_TIMEOUT_MS constant; review: removed reactive selectors from AppState useEffect, use getState() instead; removed redundant setIsBiometricVerified)
 - `src/app/providers/AuthProvider.tsx` (modified — added SIGNED_OUT event handling for session expiry)
-- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Account section with email display, logout button, confirmation dialog, session expired Snackbar)
-- `src/features/auth/screens/LoginScreen.tsx` (modified — added session expired Snackbar)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Account section with email display, logout button, confirmation dialog, session expired Snackbar; review: added accessibilityLiveRegion)
+- `src/features/auth/screens/LoginScreen.tsx` (modified — added session expired Snackbar; review: added accessibilityLiveRegion)
 - `src/features/auth/index.ts` (modified — exported signOut)
