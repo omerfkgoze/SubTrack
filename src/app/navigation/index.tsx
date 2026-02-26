@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { AppState } from 'react-native';
+import { AppState, ActivityIndicator, View, StyleSheet } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
@@ -20,8 +21,10 @@ export function RootNavigator() {
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const setPendingPasswordReset = useAuthStore((s) => s.setPendingPasswordReset);
+  const theme = useTheme();
 
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
+  const [isProcessingDeepLink, setIsProcessingDeepLink] = useState(false);
   const appStateRef = useRef(AppState.currentState);
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
@@ -30,9 +33,14 @@ export function RootNavigator() {
       const result = parseSupabaseDeepLink(url);
 
       if (result.type === 'recovery' && result.accessToken && result.refreshToken) {
-        const sessionResult = await setSessionFromTokens(result.accessToken, result.refreshToken);
-        if (!sessionResult.error) {
-          setPendingPasswordReset(true);
+        setIsProcessingDeepLink(true);
+        try {
+          const sessionResult = await setSessionFromTokens(result.accessToken, result.refreshToken);
+          if (!sessionResult.error) {
+            setPendingPasswordReset(true);
+          }
+        } finally {
+          setIsProcessingDeepLink(false);
         }
       }
     },
@@ -105,6 +113,14 @@ export function RootNavigator() {
   const showBiometricGate =
     isAuthenticated && isBiometricEnabled && !isBiometricVerified && !pendingPasswordReset;
 
+  if (isProcessingDeepLink) {
+    return (
+      <View style={deepLinkStyles.container}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
   if (showBiometricGate) {
     return (
       <BiometricPromptScreen
@@ -126,3 +142,11 @@ export function RootNavigator() {
     </NavigationContainer>
   );
 }
+
+const deepLinkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

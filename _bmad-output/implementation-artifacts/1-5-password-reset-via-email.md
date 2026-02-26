@@ -1,6 +1,6 @@
 # Story 1.5: Password Reset via Email
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -501,6 +501,9 @@ Claude Opus 4.6
 - Updated `LoginScreen` "Forgot Password?" from `Alert.alert` placeholder to `navigation.navigate('ForgotPassword')`
 - All screens use `useTheme()` colors, `accessibilityLabel`, `accessibilityRole`, and 44x44pt min touch targets
 - No email enumeration: same confirmation message shown regardless of email existence (AC2)
+- ✅ Resolved review finding [MEDIUM]: Added `isProcessingDeepLink` loading state with ActivityIndicator in RootNavigator during deep link session establishment
+- ✅ Resolved review finding [LOW]: Replaced nested `<Text>` inside `<Snackbar>` with plain string child, using theme overrides for text color
+- ✅ Resolved review finding [LOW]: Replaced hardcoded `opacity: 0.6` with `theme.colors.onSurfaceVariant` in ForgotPasswordScreen and ResetPasswordScreen subtitle text
 
 ### File List
 
@@ -527,15 +530,15 @@ Claude Opus 4.6
 
 ### Review Follow-ups (AI)
 
-- [ ] [AI-Review][MEDIUM] Add loading state during deep link processing in RootNavigator — show spinner while `setSessionFromTokens` is awaited [src/app/navigation/index.tsx:28-37]
-- [ ] [AI-Review][LOW] Replace nested `<Text>` inside `<Snackbar>` with plain string child to avoid nested Text issues [src/features/auth/screens/ResetPasswordScreen.tsx:220-223]
-- [ ] [AI-Review][LOW] Replace hardcoded `opacity: 0.6` with theme-based color for subtitle text [ForgotPasswordScreen.tsx:228, ResetPasswordScreen.tsx:246]
+- [x] [AI-Review][MEDIUM] Add loading state during deep link processing in RootNavigator — show spinner while `setSessionFromTokens` is awaited [src/app/navigation/index.tsx:28-37]
+- [x] [AI-Review][LOW] Replace nested `<Text>` inside `<Snackbar>` with plain string child to avoid nested Text issues [src/features/auth/screens/ResetPasswordScreen.tsx:220-223]
+- [x] [AI-Review][LOW] Replace hardcoded `opacity: 0.6` with theme-based color for subtitle text [ForgotPasswordScreen.tsx:228, ResetPasswordScreen.tsx:246]
 
 ### Senior Developer Review (AI)
 
 **Reviewer:** GOZE (via Claude Opus 4.6)
 **Date:** 2026-02-26
-**Outcome:** Changes Requested (6 fixes applied, 3 action items remaining)
+**Outcome:** Changes Requested (9/9 fixes applied, 0 action items remaining)
 
 **Issues Found:** 2 Critical, 2 High, 3 Medium, 2 Low (Total: 9)
 
@@ -547,10 +550,10 @@ Claude Opus 4.6
 - **[MEDIUM] M1:** `package-lock.json` not documented in File List. Fixed in story file.
 - **[MEDIUM] M3:** ForgotPasswordScreen cooldown started even on failed request. Fixed by: checking `isResetEmailSent` before starting cooldown.
 
-**Remaining Action Items (3):**
-- [MEDIUM] M2: No loading state during deep link processing
-- [LOW] L1: Nested Text in Snackbar
-- [LOW] L2: Hardcoded opacity values
+**Remaining Action Items (0):**
+- [x] [MEDIUM] M2: No loading state during deep link processing — resolved
+- [x] [LOW] L1: Nested Text in Snackbar — resolved
+- [x] [LOW] L2: Hardcoded opacity values — resolved
 
 **Post-fix Verification:**
 - TypeScript compilation: zero errors (`npx tsc --noEmit`)
@@ -560,3 +563,4 @@ Claude Opus 4.6
 
 - 2026-02-26: Implemented Story 1.5 — Password Reset via Email. Full password reset flow with deep linking, ForgotPasswordScreen, ResetPasswordScreen, Supabase Auth integration, and extracted shared PasswordRequirements component.
 - 2026-02-26: Code Review — Fixed 2 critical (navigation + UI state), 2 high (parser + type duplicate), 2 medium (docs + cooldown) issues. 3 action items remain (loading state, Snackbar nesting, hardcoded opacity).
+- 2026-02-26: Review Follow-ups — Addressed all 3 remaining code review findings: added deep link loading state (M2), fixed Snackbar nested Text (L1), replaced hardcoded opacity with theme colors (L2).

@@ -92,7 +92,7 @@ export function ForgotPasswordScreen() {
         >
           Check Your Email
         </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
           We've sent password reset instructions to {submittedEmailRef.current}. If you don't see
           it, check your spam folder.
         </Text>
@@ -149,7 +149,7 @@ export function ForgotPasswordScreen() {
         >
           Reset Password
         </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
           Enter your email address and we'll send you a link to reset your password.
         </Text>
 
@@ -225,7 +225,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.6,
     marginBottom: 24,
   },
   authError: {

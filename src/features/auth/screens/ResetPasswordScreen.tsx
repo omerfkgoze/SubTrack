@@ -73,7 +73,7 @@ export function ResetPasswordScreen() {
         >
           Link Expired
         </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
           This reset link has expired or is invalid. Please request a new one.
         </Text>
 
@@ -115,7 +115,7 @@ export function ResetPasswordScreen() {
         >
           Create New Password
         </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
           Enter your new password below.
         </Text>
 
@@ -217,10 +217,9 @@ export function ResetPasswordScreen() {
         onDismiss={() => setShowSuccess(false)}
         duration={2000}
         style={{ backgroundColor: theme.colors.primaryContainer }}
+        theme={{ colors: { inverseSurface: theme.colors.primaryContainer, inverseOnSurface: theme.colors.onPrimaryContainer } }}
       >
-        <Text style={{ color: theme.colors.onPrimaryContainer }}>
-          Password updated successfully!
-        </Text>
+        Password updated successfully!
       </Snackbar>
     </KeyboardAvoidingView>
   );
@@ -241,7 +240,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.6,
     marginBottom: 24,
   },
   authError: {
