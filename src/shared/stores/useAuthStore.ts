@@ -149,7 +149,7 @@ export const useAuthStore = create<AuthStore>()(
           return false;
         }
 
-        set({ isLoading: false, pendingPasswordReset: false });
+        set({ isLoading: false });
         return true;
       },
 

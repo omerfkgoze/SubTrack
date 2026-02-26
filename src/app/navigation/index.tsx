@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
+import type { NavigationContainerRef } from '@react-navigation/native';
 import type { RootStackParamList } from './types';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
@@ -17,10 +18,12 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
+  const pendingPasswordReset = useAuthStore((s) => s.pendingPasswordReset);
   const setPendingPasswordReset = useAuthStore((s) => s.setPendingPasswordReset);
 
   const [isBiometricVerified, setIsBiometricVerified] = useState(false);
   const appStateRef = useRef(AppState.currentState);
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   const handleDeepLink = useCallback(
     async (url: string) => {
@@ -63,6 +66,13 @@ export function RootNavigator() {
     return () => subscription.unsubscribe();
   }, [setPendingPasswordReset]);
 
+  // Navigate to ResetPassword screen when pendingPasswordReset becomes true
+  useEffect(() => {
+    if (pendingPasswordReset && navigationRef.current?.isReady()) {
+      navigationRef.current.navigate('Auth', { screen: 'ResetPassword' });
+    }
+  }, [pendingPasswordReset]);
+
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (
@@ -93,7 +103,7 @@ export function RootNavigator() {
   }, []);
 
   const showBiometricGate =
-    isAuthenticated && isBiometricEnabled && !isBiometricVerified;
+    isAuthenticated && isBiometricEnabled && !isBiometricVerified && !pendingPasswordReset;
 
   if (showBiometricGate) {
     return (
@@ -105,9 +115,9 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
+        {isAuthenticated && !pendingPasswordReset ? (
           <Stack.Screen name="Main" component={MainTabs} />
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />

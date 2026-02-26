@@ -70,7 +70,9 @@ export function ForgotPasswordScreen() {
     clearError();
     submittedEmailRef.current = data.email.trim().toLowerCase();
     await requestPasswordReset(submittedEmailRef.current);
-    startCooldown();
+    if (useAuthStore.getState().isResetEmailSent) {
+      startCooldown();
+    }
   };
 
   const handleResend = async () => {

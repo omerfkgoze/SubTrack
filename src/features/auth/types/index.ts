@@ -32,11 +32,7 @@ export interface ResetPasswordFormData {
   confirmPassword: string;
 }
 
-export interface DeepLinkResult {
-  type: 'recovery' | 'unknown';
-  accessToken?: string;
-  refreshToken?: string;
-}
+export type { DeepLinkResult } from '@shared/services/deepLinking';
 
 // Biometric types
 export type BiometricErrorCode =

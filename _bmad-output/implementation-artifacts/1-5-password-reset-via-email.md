@@ -1,6 +1,6 @@
 # Story 1.5: Password Reset via Email
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -513,17 +513,50 @@ Claude Opus 4.6
 **Modified Files:**
 - `app.json` — Added `"scheme": "subtrack"` for deep linking
 - `package.json` — Added `expo-linking` dependency
+- `package-lock.json` — Updated lockfile from `expo-linking` install
 - `src/features/auth/services/authService.ts` — Added `requestPasswordReset`, `updatePassword`, `setSessionFromTokens`
-- `src/features/auth/types/index.ts` — Added `ForgotPasswordFormData`, `ResetPasswordFormData`, `DeepLinkResult`
+- `src/features/auth/types/index.ts` — Added `ForgotPasswordFormData`, `ResetPasswordFormData`, re-exports `DeepLinkResult` from deepLinking
 - `src/features/auth/types/schemas.ts` — Added `forgotPasswordSchema`, `resetPasswordSchema`, extracted shared `passwordValidation`
 - `src/shared/stores/useAuthStore.ts` — Added password reset state fields and actions
 - `src/app/navigation/types.ts` — Added `ForgotPassword` and `ResetPassword` to `AuthStackParamList`
-- `src/app/navigation/AuthStack.tsx` — Registered ForgotPassword and ResetPassword screens
-- `src/app/navigation/index.tsx` — Added deep link listener and PASSWORD_RECOVERY event handler
+- `src/app/navigation/AuthStack.tsx` — Registered ForgotPassword and ResetPassword screens, dynamic initialRouteName for recovery
+- `src/app/navigation/index.tsx` — Added deep link listener, PASSWORD_RECOVERY event handler, recovery navigation logic, biometric gate skip
 - `src/features/auth/screens/LoginScreen.tsx` — Changed "Forgot Password?" from Alert to navigation
 - `src/features/auth/screens/RegisterScreen.tsx` — Replaced inline PasswordRequirements with shared component import
 - `src/features/auth/index.ts` — Added new screen, component, service, type, and schema exports
 
+### Review Follow-ups (AI)
+
+- [ ] [AI-Review][MEDIUM] Add loading state during deep link processing in RootNavigator — show spinner while `setSessionFromTokens` is awaited [src/app/navigation/index.tsx:28-37]
+- [ ] [AI-Review][LOW] Replace nested `<Text>` inside `<Snackbar>` with plain string child to avoid nested Text issues [src/features/auth/screens/ResetPasswordScreen.tsx:220-223]
+- [ ] [AI-Review][LOW] Replace hardcoded `opacity: 0.6` with theme-based color for subtitle text [ForgotPasswordScreen.tsx:228, ResetPasswordScreen.tsx:246]
+
+### Senior Developer Review (AI)
+
+**Reviewer:** GOZE (via Claude Opus 4.6)
+**Date:** 2026-02-26
+**Outcome:** Changes Requested (6 fixes applied, 3 action items remaining)
+
+**Issues Found:** 2 Critical, 2 High, 3 Medium, 2 Low (Total: 9)
+
+**Fixed Issues (6):**
+- **[CRITICAL] C1:** Deep link recovery navigation broken — AuthProvider set `isAuthenticated=true` for recovery sessions, routing to MainTabs instead of ResetPasswordScreen. Fixed by: adding `pendingPasswordReset` override in RootNavigator render condition, navigation ref for imperative navigation, biometric gate skip, and dynamic `initialRouteName` in AuthStack.
+- **[CRITICAL] C2:** ResetPasswordScreen showed "Link Expired" after successful password update — `updatePassword` set `pendingPasswordReset: false` causing early return. Fixed by: removing premature `pendingPasswordReset` reset from store action, delegating to `clearResetState()` in redirect timer.
+- **[HIGH] H1:** URL fragment parser truncated values containing `=` — `split('=')` only captured first two parts. Fixed by: using `indexOf`+`substring` approach.
+- **[HIGH] H2:** Duplicate `DeepLinkResult` type in `deepLinking.ts` and `types/index.ts`. Fixed by: removing duplicate from types, re-exporting from deepLinking service.
+- **[MEDIUM] M1:** `package-lock.json` not documented in File List. Fixed in story file.
+- **[MEDIUM] M3:** ForgotPasswordScreen cooldown started even on failed request. Fixed by: checking `isResetEmailSent` before starting cooldown.
+
+**Remaining Action Items (3):**
+- [MEDIUM] M2: No loading state during deep link processing
+- [LOW] L1: Nested Text in Snackbar
+- [LOW] L2: Hardcoded opacity values
+
+**Post-fix Verification:**
+- TypeScript compilation: zero errors (`npx tsc --noEmit`)
+- ESLint check: zero errors/warnings (`npx eslint src/`)
+
 ## Change Log
 
 - 2026-02-26: Implemented Story 1.5 — Password Reset via Email. Full password reset flow with deep linking, ForgotPasswordScreen, ResetPasswordScreen, Supabase Auth integration, and extracted shared PasswordRequirements component.
+- 2026-02-26: Code Review — Fixed 2 critical (navigation + UI state), 2 high (parser + type duplicate), 2 medium (docs + cooldown) issues. 3 action items remain (loading state, Snackbar nesting, hardcoded opacity).

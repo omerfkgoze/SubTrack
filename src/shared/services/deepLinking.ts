@@ -18,7 +18,10 @@ function parseSupabaseFragment(url: string): Record<string, string> {
   const params: Record<string, string> = {};
 
   fragment.split('&').forEach((pair) => {
-    const [key, value] = pair.split('=');
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx === -1) return;
+    const key = pair.substring(0, eqIdx);
+    const value = pair.substring(eqIdx + 1);
     if (key && value) {
       params[decodeURIComponent(key)] = decodeURIComponent(value);
     }
