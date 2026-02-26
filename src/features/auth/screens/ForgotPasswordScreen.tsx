@@ -79,7 +79,9 @@ export function ForgotPasswordScreen() {
     if (cooldownSeconds > 0 || isLoading) return;
     clearError();
     await requestPasswordReset(submittedEmailRef.current);
-    startCooldown();
+    if (useAuthStore.getState().isResetEmailSent) {
+      startCooldown();
+    }
   };
 
   if (isResetEmailSent) {

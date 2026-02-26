@@ -210,6 +210,20 @@ export function ResetPasswordScreen() {
             Request New Reset Link
           </Button>
         )}
+
+        <Button
+          mode="text"
+          onPress={() => {
+            clearResetState();
+            navigation.navigate('Login');
+          }}
+          style={styles.linkButton}
+          contentStyle={styles.linkButtonContent}
+          accessibilityLabel="Back to Login"
+          accessibilityRole="button"
+        >
+          Back to Login
+        </Button>
       </ScrollView>
 
       <Snackbar

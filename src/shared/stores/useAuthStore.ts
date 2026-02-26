@@ -149,6 +149,10 @@ export const useAuthStore = create<AuthStore>()(
           return false;
         }
 
+        // Sign out to invalidate the recovery session after password update.
+        // User should re-authenticate with their new password (AC4).
+        // AuthProvider's onAuthStateChange will set isAuthenticated = false.
+        await supabase.auth.signOut();
         set({ isLoading: false });
         return true;
       },

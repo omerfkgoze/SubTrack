@@ -124,6 +124,8 @@ export function LoginScreen() {
           onPress={() => navigation.navigate('ForgotPassword')}
           style={styles.linkButton}
           contentStyle={styles.linkButtonContent}
+          accessibilityLabel="Forgot Password"
+          accessibilityRole="button"
         >
           Forgot Password?
         </Button>

@@ -1,6 +1,6 @@
 # Story 1.5: Password Reset via Email
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -534,7 +534,7 @@ Claude Opus 4.6
 - [x] [AI-Review][LOW] Replace nested `<Text>` inside `<Snackbar>` with plain string child to avoid nested Text issues [src/features/auth/screens/ResetPasswordScreen.tsx:220-223]
 - [x] [AI-Review][LOW] Replace hardcoded `opacity: 0.6` with theme-based color for subtitle text [ForgotPasswordScreen.tsx:228, ResetPasswordScreen.tsx:246]
 
-### Senior Developer Review (AI)
+### Senior Developer Review (AI) — Round 1
 
 **Reviewer:** GOZE (via Claude Opus 4.6)
 **Date:** 2026-02-26
@@ -559,8 +559,32 @@ Claude Opus 4.6
 - TypeScript compilation: zero errors (`npx tsc --noEmit`)
 - ESLint check: zero errors/warnings (`npx eslint src/`)
 
+### Senior Developer Review (AI) — Round 2
+
+**Reviewer:** GOZE (via Claude Opus 4.6)
+**Date:** 2026-02-26
+**Outcome:** Approved (5/5 HIGH+MEDIUM fixes applied, 2 LOW action items deferred)
+
+**Issues Found:** 1 Critical, 1 High, 3 Medium, 2 Low (Total: 7)
+
+**Fixed Issues (5):**
+- **[CRITICAL] C1:** After successful password update, user redirected to MainTabs instead of Login (AC4 violation). AuthProvider's `onAuthStateChange` set `isAuthenticated=true` when recovery session established; when `clearResetState()` removed `pendingPasswordReset` override, authenticated state took over. Fixed by: adding `supabase.auth.signOut()` in store's `updatePassword` action after successful update to invalidate recovery session before redirect.
+- **[HIGH] H1:** ForgotPasswordScreen `handleResend` didn't check `isResetEmailSent` before starting cooldown. Previous M3 fix was only applied to `onSubmit`, not `handleResend`. Fixed by: adding `useAuthStore.getState().isResetEmailSent` check in `handleResend`.
+- **[MEDIUM] M1:** ResetPasswordScreen had no exit path (no "Back to Login" button) in normal form state. User was stuck if they didn't want to change password. Fixed by: adding "Back to Login" text button below form that calls `clearResetState()` and navigates to Login.
+- **[MEDIUM] M2:** LoginScreen "Forgot Password?" button missing `accessibilityLabel` and `accessibilityRole` (AC7). Button was modified in this story (Task 7.5). Fixed by: adding accessibility attributes.
+- **[MEDIUM] M3:** PasswordRequirements component used hardcoded `opacity: 0.5` inconsistent with theme-based styling in new screens. Fixed by: using `theme.colors.outline` for unmet and `theme.colors.tertiary` for met requirements.
+
+**Remaining Action Items (2 LOW — deferred):**
+- [ ] [LOW] L1: LoginScreen subtitle uses hardcoded `opacity: 0.6` while new screens use `theme.colors.onSurfaceVariant` [src/features/auth/screens/LoginScreen.tsx:159]
+- [ ] [LOW] L2: RegisterScreen subtitle uses hardcoded `opacity: 0.6` (same inconsistency) [src/features/auth/screens/RegisterScreen.tsx:214]
+
+**Post-fix Verification:**
+- TypeScript compilation: zero errors (`npx tsc --noEmit`)
+- ESLint check: zero errors/warnings (`npx eslint src/`)
+
 ## Change Log
 
 - 2026-02-26: Implemented Story 1.5 — Password Reset via Email. Full password reset flow with deep linking, ForgotPasswordScreen, ResetPasswordScreen, Supabase Auth integration, and extracted shared PasswordRequirements component.
 - 2026-02-26: Code Review — Fixed 2 critical (navigation + UI state), 2 high (parser + type duplicate), 2 medium (docs + cooldown) issues. 3 action items remain (loading state, Snackbar nesting, hardcoded opacity).
 - 2026-02-26: Review Follow-ups — Addressed all 3 remaining code review findings: added deep link loading state (M2), fixed Snackbar nested Text (L1), replaced hardcoded opacity with theme colors (L2).
+- 2026-02-26: Code Review Round 2 — Fixed 1 critical (post-update redirect to MainTabs instead of Login), 1 high (handleResend cooldown), 3 medium (ResetPasswordScreen exit path, LoginScreen accessibility, PasswordRequirements theme). 2 LOW items deferred.

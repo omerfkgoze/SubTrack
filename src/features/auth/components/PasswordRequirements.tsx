@@ -21,7 +21,10 @@ export function PasswordRequirements({ password }: PasswordRequirementsProps) {
         <Text
           key={rule.label}
           variant="labelSmall"
-          style={[styles.requirementText, rule.met && { opacity: 1, color: theme.colors.tertiary }]}
+          style={[
+            styles.requirementText,
+            { color: rule.met ? theme.colors.tertiary : theme.colors.outline },
+          ]}
         >
           {rule.met ? '✓' : '○'} {rule.label}
         </Text>
@@ -36,7 +39,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   requirementText: {
-    opacity: 0.5,
     lineHeight: 18,
   },
 });
