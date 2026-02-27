@@ -1,6 +1,6 @@
 # Story 2.2: View Subscription List
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -34,8 +34,8 @@ so that I can see everything I'm paying for at a glance.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create SubscriptionCard Component (AC: #7, #9)
-  - [ ] 1.1 Create `src/features/subscriptions/components/SubscriptionCard.tsx`:
+- [x] Task 1: Create SubscriptionCard Component (AC: #7, #9)
+  - [x] 1.1 Create `src/features/subscriptions/components/SubscriptionCard.tsx`:
     - Props: `subscription: Subscription`, `onPress?: () => void`
     - 4px category color stripe on left edge (View with backgroundColor from SUBSCRIPTION_CATEGORIES lookup)
     - Category icon from `SUBSCRIPTION_CATEGORIES` (MaterialCommunityIcons via react-native-paper `Icon`)
@@ -48,37 +48,37 @@ so that I can see everything I'm paying for at a glance.
     - Height: ~72px (default variant)
     - Touch: `Card` `onPress` prop for tap handling
     - Accessibility: `accessibilityLabel`, `accessibilityRole="button"`, `accessibilityHint`
-  - [ ] 1.2 Create `src/features/subscriptions/components/SubscriptionCard.test.tsx`:
+  - [x] 1.2 Create `src/features/subscriptions/components/SubscriptionCard.test.tsx`:
     - Test renders subscription name, price, renewal info
     - Test category color stripe renders correctly
     - Test trial badge shows when is_trial is true
     - Test inactive styling when is_active is false
     - Test accessibility label format
 
-- [ ] Task 2: Create Utility Functions (AC: #2, #7)
-  - [ ] 2.1 Create `src/features/subscriptions/utils/subscriptionUtils.ts`:
+- [x] Task 2: Create Utility Functions (AC: #2, #7)
+  - [x] 2.1 Create `src/features/subscriptions/utils/subscriptionUtils.ts`:
     - `formatBillingCycleShort(cycle: BillingCycle): string` — returns 'mo', 'yr', 'qtr', 'wk'
     - `formatPrice(price: number, cycle: BillingCycle): string` — returns "€17.99/mo"
     - `calculateMonthlyEquivalent(price: number, cycle: BillingCycle): number` — normalizes to monthly
     - `calculateTotalMonthlyCost(subscriptions: Subscription[]): number` — sum of monthly equivalents for active subscriptions only
     - `getRenewalInfo(renewalDate: string): { text: string; daysUntil: number; isOverdue: boolean }` — returns "Renews in 5 days", "Renews today", "Overdue by 3 days"
     - `getCategoryConfig(categoryId: string | null): SubscriptionCategory` — returns category from SUBSCRIPTION_CATEGORIES or "Other" default
-  - [ ] 2.2 Create `src/features/subscriptions/utils/subscriptionUtils.test.ts`:
+  - [x] 2.2 Create `src/features/subscriptions/utils/subscriptionUtils.test.ts`:
     - Test all utility functions with edge cases (weekly, quarterly, null category, past dates, today, etc.)
 
-- [ ] Task 3: Create Cost Summary Header Component (AC: #2, #8)
-  - [ ] 3.1 Create `src/features/subscriptions/components/CostSummaryHeader.tsx`:
+- [x] Task 3: Create Cost Summary Header Component (AC: #2, #8)
+  - [x] 3.1 Create `src/features/subscriptions/components/CostSummaryHeader.tsx`:
     - Shows total monthly cost: "€{total}/month" in large bold text
     - Shows subscription count: "12 subscriptions" below
     - Shows yearly equivalent: "€{total×12}/year" in smaller text
     - Uses `useTheme()` for colors — primary color for amounts
     - Wrapped in `Surface` with elevation 0, padding 16
-  - [ ] 3.2 Create `src/features/subscriptions/components/CostSummaryHeader.test.tsx`:
+  - [x] 3.2 Create `src/features/subscriptions/components/CostSummaryHeader.test.tsx`:
     - Test correct total calculation display
     - Test subscription count display
 
-- [ ] Task 4: Create Empty State Component (AC: #3)
-  - [ ] 4.1 Create `src/features/subscriptions/components/EmptySubscriptionState.tsx`:
+- [x] Task 4: Create Empty State Component (AC: #3)
+  - [x] 4.1 Create `src/features/subscriptions/components/EmptySubscriptionState.tsx`:
     - Package icon: `MaterialCommunityIcons` "package-variant" (via react-native-paper `Icon`, size 64)
     - Headline: "No subscriptions yet" (`Text variant="headlineSmall"`)
     - Body: "Add your first subscription to start tracking your spending" (`Text variant="bodyMedium"`, muted color)
@@ -86,54 +86,54 @@ so that I can see everything I'm paying for at a glance.
     - Centered layout with spacing per UX spec (24px padding)
     - Accessibility: `accessibilityLabel` on CTA button
 
-- [ ] Task 5: Create Skeleton Loading Component (AC: #5)
-  - [ ] 5.1 Create `src/features/subscriptions/components/SubscriptionListSkeleton.tsx`:
+- [x] Task 5: Create Skeleton Loading Component (AC: #5)
+  - [x] 5.1 Create `src/features/subscriptions/components/SubscriptionListSkeleton.tsx`:
     - 3 skeleton card placeholders (gray shimmer shapes matching SubscriptionCard dimensions: 72px height, 12px border radius)
     - Use `Animated` API or `react-native-reanimated` for shimmer effect
     - Include skeleton for cost summary header area
     - Lightweight implementation — no additional dependencies
 
-- [ ] Task 6: Implement SubscriptionsScreen (AC: #1, #2, #3, #4, #5, #6, #8, #9, #10)
-  - [ ] 6.1 Rewrite `src/features/subscriptions/screens/SubscriptionsScreen.tsx` (replace placeholder):
+- [x] Task 6: Implement SubscriptionsScreen (AC: #1, #2, #3, #4, #5, #6, #8, #9, #10)
+  - [x] 6.1 Rewrite `src/features/subscriptions/screens/SubscriptionsScreen.tsx` (replace placeholder):
     - Import `useSubscriptionStore` for subscriptions, isLoading, error state
     - Import `SubscriptionCard`, `CostSummaryHeader`, `EmptySubscriptionState`, `SubscriptionListSkeleton`
     - Import `calculateTotalMonthlyCost` from utils
-  - [ ] 6.2 Data fetching:
+  - [x] 6.2 Data fetching:
     - `useEffect` on mount → call `fetchSubscriptions()`
     - If cached subscriptions exist, show them immediately (Zustand persist provides this)
     - Background refresh on every mount to ensure freshness
-  - [ ] 6.3 List implementation:
+  - [x] 6.3 List implementation:
     - Use `FlatList` with `keyExtractor={item => item.id}`
     - `ListHeaderComponent` = `CostSummaryHeader` (only when subscriptions exist)
     - `ListEmptyComponent` = `EmptySubscriptionState` (only when NOT loading)
     - `renderItem` = `SubscriptionCard` for each subscription
     - `ItemSeparatorComponent` = 12px gap between cards
     - `contentContainerStyle` = padding 16, flexGrow 1 (for empty state centering)
-  - [ ] 6.4 Pull-to-refresh:
+  - [x] 6.4 Pull-to-refresh:
     - `RefreshControl` with `refreshing={isRefreshing}`, `onRefresh={handleRefresh}`
     - Add `isRefreshing` state (local useState, NOT in Zustand — it's a UI-only state)
     - `handleRefresh`: set isRefreshing true → `fetchSubscriptions()` → set isRefreshing false
-  - [ ] 6.5 Loading state:
+  - [x] 6.5 Loading state:
     - When `isLoading && subscriptions.length === 0` → show `SubscriptionListSkeleton`
     - When `isLoading && subscriptions.length > 0` → show existing data (background refresh)
-  - [ ] 6.6 Error state:
+  - [x] 6.6 Error state:
     - When `error && subscriptions.length === 0` → show error message + "Retry" button
     - When `error && subscriptions.length > 0` → show Snackbar with error + retain cached data
-  - [ ] 6.7 SafeAreaView wrapping for proper insets
+  - [x] 6.7 SafeAreaView wrapping for proper insets
 
-- [ ] Task 7: Update Store with isRefreshing Support (AC: #4)
-  - [ ] 7.1 Update `src/shared/stores/useSubscriptionStore.ts`:
+- [x] Task 7: Update Store with isRefreshing Support (AC: #4)
+  - [x] 7.1 Update `src/shared/stores/useSubscriptionStore.ts`:
     - No changes needed — `isLoading` is sufficient. Pull-to-refresh uses local `isRefreshing` state in SubscriptionsScreen to differentiate visual indicator. The `fetchSubscriptions()` action already handles the loading state properly.
     - **NOTE:** Do NOT add `isRefreshing` to Zustand store. It's a UI-only concern managed by the screen component.
 
-- [ ] Task 8: Update Feature Exports (AC: all)
-  - [ ] 8.1 Update `src/features/subscriptions/index.ts`:
+- [x] Task 8: Update Feature Exports (AC: all)
+  - [x] 8.1 Update `src/features/subscriptions/index.ts`:
     - Export `SubscriptionCard` from components
     - Export `CostSummaryHeader` from components
     - Export utility functions from utils
-  - [ ] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
-  - [ ] 8.3 Run `npx tsc --noEmit` — zero errors
-  - [ ] 8.4 Run `npx eslint src/` — zero errors/warnings
+  - [x] 8.2 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
+  - [x] 8.3 Run `npx tsc --noEmit` — zero errors
+  - [x] 8.4 Run `npx eslint src/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -606,14 +606,48 @@ a6f61e5 story 1.7 done
 - [Source: src/config/categories.ts — 8 categories with id, label, icon, color]
 - [Source: src/config/theme.ts — Primary #6366F1, secondary #8B5CF6, tertiary #10B981]
 
+## Change Log
+
+- 2026-02-28: Implemented Story 2.2 — View Subscription List. Created SubscriptionCard, CostSummaryHeader, EmptySubscriptionState, SubscriptionListSkeleton components. Created subscription utility functions. Rewrote SubscriptionsScreen with full FlatList implementation including pull-to-refresh, loading skeleton, error handling, and empty state. Set up Jest testing framework. All 39 tests passing, TypeScript and ESLint zero errors.
+
 ## Dev Agent Record
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Fixed timezone issue in `getRenewalInfo` by using `startOfDay` from date-fns to normalize date comparisons
+- Jest 30 incompatible with jest-expo@55, downgraded to Jest 29.7.0
+- react-test-renderer version mismatch resolved by pinning to 19.1.0 (matching React version)
+- `@testing-library/jest-native` deprecated, ESLint warnings suppressed with inline directives where necessary
+
 ### Completion Notes List
 
+- Task 1: SubscriptionCard component created with category color stripe, icon, name, price, renewal info, trial badge, inactive styling, and full accessibility support (9 tests)
+- Task 2: Utility functions created — formatBillingCycleShort, formatPrice, calculateMonthlyEquivalent, calculateTotalMonthlyCost, getRenewalInfo, getCategoryConfig (25 tests)
+- Task 3: CostSummaryHeader component with total monthly cost, subscription count, yearly equivalent (5 tests)
+- Task 4: EmptySubscriptionState component with package icon, headline, body text, and CTA button navigating to Add tab
+- Task 5: SubscriptionListSkeleton with shimmer animation using Animated API — 3 skeleton cards + header placeholder
+- Task 6: SubscriptionsScreen fully rewritten with FlatList, pull-to-refresh (local isRefreshing state), loading skeleton, error state with retry, empty state, CostSummaryHeader, and 60 FPS performance optimizations (getItemLayout, removeClippedSubviews, windowSize)
+- Task 7: Verified store needs no changes — isRefreshing handled locally in screen component
+- Task 8: Feature exports updated, TypeScript zero errors, ESLint zero errors/warnings
+
 ### File List
+
+**Created:**
+- src/features/subscriptions/components/SubscriptionCard.tsx
+- src/features/subscriptions/components/SubscriptionCard.test.tsx
+- src/features/subscriptions/components/CostSummaryHeader.tsx
+- src/features/subscriptions/components/CostSummaryHeader.test.tsx
+- src/features/subscriptions/components/EmptySubscriptionState.tsx
+- src/features/subscriptions/components/SubscriptionListSkeleton.tsx
+- src/features/subscriptions/utils/subscriptionUtils.ts
+- src/features/subscriptions/utils/subscriptionUtils.test.ts
+- jest.config.js
+
+**Modified:**
+- src/features/subscriptions/screens/SubscriptionsScreen.tsx (full rewrite from placeholder)
+- src/features/subscriptions/index.ts (added new component and utility exports)
+- package.json (added test dependencies: jest, jest-expo, @testing-library/react-native, @types/jest, react-test-renderer)
