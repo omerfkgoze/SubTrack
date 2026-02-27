@@ -552,6 +552,8 @@ Claude Opus 4.6
 ### Debug Log References
 
 - Edge Function TypeScript errors (Deno runtime types not found by Node.js tsc) — resolved by adding `supabase/functions` to tsconfig.json exclude list.
+- Edge Function returning 401 despite valid JWT — root cause: Supabase gateway's default JWT verification was rejecting the token before the function code ran. Resolved by deploying with `--no-verify-jwt` flag (`supabase functions deploy delete-account --no-verify-jwt`). The function's own code still verifies the JWT via `getUser()`.
+- Delete account flow caused login page flash + silent failure — root cause: `isAuthenticated: false` was set BEFORE the Edge Function call, causing SettingsScreen to unmount. If the Edge Function failed, `isAuthenticated: true` was restored but the dialog (with error message) was already gone. Resolved by moving `isAuthenticated: false` to AFTER successful Edge Function response, and adding `isDeleting` guard in AuthProvider to suppress auth events during deletion.
 
 ### Completion Notes List
 
@@ -571,6 +573,10 @@ Claude Opus 4.6
   - Fixed store error duplicate display in Security section (clearError after copy to local state)
   - Fixed fragile error type casting in authService (FunctionsHttpError instanceof check)
   - Added GDPR audit logging to Edge Function (structured log for account deletion events)
+- 2026-02-27: Bug fix — Edge Function 401 + login page flash resolved:
+  - Redeployed Edge Function with `--no-verify-jwt` (gateway JWT verification was blocking valid tokens)
+  - Moved `isAuthenticated: false` to after Edge Function success (prevents SettingsScreen unmount during request)
+  - Added `isDeleting` guard in AuthProvider (suppresses SIGNED_IN/SIGNED_OUT events during deletion flow)
 
 ### File List
 

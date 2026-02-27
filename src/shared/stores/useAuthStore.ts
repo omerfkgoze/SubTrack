@@ -294,15 +294,16 @@ export const useAuthStore = create<AuthStore>()(
           return false;
         }
 
-        // Step 2: Set isAuthenticated:false BEFORE deletion
-        set({ isAuthenticated: false });
-
-        // Step 3: Call Edge Function
+        // Step 2: Call Edge Function (user stays on SettingsScreen during this)
+        // AuthProvider's isDeleting guard prevents SIGNED_IN/SIGNED_OUT interference
         const deleteResult = await deleteAccountService();
         if (deleteResult.error) {
-          set({ isAuthenticated: true, error: deleteResult.error, isDeleting: false });
+          set({ error: deleteResult.error, isDeleting: false });
           return false;
         }
+
+        // Step 3: Server-side deletion confirmed — now set isAuthenticated:false
+        set({ isAuthenticated: false });
 
         // Step 4: Local cleanup
         await disableBiometricService();
@@ -332,15 +333,16 @@ export const useAuthStore = create<AuthStore>()(
           return false;
         }
 
-        // Step 2: Set isAuthenticated:false BEFORE deletion
-        set({ isAuthenticated: false });
-
-        // Step 3: Call Edge Function
+        // Step 2: Call Edge Function (user stays on SettingsScreen during this)
+        // AuthProvider's isDeleting guard prevents SIGNED_IN/SIGNED_OUT interference
         const deleteResult = await deleteAccountService();
         if (deleteResult.error) {
-          set({ isAuthenticated: true, error: deleteResult.error, isDeleting: false });
+          set({ error: deleteResult.error, isDeleting: false });
           return false;
         }
+
+        // Step 3: Server-side deletion confirmed — now set isAuthenticated:false
+        set({ isAuthenticated: false });
 
         // Step 4: Local cleanup
         await disableBiometricService();
