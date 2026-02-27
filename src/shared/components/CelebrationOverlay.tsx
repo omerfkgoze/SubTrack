@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
-import { Portal, Text } from 'react-native-paper';
+import { Portal, Text, useTheme } from 'react-native-paper';
 import LottieView from 'lottie-react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
@@ -15,6 +15,8 @@ export function CelebrationOverlay({
   onDismiss,
   message = 'Great start!',
 }: CelebrationOverlayProps) {
+  const theme = useTheme();
+
   useEffect(() => {
     if (visible) {
       const timer = setTimeout(onDismiss, 2500);
@@ -30,7 +32,7 @@ export function CelebrationOverlay({
         <Animated.View
           entering={FadeIn.duration(300)}
           exiting={FadeOut.duration(300)}
-          style={styles.overlay}
+          style={[styles.overlay, { backgroundColor: theme.colors.backdrop }]}
         >
           <View style={styles.content}>
             <LottieView
@@ -39,7 +41,7 @@ export function CelebrationOverlay({
               loop={false}
               style={styles.animation}
             />
-            <Text variant="headlineMedium" style={styles.message}>
+            <Text variant="headlineMedium" style={[styles.message, { color: theme.colors.inverseSurface }]}>
               {message}
             </Text>
           </View>
@@ -52,7 +54,6 @@ export function CelebrationOverlay({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -64,7 +65,6 @@ const styles = StyleSheet.create({
     height: 300,
   },
   message: {
-    color: '#FFFFFF',
     fontWeight: 'bold',
     marginTop: 16,
   },

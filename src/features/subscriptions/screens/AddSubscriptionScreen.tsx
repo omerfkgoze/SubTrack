@@ -38,7 +38,6 @@ export function AddSubscriptionScreen() {
 
   const addSubscription = useSubscriptionStore((s) => s.addSubscription);
   const isSubmitting = useSubscriptionStore((s) => s.isSubmitting);
-  const storeError = useSubscriptionStore((s) => s.error);
   const clearError = useSubscriptionStore((s) => s.clearError);
 
   const [suggestions, setSuggestions] = useState<ReturnType<typeof searchPopularServices>>([]);
@@ -92,18 +91,6 @@ export function AddSubscriptionScreen() {
     [setValue],
   );
 
-  const handleDateChange = useCallback(
-    (date: Date | undefined) => {
-      setRenewalDate(date);
-      if (date) {
-        setValue('renewal_date', format(date, 'yyyy-MM-dd'));
-      } else {
-        setValue('renewal_date', '');
-      }
-    },
-    [setValue],
-  );
-
   const onSubmit = useCallback(
     async (data: CreateSubscriptionFormData) => {
       clearError();
@@ -133,6 +120,7 @@ export function AddSubscriptionScreen() {
       } else {
         const errorMsg = useSubscriptionStore.getState().error?.message ?? 'Failed to save subscription.';
         setSnackbarMessage(errorMsg);
+        clearError();
       }
     },
     [addSubscription, clearError, navigation, reset],
@@ -261,12 +249,15 @@ export function AddSubscriptionScreen() {
           <Controller
             control={control}
             name="renewal_date"
-            render={() => (
+            render={({ field: { onChange } }) => (
               <DatePickerInput
                 locale="en"
                 label="Next Renewal Date"
                 value={renewalDate}
-                onChange={handleDateChange}
+                onChange={(date: Date | undefined) => {
+                  setRenewalDate(date);
+                  onChange(date ? format(date, 'yyyy-MM-dd') : '');
+                }}
                 inputMode="start"
                 mode="outlined"
                 disabled={isSubmitting}
@@ -393,7 +384,7 @@ export function AddSubscriptionScreen() {
           mode="contained"
           onPress={handleSubmit(onSubmit)}
           loading={isSubmitting}
-          disabled={isSubmitting}
+          disabled={isSubmitting || Object.keys(errors).length > 0}
           style={styles.submitButton}
           contentStyle={styles.submitButtonContent}
           accessibilityLabel="Save Subscription"
@@ -410,7 +401,7 @@ export function AddSubscriptionScreen() {
       />
 
       <Snackbar
-        visible={!!snackbarMessage && !storeError}
+        visible={!!snackbarMessage}
         onDismiss={() => setSnackbarMessage('')}
         duration={4000}
         accessibilityLiveRegion="polite"

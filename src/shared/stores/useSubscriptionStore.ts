@@ -48,13 +48,14 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
 
         const result = await createSubscription(dto);
 
-        if (result.error) {
-          set({ isSubmitting: false, error: result.error });
+        if (result.error || !result.data) {
+          set({ isSubmitting: false, error: result.error ?? { code: 'UNKNOWN', message: 'Failed to save subscription.' } });
           return false;
         }
 
+        const newSubscription = result.data;
         set((state) => ({
-          subscriptions: [...state.subscriptions, result.data!],
+          subscriptions: [...state.subscriptions, newSubscription],
           isSubmitting: false,
         }));
         return true;

@@ -1,6 +1,6 @@
 # Story 2.1: Add New Subscription
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -777,3 +777,4 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-02-27: Story 2.1 implementation complete — Add New Subscription feature with full form, database migration, Zustand store, name suggestions, celebration overlay, and accessibility support
+- 2026-02-27: Code review fixes (6 issues fixed) — Snackbar visibility bug, submit button AC4 compliance, CelebrationOverlay theme compliance, non-null assertion guard, price validation UX, renewal date Controller connection
