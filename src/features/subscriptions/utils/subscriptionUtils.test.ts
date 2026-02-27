@@ -139,6 +139,22 @@ describe('getRenewalInfo', () => {
     expect(result.daysUntil).toBe(-3);
     expect(result.isOverdue).toBe(true);
   });
+
+  it('uses singular "day" for 1 day future', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const result = getRenewalInfo(toLocalDateString(tomorrow));
+    expect(result.text).toBe('Renews in 1 day');
+    expect(result.daysUntil).toBe(1);
+  });
+
+  it('uses singular "day" for 1 day overdue', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const result = getRenewalInfo(toLocalDateString(yesterday));
+    expect(result.text).toBe('Overdue by 1 day');
+    expect(result.daysUntil).toBe(-1);
+  });
 });
 
 describe('getCategoryConfig', () => {

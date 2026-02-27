@@ -26,9 +26,9 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
       elevation={1}
       onPress={onPress}
       style={[styles.card, isInactive && styles.inactiveCard]}
-      accessibilityRole="button"
+      {...(onPress ? { accessibilityRole: 'button' as const } : {})}
       accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}, ${renewalInfo.text}`}
-      accessibilityHint="Swipe left for options"
+      {...(onPress ? { accessibilityHint: 'Swipe left for options' } : {})}
     >
       <View style={styles.cardContent}>
         <View

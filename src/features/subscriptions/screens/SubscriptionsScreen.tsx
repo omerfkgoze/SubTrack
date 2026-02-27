@@ -15,6 +15,7 @@ import { SubscriptionListSkeleton } from '@features/subscriptions/components/Sub
 
 const CARD_HEIGHT = 72;
 const SEPARATOR_HEIGHT = 12;
+const HEADER_HEIGHT = 82; // CostSummaryHeader: padding 16*2 + headline ~28 + body ~18 + yearly ~14 + margins ~6
 
 function ItemSeparator() {
   return <View style={styles.separator} />;
@@ -64,13 +65,14 @@ export function SubscriptionsScreen() {
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
 
+  const hasHeader = subscriptions.length > 0;
   const getItemLayout = useCallback(
     (_: unknown, index: number) => ({
       length: CARD_HEIGHT + SEPARATOR_HEIGHT,
-      offset: (CARD_HEIGHT + SEPARATOR_HEIGHT) * index,
+      offset: (hasHeader ? HEADER_HEIGHT : 0) + (CARD_HEIGHT + SEPARATOR_HEIGHT) * index,
       index,
     }),
-    [],
+    [hasHeader],
   );
 
   // Loading state: first load with no cached data

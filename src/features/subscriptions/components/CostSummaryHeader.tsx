@@ -11,13 +11,20 @@ export function CostSummaryHeader({ totalMonthlyCost, subscriptionCount }: CostS
   const theme = useTheme();
   const yearlyEquivalent = totalMonthlyCost * 12;
 
+  const countLabel = subscriptionCount === 1 ? 'subscription' : 'subscriptions';
+
   return (
-    <Surface style={styles.container} elevation={0}>
+    <Surface
+      style={styles.container}
+      elevation={0}
+      accessibilityRole="summary"
+      accessibilityLabel={`Total monthly cost: ${totalMonthlyCost.toFixed(2)} euros, ${subscriptionCount} active ${countLabel}, ${yearlyEquivalent.toFixed(2)} euros per year`}
+    >
       <Text variant="headlineMedium" style={[styles.totalCost, { color: theme.colors.primary }]}>
         €{totalMonthlyCost.toFixed(2)}/month
       </Text>
       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-        {subscriptionCount} {subscriptionCount === 1 ? 'subscription' : 'subscriptions'}
+        {subscriptionCount} {countLabel}
       </Text>
       <Text variant="bodySmall" style={[styles.yearlyText, { color: theme.colors.onSurfaceVariant }]}>
         €{yearlyEquivalent.toFixed(2)}/year

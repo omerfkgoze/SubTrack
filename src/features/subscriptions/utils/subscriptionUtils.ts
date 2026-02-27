@@ -30,6 +30,8 @@ export function calculateMonthlyEquivalent(price: number, cycle: BillingCycle): 
       return price / 3;
     case 'weekly':
       return price * (52 / 12);
+    default:
+      return price;
   }
 }
 
@@ -58,18 +60,27 @@ export function getRenewalInfo(renewalDate: string): {
   const days = differenceInDays(date, today);
 
   if (days < 0) {
-    return { text: `Overdue by ${Math.abs(days)} days`, daysUntil: days, isOverdue: true };
+    const absDays = Math.abs(days);
+    return { text: `Overdue by ${absDays} ${absDays === 1 ? 'day' : 'days'}`, daysUntil: days, isOverdue: true };
   }
 
-  return { text: `Renews in ${days} days`, daysUntil: days, isOverdue: false };
+  return { text: `Renews in ${days} ${days === 1 ? 'day' : 'days'}`, daysUntil: days, isOverdue: false };
 }
+
+const DEFAULT_CATEGORY: SubscriptionCategory = {
+  id: 'other',
+  label: 'Other',
+  icon: 'dots-horizontal-circle',
+  color: '#6B7280',
+};
 
 export function getCategoryConfig(categoryId: string | null): SubscriptionCategory {
   if (!categoryId) {
-    return SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other')!;
+    return SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other') ?? DEFAULT_CATEGORY;
   }
   return (
     SUBSCRIPTION_CATEGORIES.find((c) => c.id === categoryId) ??
-    SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other')!
+    SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other') ??
+    DEFAULT_CATEGORY
   );
 }

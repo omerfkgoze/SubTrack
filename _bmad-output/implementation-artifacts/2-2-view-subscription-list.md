@@ -1,6 +1,6 @@
 # Story 2.2: View Subscription List
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -609,6 +609,7 @@ a6f61e5 story 1.7 done
 ## Change Log
 
 - 2026-02-28: Implemented Story 2.2 — View Subscription List. Created SubscriptionCard, CostSummaryHeader, EmptySubscriptionState, SubscriptionListSkeleton components. Created subscription utility functions. Rewrote SubscriptionsScreen with full FlatList implementation including pull-to-refresh, loading skeleton, error handling, and empty state. Set up Jest testing framework. All 39 tests passing, TypeScript and ESLint zero errors.
+- 2026-02-28: Code review fixes (6 MEDIUM issues resolved): M1-getRenewalInfo singular/plural grammar fix, M2-getItemLayout header offset correction, M3-getCategoryConfig safe fallback (removed non-null assertions), M4-conditional accessibilityRole/Hint on SubscriptionCard (only when onPress provided), M5-default case in calculateMonthlyEquivalent switch, M6-accessibility attributes added to CostSummaryHeader. 4 new tests added (43 total). TypeScript and ESLint zero errors.
 
 ## Dev Agent Record
 

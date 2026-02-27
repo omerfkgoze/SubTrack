@@ -89,11 +89,23 @@ describe('SubscriptionCard', () => {
   it('has correct accessibility label', () => {
     renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
     expect(
-      screen.getByAccessibilityHint('Swipe left for options'),
-    ).toBeTruthy();
-    expect(
       screen.getByLabelText('Netflix, 17.99 euros per monthly, Renews in 5 days'),
     ).toBeTruthy();
+  });
+
+  it('has accessibility hint and button role when onPress is provided', () => {
+    const onPress = jest.fn();
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} onPress={onPress} />);
+    expect(
+      screen.getByAccessibilityHint('Swipe left for options'),
+    ).toBeTruthy();
+  });
+
+  it('does not have accessibility hint when onPress is not provided', () => {
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+    expect(
+      screen.queryByAccessibilityHint('Swipe left for options'),
+    ).toBeNull();
   });
 
   it('renders category color stripe for entertainment', () => {
