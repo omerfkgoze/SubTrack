@@ -1,6 +1,6 @@
 # Story 2.1: Add New Subscription
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -34,33 +34,33 @@ so that I can start tracking my spending.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Supabase Migration for `subscriptions` Table (AC: #1, #10)
-  - [ ] 1.1 Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_subscriptions.sql`
+- [x] Task 1: Create Supabase Migration for `subscriptions` Table (AC: #1, #10)
+  - [x] 1.1 Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_subscriptions.sql`
     - CREATE TABLE `subscriptions` with all columns per AC1
     - All columns use snake_case per architecture naming conventions
     - `user_id` references `auth.users(id)` with `ON DELETE CASCADE`
     - `billing_cycle` as TEXT (not enum) for flexibility — validate in application layer
     - `currency` defaults to `'EUR'` (Europe target market)
-  - [ ] 1.2 Enable RLS and create four policies:
+  - [x] 1.2 Enable RLS and create four policies:
     - SELECT: `(select auth.uid()) = user_id` — wrap in subquery for performance
     - INSERT: `(select auth.uid()) = user_id` — WITH CHECK
     - UPDATE: `(select auth.uid()) = user_id` — USING
     - DELETE: `(select auth.uid()) = user_id` — USING
-  - [ ] 1.3 Create `updated_at` trigger function and trigger:
+  - [x] 1.3 Create `updated_at` trigger function and trigger:
     - `CREATE OR REPLACE FUNCTION update_updated_at_column()` → sets `NEW.updated_at = now()`
     - `CREATE TRIGGER set_updated_at BEFORE UPDATE ON subscriptions`
-  - [ ] 1.4 Apply migration locally: `npx supabase db reset`
-  - [ ] 1.5 Generate TypeScript types: `npx supabase gen types typescript --local > src/shared/types/database.types.ts`
-  - [ ] 1.6 Update `delete-account` Edge Function to delete subscriptions before user deletion:
+  - [x] 1.4 Apply migration locally: `npx supabase db reset`
+  - [x] 1.5 Generate TypeScript types: `npx supabase gen types typescript --local > src/shared/types/database.types.ts`
+  - [x] 1.6 Update `delete-account` Edge Function to delete subscriptions before user deletion:
     - Add `await supabaseAdmin.from('subscriptions').delete().eq('user_id', user.id)` before `auth.admin.deleteUser()`
     - Note: ON DELETE CASCADE handles this at DB level, but explicit deletion is defense-in-depth
 
-- [ ] Task 2: Create Subscription Types and Zod Schemas (AC: #2, #4)
-  - [ ] 2.1 Create `src/features/subscriptions/types/index.ts`:
+- [x] Task 2: Create Subscription Types and Zod Schemas (AC: #2, #4)
+  - [x] 2.1 Create `src/features/subscriptions/types/index.ts`:
     - `BillingCycle` type: `'monthly' | 'yearly' | 'quarterly' | 'weekly'`
     - `Subscription` interface matching database schema (use generated types as base)
     - `CreateSubscriptionDTO` — fields for creating: name, price, currency, billing_cycle, renewal_date, is_trial?, trial_expiry_date?, category?, notes?
-  - [ ] 2.2 Create `src/features/subscriptions/types/schemas.ts`:
+  - [x] 2.2 Create `src/features/subscriptions/types/schemas.ts`:
     - `createSubscriptionSchema` using zod v4:
       - `name`: z.string().min(1, 'Subscription name is required').max(100)
       - `price`: z.number().positive('Price must be greater than 0')  — or z.string() → z.coerce.number() for TextInput compatibility
@@ -71,26 +71,26 @@ so that I can start tracking my spending.
       - `category`: z.string().optional()
       - `notes`: z.string().optional()
 
-- [ ] Task 3: Create Subscription Service (AC: #5, #8)
-  - [ ] 3.1 Create `src/features/subscriptions/services/subscriptionService.ts`:
+- [x] Task 3: Create Subscription Service (AC: #5, #8)
+  - [x] 3.1 Create `src/features/subscriptions/services/subscriptionService.ts`:
     - Import `supabase` from `@shared/services/supabase`
     - Define `SubscriptionResult` interface: `{ data: Subscription | null; error: AppError | null }`
     - Define `SubscriptionListResult`: `{ data: Subscription[]; error: AppError | null }`
-  - [ ] 3.2 Implement `createSubscription(dto: CreateSubscriptionDTO): Promise<SubscriptionResult>`:
+  - [x] 3.2 Implement `createSubscription(dto: CreateSubscriptionDTO): Promise<SubscriptionResult>`:
     - Get current user from supabase auth: `supabase.auth.getUser()`
     - Insert into `subscriptions` table with `user_id` from auth
     - Map errors: network, auth expired, constraint violations
     - Return typed result
-  - [ ] 3.3 Implement `getSubscriptions(): Promise<SubscriptionListResult>`:
+  - [x] 3.3 Implement `getSubscriptions(): Promise<SubscriptionListResult>`:
     - Query `supabase.from('subscriptions').select('*').order('renewal_date', { ascending: true })`
     - RLS automatically filters by user_id
     - Map errors consistently
-  - [ ] 3.4 Implement `getSubscriptionCount(): Promise<number>`:
+  - [x] 3.4 Implement `getSubscriptionCount(): Promise<number>`:
     - `supabase.from('subscriptions').select('id', { count: 'exact', head: true })`
     - Used to determine if first subscription (for celebration animation)
 
-- [ ] Task 4: Create useSubscriptionStore (Zustand) (AC: #7)
-  - [ ] 4.1 Create `src/shared/stores/useSubscriptionStore.ts`:
+- [x] Task 4: Create useSubscriptionStore (Zustand) (AC: #7)
+  - [x] 4.1 Create `src/shared/stores/useSubscriptionStore.ts`:
     - Follow EXACT same pattern as `useAuthStore`:
       - `create<SubscriptionStore>()(persist(...))`
       - `createJSONStorage(() => AsyncStorage)`
@@ -99,36 +99,36 @@ so that I can start tracking my spending.
     - Actions: `fetchSubscriptions()`, `addSubscription(dto)`, `clearError()`
     - Persist: `subscriptions` array only (not loading/error states)
     - Store name: `'subscription-store'`
-  - [ ] 4.2 Implement `fetchSubscriptions()`:
+  - [x] 4.2 Implement `fetchSubscriptions()`:
     - `set({ isLoading: true, error: null })`
     - Call `getSubscriptions()` from service
     - Handle error/success per store pattern
-  - [ ] 4.3 Implement `addSubscription(dto: CreateSubscriptionDTO): Promise<boolean>`:
+  - [x] 4.3 Implement `addSubscription(dto: CreateSubscriptionDTO): Promise<boolean>`:
     - `set({ isSubmitting: true, error: null })`
     - Call `createSubscription(dto)` from service
     - On success: add to local subscriptions array, `set({ isSubmitting: false })`
     - On error: `set({ error, isSubmitting: false })`, return false
     - Return true on success
-  - [ ] 4.4 Export store from `src/shared/stores/` — do NOT create a separate feature store, follow established pattern
+  - [x] 4.4 Export store from `src/shared/stores/` — do NOT create a separate feature store, follow established pattern
 
-- [ ] Task 5: Create Popular Services Suggestion Data (AC: #3)
-  - [ ] 5.1 Create `src/config/popularServices.ts`:
+- [x] Task 5: Create Popular Services Suggestion Data (AC: #3)
+  - [x] 5.1 Create `src/config/popularServices.ts`:
     - Array of `{ name: string; defaultCategory?: string }` for popular subscription services
     - Include: Netflix, Spotify, Disney+, YouTube Premium, Apple Music, iCloud, Google One, Adobe Creative Cloud, Canva Pro, Amazon Prime, HBO Max, Hulu, Paramount+, Crunchyroll, Xbox Game Pass, PlayStation Plus, Nintendo Switch Online, Dropbox, Microsoft 365, LinkedIn Premium, Headspace, Calm, Strava, Duolingo, ChatGPT Plus, GitHub Copilot, Notion, Figma, Slack, Zoom
     - Export `searchPopularServices(query: string): PopularService[]` — fuzzy match by name prefix
-  - [ ] 5.2 Export from `src/config/index.ts`
+  - [x] 5.2 Export from `src/config/index.ts`
 
-- [ ] Task 6: Install date-fns Dependency (AC: #2)
-  - [ ] 6.1 Run `npx expo install date-fns`
-  - [ ] 6.2 Verify installation in package.json
+- [x] Task 6: Install date-fns Dependency (AC: #2)
+  - [x] 6.1 Run `npx expo install date-fns`
+  - [x] 6.2 Verify installation in package.json
 
-- [ ] Task 7: Add Confetti Lottie Animation Asset (AC: #6)
-  - [ ] 7.1 Download a confetti celebration Lottie JSON animation from LottieFiles (free license)
-  - [ ] 7.2 Save to `assets/animations/confetti.json`
-  - [ ] 7.3 Verify animation renders with `lottie-react-native` (already installed ~7.3.1)
+- [x] Task 7: Add Confetti Lottie Animation Asset (AC: #6)
+  - [x] 7.1 Download a confetti celebration Lottie JSON animation from LottieFiles (free license)
+  - [x] 7.2 Save to `assets/animations/confetti.json`
+  - [x] 7.3 Verify animation renders with `lottie-react-native` (already installed ~7.3.1)
 
-- [ ] Task 8: Implement AddSubscriptionScreen (AC: #2, #3, #4, #5, #6, #8, #9)
-  - [ ] 8.1 Rewrite `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` (currently placeholder):
+- [x] Task 8: Implement AddSubscriptionScreen (AC: #2, #3, #4, #5, #6, #8, #9)
+  - [x] 8.1 Rewrite `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` (currently placeholder):
     - Import: `useForm, Controller` from `react-hook-form`, `zodResolver` from `@hookform/resolvers/zod`
     - Import: `TextInput, Button, HelperText, Switch, SegmentedButtons, Snackbar` from `react-native-paper`
     - Import: `createSubscriptionSchema` from `@features/subscriptions/types/schemas`
@@ -136,70 +136,70 @@ so that I can start tracking my spending.
     - Import: `SUBSCRIPTION_CATEGORIES` from `@config/categories`
     - Import: `searchPopularServices` from `@config/popularServices`
     - Import: `useNavigation` from `@react-navigation/native`
-  - [ ] 8.2 Implement form with `useForm<CreateSubscriptionFormData>`:
+  - [x] 8.2 Implement form with `useForm<CreateSubscriptionFormData>`:
     - `resolver: zodResolver(createSubscriptionSchema)`
     - `defaultValues: { billing_cycle: 'monthly', is_trial: false, currency: 'EUR' }`
     - Use `Controller` for each React Native input (NOT register — RN has no refs)
-  - [ ] 8.3 Name field with suggestions:
+  - [x] 8.3 Name field with suggestions:
     - TextInput with `onChangeText` updating search query
     - Show `FlatList` dropdown when suggestions exist and field is focused
     - `searchPopularServices(query)` for filtering
     - Tap suggestion → fill name + auto-select category if `defaultCategory` exists
-  - [ ] 8.4 Price field:
+  - [x] 8.4 Price field:
     - TextInput with `keyboardType="decimal-pad"`
     - Left affix: `<TextInput.Affix text="€" />`
     - Parse string to number for zod validation (use `z.coerce.number()` or manual transform)
-  - [ ] 8.5 Billing cycle selector:
+  - [x] 8.5 Billing cycle selector:
     - `SegmentedButtons` with 4 options: Monthly, Yearly, Quarterly, Weekly
     - Wrapped in `Controller`
-  - [ ] 8.6 Renewal date picker:
+  - [x] 8.6 Renewal date picker:
     - Use `DatePickerInput` from `react-native-paper-dates` or a custom date picker approach
     - **Alternative:** TextInput with `onFocus` opening a date selection modal
     - Display formatted date using `date-fns` format()
     - Store as ISO date string
-  - [ ] 8.7 Category selection:
+  - [x] 8.7 Category selection:
     - Horizontal ScrollView of `Chip` components from react-native-paper
     - Map from `SUBSCRIPTION_CATEGORIES` config
     - Optional — no validation error if not selected, defaults to null
-  - [ ] 8.8 Trial toggle:
+  - [x] 8.8 Trial toggle:
     - `Switch` component — when ON, reveal `trial_expiry_date` field
     - Use `watch('is_trial')` from react-hook-form to conditionally render
-  - [ ] 8.9 Notes field (optional):
+  - [x] 8.9 Notes field (optional):
     - TextInput multiline, mode="outlined"
-  - [ ] 8.10 Submit handler:
+  - [x] 8.10 Submit handler:
     - `handleSubmit(onSubmit)` from react-hook-form
     - Call `addSubscription(data)` from store
     - On success: check subscription count — if was 0, show celebration overlay
     - Navigate back to Subscriptions tab after success (or after celebration)
     - On error: Snackbar with error message
-  - [ ] 8.11 Loading states:
+  - [x] 8.11 Loading states:
     - Submit button: `loading={isSubmitting}`, `disabled={isSubmitting}`
     - Form inputs: `disabled={isSubmitting}`
-  - [ ] 8.12 Accessibility:
+  - [x] 8.12 Accessibility:
     - All inputs: `accessibilityLabel`, `accessibilityRole`
     - Error messages: `accessibilityLiveRegion="polite"`
     - Touch targets: minimum 44x44pt
 
-- [ ] Task 9: Create CelebrationOverlay Component (AC: #6)
-  - [ ] 9.1 Create `src/shared/components/CelebrationOverlay.tsx`:
+- [x] Task 9: Create CelebrationOverlay Component (AC: #6)
+  - [x] 9.1 Create `src/shared/components/CelebrationOverlay.tsx`:
     - Props: `visible: boolean`, `onDismiss: () => void`, `message?: string`
     - Full-screen overlay with semi-transparent background
     - Lottie confetti animation: `require('../../../../assets/animations/confetti.json')`
     - Message text below animation (default: "Great start!")
     - Auto-dismiss after 2.5 seconds OR tap to dismiss
     - Use `react-native-reanimated` for fade in/out
-  - [ ] 9.2 Export from `src/shared/components/`
+  - [x] 9.2 Export from `src/shared/components/`
 
-- [ ] Task 10: Update Navigation and Feature Exports (AC: all)
-  - [ ] 10.1 Verify `MainTabs.tsx` already has "Add" tab pointing to `AddSubscriptionScreen` — no changes needed
-  - [ ] 10.2 Update `src/features/subscriptions/index.ts`:
+- [x] Task 10: Update Navigation and Feature Exports (AC: all)
+  - [x] 10.1 Verify `MainTabs.tsx` already has "Add" tab pointing to `AddSubscriptionScreen` — no changes needed
+  - [x] 10.2 Update `src/features/subscriptions/index.ts`:
     - Export `AddSubscriptionScreen`
     - Export subscription types
     - Export subscription service functions
-  - [ ] 10.3 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
-  - [ ] 10.4 Run `npx tsc --noEmit` — zero errors
-  - [ ] 10.5 Run `npx eslint src/` — zero errors/warnings
-  - [ ] 10.6 Apply Supabase migration to remote: `npx supabase db push` (if deploying)
+  - [x] 10.3 Verify all imports use path aliases (`@features/*`, `@shared/*`, `@config/*`)
+  - [x] 10.4 Run `npx tsc --noEmit` — zero errors
+  - [x] 10.5 Run `npx eslint src/` — zero errors/warnings
+  - [x] 10.6 Apply Supabase migration to remote: `npx supabase db push` (if deploying)
 
 ## Dev Notes
 
@@ -735,6 +735,45 @@ Claude Opus 4.6
 
 ### Debug Log References
 
+- Zod v4 `z.coerce.number()` produces `unknown` input type causing react-hook-form Resolver type mismatch. Fixed by using `z.number()` and manually parsing string→number in Controller's `onChangeText`.
+- Zod v4 `z.boolean().default(false)` produces `boolean | undefined` input type causing Resolver mismatch. Fixed by using `z.boolean()` without `.default()` and setting default in form's `defaultValues`.
+- `supabase gen types typescript --local` outputs "Connecting to db 5432" to stdout. Fixed by removing the first line from generated database.types.ts.
+- Installed `react-native-paper-dates` for date picker integration with Paper theme (DatePickerInput with calendar modal).
+
 ### Completion Notes List
 
+- All 10 tasks and subtasks implemented and verified
+- Migration applied locally via `npx supabase db reset` — subscriptions table created with RLS policies
+- TypeScript types auto-generated from Supabase schema (database.types.ts)
+- Delete-account Edge Function updated with explicit subscription deletion (defense-in-depth)
+- Form uses react-hook-form + zodResolver + Controller pattern consistent with auth screens
+- Smart name suggestions with prefix search on 30 popular services
+- CelebrationOverlay with Lottie animation, auto-dismiss after 2.5s, Portal-based overlay
+- Zustand store follows exact same pattern as useAuthStore (persist + partialize)
+- All accessibility requirements met (labels, roles, liveRegion, 44pt touch targets)
+- `npx tsc --noEmit` — zero errors
+- `npx eslint src/` — zero errors/warnings
+
 ### File List
+
+**Created:**
+- `supabase/migrations/20260227000000_create_subscriptions.sql` — First database migration (subscriptions table, RLS, trigger, indexes)
+- `src/shared/types/database.types.ts` — Auto-generated Supabase TypeScript types
+- `src/features/subscriptions/types/index.ts` — Subscription types, DTOs, AppError
+- `src/features/subscriptions/types/schemas.ts` — Zod validation schema for create subscription form
+- `src/features/subscriptions/services/subscriptionService.ts` — Supabase CRUD operations (create, list, count)
+- `src/shared/stores/useSubscriptionStore.ts` — Zustand subscription store (persist + AsyncStorage)
+- `src/config/popularServices.ts` — Popular subscription services data with prefix search
+- `src/shared/components/CelebrationOverlay.tsx` — Lottie confetti overlay component
+- `assets/animations/confetti.json` — Lottie confetti animation asset
+
+**Modified:**
+- `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` — Full form implementation (replaced placeholder)
+- `src/features/subscriptions/index.ts` — Added barrel exports for screens, types, services
+- `src/config/index.ts` — Added searchPopularServices export
+- `supabase/functions/delete-account/index.ts` — Uncommented subscription deletion (defense-in-depth)
+- `package.json` — Added date-fns ^4.1.0, react-native-paper-dates dependencies
+
+### Change Log
+
+- 2026-02-27: Story 2.1 implementation complete — Add New Subscription feature with full form, database migration, Zustand store, name suggestions, celebration overlay, and accessibility support

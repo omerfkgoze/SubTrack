@@ -48,11 +48,11 @@ Deno.serve(async (req: Request) => {
     // Admin client — delete user
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-    // TODO: When data tables are created (Epic 2+), add deletion queries here:
-    // await supabaseAdmin.from('subscriptions').delete().eq('user_id', user.id)
+    // Delete user data (defense-in-depth — ON DELETE CASCADE also handles this at DB level)
+    await supabaseAdmin.from('subscriptions').delete().eq('user_id', user.id)
+    // TODO: When additional data tables are created, add deletion queries here:
     // await supabaseAdmin.from('reminder_settings').delete().eq('user_id', user.id)
     // await supabaseAdmin.from('user_settings').delete().eq('user_id', user.id)
-    // Alternative: Use ON DELETE CASCADE foreign keys in migrations
 
     // Delete auth user (this is the final step — no recovery after this)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
