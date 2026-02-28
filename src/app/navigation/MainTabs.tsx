@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme, Icon } from 'react-native-paper';
 import type { MainTabsParamList } from './types';
 import { HomeScreen } from '@features/dashboard/screens/HomeScreen';
-import { SubscriptionsScreen } from '@features/subscriptions/screens/SubscriptionsScreen';
 import { AddSubscriptionScreen } from '@features/subscriptions/screens/AddSubscriptionScreen';
+import { SubscriptionsStack } from './SubscriptionsStack';
 import { SettingsStack } from './SettingsStack';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
@@ -30,7 +30,7 @@ export function MainTabs() {
       />
       <Tab.Screen
         name="Subscriptions"
-        component={SubscriptionsScreen}
+        component={SubscriptionsStack}
         options={{
           tabBarLabel: 'Subscriptions',
           tabBarIcon: ({ color, size }) => (

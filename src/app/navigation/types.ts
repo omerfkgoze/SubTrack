@@ -20,10 +20,16 @@ export type SettingsStackParamList = {
   Account: undefined;
 };
 
+// Subscriptions Stack
+export type SubscriptionsStackParamList = {
+  SubscriptionsList: undefined;
+  EditSubscription: { subscriptionId: string };
+};
+
 // Main Tabs
 export type MainTabsParamList = {
   Home: undefined;
-  Subscriptions: undefined;
+  Subscriptions: NavigatorScreenParams<SubscriptionsStackParamList>;
   Add: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList>;
 };
@@ -44,6 +50,9 @@ export type MainTabsScreenProps<T extends keyof MainTabsParamList> = BottomTabSc
   MainTabsParamList,
   T
 >;
+
+export type SubscriptionsStackScreenProps<T extends keyof SubscriptionsStackParamList> =
+  NativeStackScreenProps<SubscriptionsStackParamList, T>;
 
 export type SettingsStackScreenProps<T extends keyof SettingsStackParamList> =
   NativeStackScreenProps<SettingsStackParamList, T>;

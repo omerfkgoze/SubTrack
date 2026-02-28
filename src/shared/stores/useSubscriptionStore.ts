@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Subscription, CreateSubscriptionDTO, AppError } from '@features/subscriptions/types';
 import {
   createSubscription,
+  updateSubscription,
   getSubscriptions,
 } from '@features/subscriptions/services/subscriptionService';
 
@@ -17,6 +18,7 @@ interface SubscriptionState {
 interface SubscriptionActions {
   fetchSubscriptions: () => Promise<void>;
   addSubscription: (dto: CreateSubscriptionDTO) => Promise<boolean>;
+  updateSubscription: (id: string, dto: Partial<CreateSubscriptionDTO>) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -56,6 +58,28 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         const newSubscription = result.data;
         set((state) => ({
           subscriptions: [...state.subscriptions, newSubscription],
+          isSubmitting: false,
+        }));
+        return true;
+      },
+
+      updateSubscription: async (id: string, dto: Partial<CreateSubscriptionDTO>) => {
+        set({ isSubmitting: true, error: null });
+
+        const result = await updateSubscription(id, dto);
+
+        if (result.error || !result.data) {
+          set({
+            isSubmitting: false,
+            error: result.error ?? { code: 'UNKNOWN', message: 'Failed to update subscription.' },
+          });
+          return false;
+        }
+
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id ? result.data! : sub
+          ),
           isSubmitting: false,
         }));
         return true;

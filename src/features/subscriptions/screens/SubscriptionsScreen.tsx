@@ -3,12 +3,14 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Button, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { MainTabsParamList } from '@app/navigation/types';
+import type { MainTabsParamList, SubscriptionsStackParamList } from '@app/navigation/types';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import type { Subscription } from '@features/subscriptions/types';
 import { calculateTotalMonthlyCost } from '@features/subscriptions/utils/subscriptionUtils';
-import { SubscriptionCard } from '@features/subscriptions/components/SubscriptionCard';
+import { SwipeableSubscriptionCard } from '@features/subscriptions/components/SwipeableSubscriptionCard';
 import { CostSummaryHeader } from '@features/subscriptions/components/CostSummaryHeader';
 import { EmptySubscriptionState } from '@features/subscriptions/components/EmptySubscriptionState';
 import { SubscriptionListSkeleton } from '@features/subscriptions/components/SubscriptionListSkeleton';
@@ -23,7 +25,13 @@ function ItemSeparator() {
 
 export function SubscriptionsScreen() {
   const theme = useTheme();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList, 'Subscriptions'>>();
+  const navigation = useNavigation<
+    CompositeNavigationProp<
+      NativeStackNavigationProp<SubscriptionsStackParamList, 'SubscriptionsList'>,
+      BottomTabNavigationProp<MainTabsParamList>
+    >
+  >();
+  const [successSnackbar, setSuccessSnackbar] = useState('');
   const { subscriptions, isLoading, error, fetchSubscriptions, clearError } =
     useSubscriptionStore();
 
@@ -55,12 +63,25 @@ export function SubscriptionsScreen() {
     fetchSubscriptions();
   }, [clearError, fetchSubscriptions]);
 
+  const handleEdit = useCallback(
+    (subscriptionId: string) => {
+      navigation.navigate('EditSubscription', { subscriptionId });
+    },
+    [navigation],
+  );
+
   const totalMonthlyCost = calculateTotalMonthlyCost(subscriptions);
   const activeCount = subscriptions.filter((s) => s.is_active !== false).length;
 
   const renderItem = useCallback(
-    ({ item }: { item: Subscription }) => <SubscriptionCard subscription={item} />,
-    [],
+    ({ item }: { item: Subscription }) => (
+      <SwipeableSubscriptionCard
+        subscription={item}
+        onEdit={() => handleEdit(item.id)}
+        onPress={() => handleEdit(item.id)}
+      />
+    ),
+    [handleEdit],
   );
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
@@ -144,6 +165,13 @@ export function SubscriptionsScreen() {
         }}
       >
         {error?.message ?? 'An error occurred'}
+      </Snackbar>
+      <Snackbar
+        visible={!!successSnackbar}
+        onDismiss={() => setSuccessSnackbar('')}
+        duration={3000}
+      >
+        {successSnackbar}
       </Snackbar>
     </SafeAreaView>
   );

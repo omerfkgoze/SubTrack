@@ -16,6 +16,8 @@ export interface CreateSubscriptionDTO {
   notes?: string;
 }
 
+export type UpdateSubscriptionDTO = Partial<CreateSubscriptionDTO> & { id: string };
+
 export interface AppError {
   code: string;
   message: string;

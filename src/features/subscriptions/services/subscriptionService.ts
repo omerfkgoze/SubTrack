@@ -62,6 +62,55 @@ export async function createSubscription(
   }
 }
 
+export async function updateSubscription(
+  id: string,
+  dto: Partial<CreateSubscriptionDTO>,
+): Promise<SubscriptionResult> {
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        data: null,
+        error: { code: 'AUTH_ERROR', message: 'Please log in to update subscriptions.' },
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .update(dto)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Supabase update error:', error.message, error.code, error.details);
+      return {
+        data: null,
+        error: { code: 'DB_ERROR', message: 'Failed to update subscription. Please try again.' },
+      };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      data: null,
+      error: {
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+      },
+    };
+  }
+}
+
 export async function getSubscriptions(): Promise<SubscriptionListResult> {
   try {
     const { data, error } = await supabase

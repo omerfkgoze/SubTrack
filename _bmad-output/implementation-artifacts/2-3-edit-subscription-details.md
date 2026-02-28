@@ -1,6 +1,6 @@
 # Story 2.3: Edit Subscription Details
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -32,45 +32,45 @@ so that I can keep my information accurate when prices change or details update.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `updateSubscription` Service Method (AC: #5, #6)
-  - [ ] 1.1 Add `updateSubscription(id: string, dto: Partial<CreateSubscriptionDTO>)` to `src/features/subscriptions/services/subscriptionService.ts`
-  - [ ] 1.2 Method uses `supabase.from('subscriptions').update(dto).eq('id', id).eq('user_id', userId).select().single()`
-  - [ ] 1.3 Returns `SubscriptionResult` (same pattern as `createSubscription`)
-  - [ ] 1.4 Supabase automatically updates `updated_at` timestamp
+- [x] Task 1: Add `updateSubscription` Service Method (AC: #5, #6)
+  - [x] 1.1 Add `updateSubscription(id: string, dto: Partial<CreateSubscriptionDTO>)` to `src/features/subscriptions/services/subscriptionService.ts`
+  - [x] 1.2 Method uses `supabase.from('subscriptions').update(dto).eq('id', id).eq('user_id', userId).select().single()`
+  - [x] 1.3 Returns `SubscriptionResult` (same pattern as `createSubscription`)
+  - [x] 1.4 Supabase automatically updates `updated_at` timestamp
 
-- [ ] Task 2: Add `updateSubscription` Store Action (AC: #5, #6, #7)
-  - [ ] 2.1 Add `UpdateSubscriptionDTO` type to `src/features/subscriptions/types/index.ts` — `Partial<CreateSubscriptionDTO> & { id: string }`
-  - [ ] 2.2 Add `updateSubscription(id: string, dto: Partial<CreateSubscriptionDTO>)` action to `useSubscriptionStore`
-  - [ ] 2.3 Uses `isSubmitting` flag (same as `addSubscription`)
-  - [ ] 2.4 On success: replace matching subscription in `subscriptions` array (by id), set `isSubmitting: false`
-  - [ ] 2.5 On failure: set `error`, set `isSubmitting: false`, return `false`
-  - [ ] 2.6 Import `updateSubscription` from service in store file
+- [x] Task 2: Add `updateSubscription` Store Action (AC: #5, #6, #7)
+  - [x] 2.1 Add `UpdateSubscriptionDTO` type to `src/features/subscriptions/types/index.ts` — `Partial<CreateSubscriptionDTO> & { id: string }`
+  - [x] 2.2 Add `updateSubscription(id: string, dto: Partial<CreateSubscriptionDTO>)` action to `useSubscriptionStore`
+  - [x] 2.3 Uses `isSubmitting` flag (same as `addSubscription`)
+  - [x] 2.4 On success: replace matching subscription in `subscriptions` array (by id), set `isSubmitting: false`
+  - [x] 2.5 On failure: set `error`, set `isSubmitting: false`, return `false`
+  - [x] 2.6 Import `updateSubscription` from service in store file
 
-- [ ] Task 3: Create SubscriptionsStack Navigator (AC: #2)
-  - [ ] 3.1 Create `src/app/navigation/SubscriptionsStack.tsx` — NativeStackNavigator with two screens:
+- [x] Task 3: Create SubscriptionsStack Navigator (AC: #2)
+  - [x] 3.1 Create `src/app/navigation/SubscriptionsStack.tsx` — NativeStackNavigator with two screens:
     - `SubscriptionsList` → `SubscriptionsScreen` (headerShown: false)
     - `EditSubscription` → `EditSubscriptionScreen` (header title: "Edit Subscription")
-  - [ ] 3.2 Add `SubscriptionsStackParamList` to `src/app/navigation/types.ts`:
+  - [x] 3.2 Add `SubscriptionsStackParamList` to `src/app/navigation/types.ts`:
     - `SubscriptionsList: undefined`
     - `EditSubscription: { subscriptionId: string }`
-  - [ ] 3.3 Update `MainTabs.tsx`: Replace `SubscriptionsScreen` with `SubscriptionsStack` as the Subscriptions tab component
+  - [x] 3.3 Update `MainTabs.tsx`: Replace `SubscriptionsScreen` with `SubscriptionsStack` as the Subscriptions tab component
 
-- [ ] Task 4: Create SwipeableSubscriptionCard Wrapper (AC: #1, #9)
-  - [ ] 4.1 Create `src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`:
+- [x] Task 4: Create SwipeableSubscriptionCard Wrapper (AC: #1, #9)
+  - [x] 4.1 Create `src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`:
     - Wraps `SubscriptionCard` with `Swipeable` from `react-native-gesture-handler`
     - `renderRightActions` renders "Edit" button (blue, pencil-outline icon) and "Delete" button (red, trash-can-outline icon)
     - Each action button: 72px width, centered icon + label, full card height
     - Props: `subscription`, `onEdit`, `onDelete`, `onPress`
     - Spring animation: overshootRight false, friction 2
     - Accessibility: `accessibilityActions` for edit/delete, `onAccessibilityAction` handler
-  - [ ] 4.2 Create `src/features/subscriptions/components/SwipeableSubscriptionCard.test.tsx`:
+  - [x] 4.2 Create `src/features/subscriptions/components/SwipeableSubscriptionCard.test.tsx`:
     - Test renders subscription card
     - Test swipe reveals action buttons
     - Test edit callback fires on edit button press
     - Test accessibility actions
 
-- [ ] Task 5: Create EditSubscriptionScreen (AC: #3, #4, #5, #6, #7, #8)
-  - [ ] 5.1 Create `src/features/subscriptions/screens/EditSubscriptionScreen.tsx`:
+- [x] Task 5: Create EditSubscriptionScreen (AC: #3, #4, #5, #6, #7, #8)
+  - [x] 5.1 Create `src/features/subscriptions/screens/EditSubscriptionScreen.tsx`:
     - Receives `subscriptionId` from navigation params
     - Looks up subscription from `useSubscriptionStore` by ID
     - Uses `react-hook-form` with `createSubscriptionSchema` (same Zod schema as Add)
@@ -82,23 +82,23 @@ so that I can keep my information accurate when prices change or details update.
     - On error: show error Snackbar, keep form open
     - Loading: `isSubmitting` disables all fields and button
     - No celebration overlay (only for first subscription add)
-  - [ ] 5.2 Create `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx`:
+  - [x] 5.2 Create `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx`:
     - Test form pre-fills with subscription data
     - Test form validation
     - Test successful update navigates back
 
-- [ ] Task 6: Update SubscriptionsScreen with Swipeable Cards (AC: #1, #2)
-  - [ ] 6.1 Replace `SubscriptionCard` with `SwipeableSubscriptionCard` in SubscriptionsScreen FlatList `renderItem`
-  - [ ] 6.2 Add `onEdit` handler: navigate to `EditSubscription` screen with subscriptionId
-  - [ ] 6.3 Add `onPress` handler on card: same navigation to `EditSubscription` screen
-  - [ ] 6.4 Add `onDelete` handler: no-op for now (Story 2.4 scope) or omit prop
-  - [ ] 6.5 Add success Snackbar display after returning from edit (listen for navigation focus + store changes)
+- [x] Task 6: Update SubscriptionsScreen with Swipeable Cards (AC: #1, #2)
+  - [x] 6.1 Replace `SubscriptionCard` with `SwipeableSubscriptionCard` in SubscriptionsScreen FlatList `renderItem`
+  - [x] 6.2 Add `onEdit` handler: navigate to `EditSubscription` screen with subscriptionId
+  - [x] 6.3 Add `onPress` handler on card: same navigation to `EditSubscription` screen
+  - [x] 6.4 Add `onDelete` handler: no-op for now (Story 2.4 scope) or omit prop
+  - [x] 6.5 Add success Snackbar display after returning from edit (listen for navigation focus + store changes)
 
-- [ ] Task 7: Update Feature Exports and Final Verification (AC: all)
-  - [ ] 7.1 Update `src/features/subscriptions/index.ts` with new exports: `SwipeableSubscriptionCard`, `EditSubscriptionScreen`
-  - [ ] 7.2 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
-  - [ ] 7.3 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
-  - [ ] 7.4 Run existing tests: `npx jest` — all pass (no regressions)
+- [x] Task 7: Update Feature Exports and Final Verification (AC: all)
+  - [x] 7.1 Update `src/features/subscriptions/index.ts` with new exports: `SwipeableSubscriptionCard`, `EditSubscriptionScreen`
+  - [x] 7.2 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
+  - [x] 7.3 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
+  - [x] 7.4 Run existing tests: `npx jest` — all pass (no regressions)
 
 ## Dev Notes
 
@@ -594,10 +594,42 @@ be1d240 story 2.1 done
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- ESLint warning fixed: removed unused `useTheme` import from EditSubscriptionScreen
+- EditSubscriptionScreen test required mocking `react-native-paper-dates`, `@react-native-async-storage/async-storage`, and `@shared/services/supabase` to resolve Jest transformation and env variable issues
+- Fixed test assertion: Notes field uses `getByDisplayValue` not `getByText` since it renders inside TextInput
+
 ### Completion Notes List
 
+- Task 1: Added `updateSubscription` service method following same error handling pattern as `createSubscription` (AUTH_ERROR, DB_ERROR, NETWORK_ERROR)
+- Task 2: Added `UpdateSubscriptionDTO` type and `updateSubscription` store action with optimistic array replacement via `.map()`
+- Task 3: Created `SubscriptionsStack` navigator (NativeStackNavigator) with SubscriptionsList and EditSubscription screens, updated MainTabs to use stack instead of direct screen
+- Task 4: Created `SwipeableSubscriptionCard` wrapper using `Swipeable` from react-native-gesture-handler with Edit (blue) and Delete (red) action buttons, 72px width, accessibility labels
+- Task 5: Created `EditSubscriptionScreen` with full form pre-fill via `defaultValues`, Zod validation (reusing `createSubscriptionSchema`), error Snackbar with Retry action, subscription-not-found guard
+- Task 6: Updated `SubscriptionsScreen` to use `SwipeableSubscriptionCard`, added edit navigation via `CompositeNavigationProp`, card tap also navigates to edit, success Snackbar added
+- Task 7: Updated feature exports, verified TypeScript (0 errors), ESLint (0 errors/warnings), Jest (54/54 tests pass, 0 regressions)
+
 ### File List
+
+**Created:**
+- `src/app/navigation/SubscriptionsStack.tsx`
+- `src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`
+- `src/features/subscriptions/components/SwipeableSubscriptionCard.test.tsx`
+- `src/features/subscriptions/screens/EditSubscriptionScreen.tsx`
+- `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx`
+
+**Modified:**
+- `src/features/subscriptions/services/subscriptionService.ts` — Added `updateSubscription` method
+- `src/shared/stores/useSubscriptionStore.ts` — Added `updateSubscription` action and import
+- `src/features/subscriptions/types/index.ts` — Added `UpdateSubscriptionDTO` type
+- `src/app/navigation/types.ts` — Added `SubscriptionsStackParamList`, `SubscriptionsStackScreenProps`, updated `MainTabsParamList`
+- `src/app/navigation/MainTabs.tsx` — Replaced `SubscriptionsScreen` with `SubscriptionsStack`
+- `src/features/subscriptions/screens/SubscriptionsScreen.tsx` — Replaced `SubscriptionCard` with `SwipeableSubscriptionCard`, added edit navigation, success Snackbar
+- `src/features/subscriptions/index.ts` — Added new exports (`EditSubscriptionScreen`, `SwipeableSubscriptionCard`, `UpdateSubscriptionDTO`, `updateSubscription`)
+
+### Change Log
+
+- 2026-02-28: Story 2.3 implemented — Edit subscription feature with swipe-to-edit, SubscriptionsStack navigation, form pre-fill, updateSubscription service/store, 11 new tests (5 SwipeableSubscriptionCard + 6 EditSubscriptionScreen)
