@@ -12,7 +12,7 @@ import {
 } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DatePickerInput } from 'react-native-paper-dates';
+import { DatePickerInput, registerTranslation, en } from 'react-native-paper-dates';
 import { format, parseISO } from 'date-fns';
 import { createSubscriptionSchema } from '@features/subscriptions/types/schemas';
 import type { CreateSubscriptionFormData } from '@features/subscriptions/types/schemas';
@@ -20,6 +20,8 @@ import type { BillingCycle } from '@features/subscriptions/types';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
 import type { SubscriptionsStackScreenProps } from '@app/navigation/types';
+
+registerTranslation('en', en);
 
 const BILLING_CYCLE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },

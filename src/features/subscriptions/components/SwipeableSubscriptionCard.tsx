@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 import { Swipeable } from 'react-native-gesture-handler';
-import type { Subscription } from '@features/subscriptions/types';
+import type { Subscription, BillingCycle } from '@features/subscriptions/types';
+import { getRenewalInfo } from '@features/subscriptions/utils/subscriptionUtils';
 import { SubscriptionCard } from './SubscriptionCard';
 
 interface SwipeableSubscriptionCardProps {
@@ -10,6 +11,7 @@ interface SwipeableSubscriptionCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onPress?: () => void;
+  onSwipeableOpen?: (close: () => void) => void;
 }
 
 export function SwipeableSubscriptionCard({
@@ -17,8 +19,11 @@ export function SwipeableSubscriptionCard({
   onEdit,
   onDelete,
   onPress,
+  onSwipeableOpen,
 }: SwipeableSubscriptionCardProps) {
   const swipeableRef = useRef<Swipeable>(null);
+  const renewalInfo = getRenewalInfo(subscription.renewal_date);
+  const detailedLabel = `${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle as BillingCycle}, ${renewalInfo.text}`;
 
   const renderRightActions = () => (
     <View style={styles.actionsContainer}>
@@ -55,10 +60,11 @@ export function SwipeableSubscriptionCard({
       renderRightActions={renderRightActions}
       overshootRight={false}
       friction={2} // AC specifies damping:20, but classic Swipeable uses friction (not Reanimated damping)
+      onSwipeableOpen={() => onSwipeableOpen?.(() => swipeableRef.current?.close())}
     >
       <View
         accessible={true}
-        accessibilityLabel={`${subscription.name} subscription`}
+        accessibilityLabel={detailedLabel}
         accessibilityActions={[
           { name: 'edit', label: `Edit ${subscription.name}` },
           { name: 'delete', label: `Delete ${subscription.name}` },

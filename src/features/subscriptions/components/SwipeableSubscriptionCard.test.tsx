@@ -85,8 +85,8 @@ describe('SwipeableSubscriptionCard', () => {
     renderWithProvider(
       <SwipeableSubscriptionCard subscription={mockSubscription} onEdit={onEdit} />,
     );
-    const wrapper = screen.getByLabelText(`${mockSubscription.name} subscription`);
-    fireEvent(wrapper, 'accessibilityAction', { nativeEvent: { actionName: 'edit' } });
+    const wrappers = screen.getAllByLabelText(/Netflix, 17\.99 euros per monthly/);
+    fireEvent(wrappers[0], 'accessibilityAction', { nativeEvent: { actionName: 'edit' } });
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
 
@@ -95,8 +95,8 @@ describe('SwipeableSubscriptionCard', () => {
     renderWithProvider(
       <SwipeableSubscriptionCard subscription={mockSubscription} onDelete={onDelete} />,
     );
-    const wrapper = screen.getByLabelText(`${mockSubscription.name} subscription`);
-    fireEvent(wrapper, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    const wrappers = screen.getAllByLabelText(/Netflix, 17\.99 euros per monthly/);
+    fireEvent(wrappers[0], 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 });

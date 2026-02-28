@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Button, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,19 +33,18 @@ export function SubscriptionsScreen() {
     >
   >();
   const route = useRoute<RouteProp<SubscriptionsStackParamList, 'SubscriptionsList'>>();
-  const [successSnackbar, setSuccessSnackbar] = useState('');
+  const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const { subscriptions, isLoading, error, fetchSubscriptions, clearError } =
     useSubscriptionStore();
 
   useEffect(() => {
     if (route.params?.updated) {
-      setSuccessSnackbar('Subscription updated');
+      setSnackbar({ message: 'Subscription updated', type: 'success' });
       navigation.setParams({ updated: undefined });
     }
   }, [route.params?.updated, navigation]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -53,7 +52,7 @@ export function SubscriptionsScreen() {
 
   useEffect(() => {
     if (error && subscriptions.length > 0) {
-      setSnackbarVisible(true);
+      setSnackbar({ message: error.message, type: 'error' });
     }
   }, [error, subscriptions.length]);
 
@@ -72,6 +71,15 @@ export function SubscriptionsScreen() {
     fetchSubscriptions();
   }, [clearError, fetchSubscriptions]);
 
+  const closeActiveSwipeable = useRef<(() => void) | null>(null);
+
+  const handleSwipeableOpen = useCallback((close: () => void) => {
+    if (closeActiveSwipeable.current) {
+      closeActiveSwipeable.current();
+    }
+    closeActiveSwipeable.current = close;
+  }, []);
+
   const handleEdit = useCallback(
     (subscriptionId: string) => {
       navigation.navigate('EditSubscription', { subscriptionId });
@@ -88,9 +96,10 @@ export function SubscriptionsScreen() {
         subscription={item}
         onEdit={() => handleEdit(item.id)}
         onPress={() => handleEdit(item.id)}
+        onSwipeableOpen={handleSwipeableOpen}
       />
     ),
-    [handleEdit],
+    [handleEdit, handleSwipeableOpen],
   );
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
@@ -165,22 +174,12 @@ export function SubscriptionsScreen() {
         accessibilityLiveRegion="polite"
       />
       <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={4000}
-        action={{
-          label: 'Retry',
-          onPress: handleRetry,
-        }}
+        visible={!!snackbar}
+        onDismiss={() => setSnackbar(null)}
+        duration={snackbar?.type === 'error' ? 4000 : 3000}
+        action={snackbar?.type === 'error' ? { label: 'Retry', onPress: handleRetry } : undefined}
       >
-        {error?.message ?? 'An error occurred'}
-      </Snackbar>
-      <Snackbar
-        visible={!!successSnackbar}
-        onDismiss={() => setSuccessSnackbar('')}
-        duration={3000}
-      >
-        {successSnackbar}
+        {snackbar?.message ?? ''}
       </Snackbar>
     </SafeAreaView>
   );

@@ -79,9 +79,20 @@ export async function updateSubscription(
       };
     }
 
+    const updatePayload: Record<string, unknown> = {};
+    if (dto.name !== undefined) updatePayload.name = dto.name;
+    if (dto.price !== undefined) updatePayload.price = dto.price;
+    if (dto.currency !== undefined) updatePayload.currency = dto.currency;
+    if (dto.billing_cycle !== undefined) updatePayload.billing_cycle = dto.billing_cycle;
+    if (dto.renewal_date !== undefined) updatePayload.renewal_date = dto.renewal_date;
+    if (dto.is_trial !== undefined) updatePayload.is_trial = dto.is_trial;
+    if ('trial_expiry_date' in dto) updatePayload.trial_expiry_date = dto.trial_expiry_date ?? null;
+    if ('category' in dto) updatePayload.category = dto.category ?? null;
+    if ('notes' in dto) updatePayload.notes = dto.notes ?? null;
+
     const { data, error } = await supabase
       .from('subscriptions')
-      .update(dto)
+      .update(updatePayload)
       .eq('id', id)
       .eq('user_id', user.id)
       .select()

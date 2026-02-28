@@ -1,6 +1,6 @@
 # Story 2.3: Edit Subscription Details
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -651,3 +651,4 @@ Claude Opus 4.6
 
 - 2026-02-28: Story 2.3 implemented — Edit subscription feature with swipe-to-edit, SubscriptionsStack navigation, form pre-fill, updateSubscription service/store, 11 new tests (5 SwipeableSubscriptionCard + 6 EditSubscriptionScreen)
 - 2026-02-28: Addressed 7 code review findings (3 HIGH, 2 MEDIUM, 2 LOW) — accessibility actions, success snackbar, back button disable during submit, non-null assertion fix, test improvements, animation comment, currency preservation. All 56 tests pass, 0 TypeScript errors, 0 ESLint warnings.
+- 2026-02-28: Second code review — addressed 5 additional findings (1 HIGH, 4 MEDIUM): (1) Fixed accessible View label to include detailed subscription info matching SubscriptionCard pattern, (2) Added registerTranslation to EditSubscriptionScreen for self-contained DatePickerInput support, (3) Explicit field mapping in updateSubscription service matching createSubscription pattern, (4) Consolidated dual Snackbar into single state in SubscriptionsScreen, (5) Added swipeable auto-close — opening one card closes previously opened card. All 56 tests pass, 0 TypeScript errors, 0 ESLint warnings.
