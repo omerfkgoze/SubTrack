@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Subscription, CreateSubscriptionDTO, AppError } from '@features/subscriptions/types';
+import type { Subscription, CreateSubscriptionDTO, AppError, BillingCycle } from '@features/subscriptions/types';
 import {
   createSubscription,
   updateSubscription,
@@ -94,14 +94,21 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
 
       deleteSubscription: async (id: string) => {
         const state = get();
-        const index = state.subscriptions.findIndex((s) => s.id === id);
+
+        // M1 fix: Clear existing pending delete — previous delete becomes permanent
+        if (state.pendingDelete) {
+          set({ pendingDelete: null });
+        }
+
+        const currentState = get();
+        const index = currentState.subscriptions.findIndex((s) => s.id === id);
         if (index === -1) return false;
 
-        const subscription = state.subscriptions[index];
+        const subscription = currentState.subscriptions[index];
 
         // Optimistic removal — instant UI feedback
         set({
-          subscriptions: state.subscriptions.filter((s) => s.id !== id),
+          subscriptions: currentState.subscriptions.filter((s) => s.id !== id),
           pendingDelete: { subscription, originalIndex: index },
           error: null,
         });
@@ -110,16 +117,20 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         const result = await deleteSubscription(id);
 
         if (result.error) {
-          // Restore on failure — splice back at original index
-          set((current) => {
-            const restored = [...current.subscriptions];
-            restored.splice(index, 0, subscription);
-            return {
-              subscriptions: restored,
-              pendingDelete: null,
-              error: result.error,
-            };
-          });
+          // Only restore if undo hasn't been called (pendingDelete still matches)
+          const current = get();
+          if (current.pendingDelete?.subscription.id === id) {
+            set((s) => {
+              const restored = [...s.subscriptions];
+              const insertIdx = Math.min(index, restored.length);
+              restored.splice(insertIdx, 0, subscription);
+              return {
+                subscriptions: restored,
+                pendingDelete: null,
+                error: result.error,
+              };
+            });
+          }
           return false;
         }
 
@@ -148,7 +159,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           name: subscription.name,
           price: subscription.price,
           currency: subscription.currency ?? undefined,
-          billing_cycle: subscription.billing_cycle as 'monthly' | 'yearly' | 'quarterly' | 'weekly',
+          billing_cycle: (subscription.billing_cycle ?? 'monthly') as BillingCycle,
           renewal_date: subscription.renewal_date,
           is_trial: subscription.is_trial ?? false,
           trial_expiry_date: subscription.trial_expiry_date ?? undefined,

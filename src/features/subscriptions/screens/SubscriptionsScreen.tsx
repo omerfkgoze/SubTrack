@@ -101,13 +101,18 @@ export function SubscriptionsScreen() {
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteDialogSubscription) return;
     const name = deleteDialogSubscription.name;
+    const id = deleteDialogSubscription.id;
     setDeleteDialogSubscription(null);
     setSnackbar(null);
 
-    const success = await storeDelete(deleteDialogSubscription.id);
-    if (success) {
-      setDeletedSubscriptionName(name);
-      setUndoSnackbarVisible(true);
+    // Show undo snackbar immediately for instant UX (AC3/AC7)
+    setDeletedSubscriptionName(name);
+    setUndoSnackbarVisible(true);
+
+    const success = await storeDelete(id);
+    if (!success) {
+      // Delete failed — store auto-restores, hide undo snackbar
+      setUndoSnackbarVisible(false);
     }
   }, [deleteDialogSubscription, storeDelete]);
 

@@ -1,6 +1,6 @@
 # Story 2.4: Delete Subscription
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -722,13 +722,23 @@ Claude Opus 4.6
 - src/features/subscriptions/components/DeleteConfirmationDialog.test.tsx
 - src/shared/components/feedback/UndoSnackbar.tsx
 - src/shared/components/feedback/UndoSnackbar.test.tsx
+- src/shared/components/feedback/index.ts — barrel export (review fix L1)
+- src/shared/stores/useSubscriptionStore.test.ts — store tests for delete/undo (review fix M3)
 
 **Modified:**
 - src/features/subscriptions/services/subscriptionService.ts — added `deleteSubscription` method
-- src/shared/stores/useSubscriptionStore.ts — added `deleteSubscription`, `undoDelete`, `clearPendingDelete` actions + `pendingDelete` state + `(set, get)` signature
-- src/features/subscriptions/screens/SubscriptionsScreen.tsx — added delete flow wiring: dialog, undo snackbar, handlers, `onDelete` callback
+- src/shared/stores/useSubscriptionStore.ts — added `deleteSubscription`, `undoDelete`, `clearPendingDelete` actions + `pendingDelete` state + `(set, get)` signature; review fixes: M1 (pendingDelete guard), M2 (failure handler guard), L2/L4 (BillingCycle type import + null safety)
+- src/features/subscriptions/screens/SubscriptionsScreen.tsx — added delete flow wiring: dialog, undo snackbar, handlers, `onDelete` callback; review fix M2 (immediate undo snackbar display)
 - src/features/subscriptions/index.ts — added `DeleteConfirmationDialog` and `deleteSubscription` exports
 
 ### Change Log
 
 - 2026-02-28: Implemented Story 2.4 Delete Subscription — full CRUD operation for subscriptions with optimistic delete, undo support via 5-second snackbar, confirmation dialog, error recovery with automatic restore
+- 2026-03-01: Code Review — Fixed 3 MEDIUM + 4 LOW issues:
+  - M1: Fixed race condition where rapid sequential deletes overwrote pendingDelete silently
+  - M2: Fixed undo snackbar appearing only after API call instead of immediately (AC3/AC7 violation); added guard to prevent double-restore if undo was called before delete API completes
+  - M3: Added 11 store tests for deleteSubscription, undoDelete, clearPendingDelete including race condition scenarios
+  - L1: Created barrel export src/shared/components/feedback/index.ts
+  - L2: Replaced inline BillingCycle type cast with imported BillingCycle type
+  - L3: Used Math.min for consistent index clamping in failure handler
+  - L4: Added null safety fallback for billing_cycle in undoDelete
