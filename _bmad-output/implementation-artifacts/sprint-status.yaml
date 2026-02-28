@@ -55,7 +55,7 @@ development_status:
   epic-2: in-progress
   2-1-add-new-subscription: done
   2-2-view-subscription-list: done
-  2-3-edit-subscription-details: review
+  2-3-edit-subscription-details: in-progress
   2-4-delete-subscription: backlog
   2-5-trial-period-tracking: backlog
   2-6-subscription-categories: backlog

@@ -1,6 +1,6 @@
 # Story 2.3: Edit Subscription Details
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -99,6 +99,16 @@ so that I can keep my information accurate when prices change or details update.
   - [x] 7.2 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
   - [x] 7.3 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
   - [x] 7.4 Run existing tests: `npx jest` — all pass (no regressions)
+
+### Review Follow-ups (AI)
+
+- [ ] [AI-Review][HIGH] AC9: Add `accessibilityActions` and `onAccessibilityAction` handler to SwipeableSubscriptionCard for screen reader users who cannot swipe [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`]
+- [ ] [AI-Review][HIGH] AC5: Implement success Snackbar after returning from edit — `setSuccessSnackbar` is never called; add navigation focus listener to detect return from EditSubscription and show "Subscription updated" message [`src/features/subscriptions/screens/SubscriptionsScreen.tsx:34`]
+- [ ] [AI-Review][HIGH] AC7: Disable header back button during `isSubmitting` via `navigation.setOptions({ headerBackVisible: false })` or `gestureEnabled: false` to prevent data loss [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx`]
+- [ ] [AI-Review][MEDIUM] Remove non-null assertion `result.data!` in updateSubscription store action — use a const assignment with early return or type narrowing instead (contradicts Story 2.2 review fix) [`src/shared/stores/useSubscriptionStore.ts:81`]
+- [ ] [AI-Review][MEDIUM] Improve test assertions: (1) successful submit test should verify `mockGoBack` was called, (2) failed submit test should verify snackbar error message is displayed [`src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx:97-133`]
+- [ ] [AI-Review][LOW] AC1: Spring animation spec says "damping: 20" but Swipeable uses `friction={2}` — verify with UX spec if current behavior is acceptable [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx:56-57`]
+- [ ] [AI-Review][LOW] Currency is hardcoded to 'EUR' on edit submit — if subscription had different currency, it would be overwritten [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx:78`]
 
 ## Dev Notes
 
