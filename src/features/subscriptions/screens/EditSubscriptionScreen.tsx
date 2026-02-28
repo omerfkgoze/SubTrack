@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import {
   Text,
@@ -65,6 +65,13 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
     },
   });
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerBackVisible: !isSubmitting,
+      gestureEnabled: !isSubmitting,
+    });
+  }, [isSubmitting, navigation]);
+
   const isTrial = watch('is_trial');
   const selectedCategory = watch('category');
 
@@ -75,7 +82,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
       const success = await updateSubscription(subscriptionId, {
         name: data.name,
         price: data.price,
-        currency: 'EUR',
+        currency: subscription?.currency ?? 'EUR',
         billing_cycle: data.billing_cycle,
         renewal_date: data.renewal_date,
         is_trial: data.is_trial,
@@ -85,7 +92,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
       });
 
       if (success) {
-        navigation.goBack();
+        navigation.navigate('SubscriptionsList', { updated: true });
       } else {
         const errorMsg =
           useSubscriptionStore.getState().error?.message ?? 'Failed to update subscription.';
@@ -93,7 +100,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
         clearError();
       }
     },
-    [updateSubscription, clearError, navigation, subscriptionId],
+    [updateSubscription, clearError, navigation, subscriptionId, subscription?.currency],
   );
 
   if (!subscription) {

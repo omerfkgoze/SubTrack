@@ -76,9 +76,10 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           return false;
         }
 
+        const updatedSubscription = result.data;
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? result.data! : sub
+            sub.id === id ? updatedSubscription : sub
           ),
           isSubmitting: false,
         }));

@@ -1,6 +1,6 @@
 # Story 2.3: Edit Subscription Details
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -102,13 +102,13 @@ so that I can keep my information accurate when prices change or details update.
 
 ### Review Follow-ups (AI)
 
-- [ ] [AI-Review][HIGH] AC9: Add `accessibilityActions` and `onAccessibilityAction` handler to SwipeableSubscriptionCard for screen reader users who cannot swipe [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`]
-- [ ] [AI-Review][HIGH] AC5: Implement success Snackbar after returning from edit — `setSuccessSnackbar` is never called; add navigation focus listener to detect return from EditSubscription and show "Subscription updated" message [`src/features/subscriptions/screens/SubscriptionsScreen.tsx:34`]
-- [ ] [AI-Review][HIGH] AC7: Disable header back button during `isSubmitting` via `navigation.setOptions({ headerBackVisible: false })` or `gestureEnabled: false` to prevent data loss [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx`]
-- [ ] [AI-Review][MEDIUM] Remove non-null assertion `result.data!` in updateSubscription store action — use a const assignment with early return or type narrowing instead (contradicts Story 2.2 review fix) [`src/shared/stores/useSubscriptionStore.ts:81`]
-- [ ] [AI-Review][MEDIUM] Improve test assertions: (1) successful submit test should verify `mockGoBack` was called, (2) failed submit test should verify snackbar error message is displayed [`src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx:97-133`]
-- [ ] [AI-Review][LOW] AC1: Spring animation spec says "damping: 20" but Swipeable uses `friction={2}` — verify with UX spec if current behavior is acceptable [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx:56-57`]
-- [ ] [AI-Review][LOW] Currency is hardcoded to 'EUR' on edit submit — if subscription had different currency, it would be overwritten [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx:78`]
+- [x] [AI-Review][HIGH] AC9: Add `accessibilityActions` and `onAccessibilityAction` handler to SwipeableSubscriptionCard for screen reader users who cannot swipe [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx`]
+- [x] [AI-Review][HIGH] AC5: Implement success Snackbar after returning from edit — `setSuccessSnackbar` is never called; add navigation focus listener to detect return from EditSubscription and show "Subscription updated" message [`src/features/subscriptions/screens/SubscriptionsScreen.tsx:34`]
+- [x] [AI-Review][HIGH] AC7: Disable header back button during `isSubmitting` via `navigation.setOptions({ headerBackVisible: false })` or `gestureEnabled: false` to prevent data loss [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx`]
+- [x] [AI-Review][MEDIUM] Remove non-null assertion `result.data!` in updateSubscription store action — use a const assignment with early return or type narrowing instead (contradicts Story 2.2 review fix) [`src/shared/stores/useSubscriptionStore.ts:81`]
+- [x] [AI-Review][MEDIUM] Improve test assertions: (1) successful submit test should verify `mockGoBack` was called, (2) failed submit test should verify snackbar error message is displayed [`src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx:97-133`]
+- [x] [AI-Review][LOW] AC1: Spring animation spec says "damping: 20" but Swipeable uses `friction={2}` — verify with UX spec if current behavior is acceptable [`src/features/subscriptions/components/SwipeableSubscriptionCard.tsx:56-57`]
+- [x] [AI-Review][LOW] Currency is hardcoded to 'EUR' on edit submit — if subscription had different currency, it would be overwritten [`src/features/subscriptions/screens/EditSubscriptionScreen.tsx:78`]
 
 ## Dev Notes
 
@@ -621,6 +621,13 @@ Claude Opus 4.6
 - Task 5: Created `EditSubscriptionScreen` with full form pre-fill via `defaultValues`, Zod validation (reusing `createSubscriptionSchema`), error Snackbar with Retry action, subscription-not-found guard
 - Task 6: Updated `SubscriptionsScreen` to use `SwipeableSubscriptionCard`, added edit navigation via `CompositeNavigationProp`, card tap also navigates to edit, success Snackbar added
 - Task 7: Updated feature exports, verified TypeScript (0 errors), ESLint (0 errors/warnings), Jest (54/54 tests pass, 0 regressions)
+- ✅ Resolved review finding [HIGH]: Added `accessibilityActions` and `onAccessibilityAction` to SwipeableSubscriptionCard wrapper View for screen reader users
+- ✅ Resolved review finding [HIGH]: Implemented success Snackbar via route param `updated` — EditSubscriptionScreen navigates with `{ updated: true }`, SubscriptionsScreen reads param and shows "Subscription updated"
+- ✅ Resolved review finding [HIGH]: Disabled header back button and swipe-back gesture during `isSubmitting` via `navigation.setOptions({ headerBackVisible, gestureEnabled })`
+- ✅ Resolved review finding [MEDIUM]: Removed non-null assertion `result.data!` — replaced with const assignment `updatedSubscription` for type safety
+- ✅ Resolved review finding [MEDIUM]: Improved test assertions — successful submit now verifies `mockNavigate` called with correct params, failed submit verifies error snackbar message displayed
+- ✅ Resolved review finding [LOW]: Added comment explaining friction vs damping difference (classic Swipeable uses friction, not Reanimated damping)
+- ✅ Resolved review finding [LOW]: Replaced hardcoded 'EUR' currency with `subscription?.currency ?? 'EUR'` to preserve existing currency on edit
 
 ### File List
 
@@ -635,11 +642,12 @@ Claude Opus 4.6
 - `src/features/subscriptions/services/subscriptionService.ts` — Added `updateSubscription` method
 - `src/shared/stores/useSubscriptionStore.ts` — Added `updateSubscription` action and import
 - `src/features/subscriptions/types/index.ts` — Added `UpdateSubscriptionDTO` type
-- `src/app/navigation/types.ts` — Added `SubscriptionsStackParamList`, `SubscriptionsStackScreenProps`, updated `MainTabsParamList`
+- `src/app/navigation/types.ts` — Added `SubscriptionsStackParamList`, `SubscriptionsStackScreenProps`, updated `MainTabsParamList`; updated `SubscriptionsList` params to accept `{ updated?: boolean }`
 - `src/app/navigation/MainTabs.tsx` — Replaced `SubscriptionsScreen` with `SubscriptionsStack`
-- `src/features/subscriptions/screens/SubscriptionsScreen.tsx` — Replaced `SubscriptionCard` with `SwipeableSubscriptionCard`, added edit navigation, success Snackbar
+- `src/features/subscriptions/screens/SubscriptionsScreen.tsx` — Replaced `SubscriptionCard` with `SwipeableSubscriptionCard`, added edit navigation, success Snackbar via route param listener
 - `src/features/subscriptions/index.ts` — Added new exports (`EditSubscriptionScreen`, `SwipeableSubscriptionCard`, `UpdateSubscriptionDTO`, `updateSubscription`)
 
 ### Change Log
 
 - 2026-02-28: Story 2.3 implemented — Edit subscription feature with swipe-to-edit, SubscriptionsStack navigation, form pre-fill, updateSubscription service/store, 11 new tests (5 SwipeableSubscriptionCard + 6 EditSubscriptionScreen)
+- 2026-02-28: Addressed 7 code review findings (3 HIGH, 2 MEDIUM, 2 LOW) — accessibility actions, success snackbar, back button disable during submit, non-null assertion fix, test improvements, animation comment, currency preservation. All 56 tests pass, 0 TypeScript errors, 0 ESLint warnings.

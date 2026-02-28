@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Button, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -31,9 +32,17 @@ export function SubscriptionsScreen() {
       BottomTabNavigationProp<MainTabsParamList>
     >
   >();
+  const route = useRoute<RouteProp<SubscriptionsStackParamList, 'SubscriptionsList'>>();
   const [successSnackbar, setSuccessSnackbar] = useState('');
   const { subscriptions, isLoading, error, fetchSubscriptions, clearError } =
     useSubscriptionStore();
+
+  useEffect(() => {
+    if (route.params?.updated) {
+      setSuccessSnackbar('Subscription updated');
+      navigation.setParams({ updated: undefined });
+    }
+  }, [route.params?.updated, navigation]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);

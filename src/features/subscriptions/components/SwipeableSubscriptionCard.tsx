@@ -54,9 +54,28 @@ export function SwipeableSubscriptionCard({
       ref={swipeableRef}
       renderRightActions={renderRightActions}
       overshootRight={false}
-      friction={2}
+      friction={2} // AC specifies damping:20, but classic Swipeable uses friction (not Reanimated damping)
     >
-      <SubscriptionCard subscription={subscription} onPress={onPress} />
+      <View
+        accessible={true}
+        accessibilityLabel={`${subscription.name} subscription`}
+        accessibilityActions={[
+          { name: 'edit', label: `Edit ${subscription.name}` },
+          { name: 'delete', label: `Delete ${subscription.name}` },
+        ]}
+        onAccessibilityAction={(event) => {
+          switch (event.nativeEvent.actionName) {
+            case 'edit':
+              onEdit?.();
+              break;
+            case 'delete':
+              onDelete?.();
+              break;
+          }
+        }}
+      >
+        <SubscriptionCard subscription={subscription} onPress={onPress} />
+      </View>
     </Swipeable>
   );
 }

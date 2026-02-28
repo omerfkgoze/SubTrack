@@ -79,4 +79,24 @@ describe('SwipeableSubscriptionCard', () => {
     expect(screen.getByText('Edit')).toBeTruthy();
     expect(screen.getByText('Delete')).toBeTruthy();
   });
+
+  it('calls onEdit via accessibilityAction', () => {
+    const onEdit = jest.fn();
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} onEdit={onEdit} />,
+    );
+    const wrapper = screen.getByLabelText(`${mockSubscription.name} subscription`);
+    fireEvent(wrapper, 'accessibilityAction', { nativeEvent: { actionName: 'edit' } });
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onDelete via accessibilityAction', () => {
+    const onDelete = jest.fn();
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} onDelete={onDelete} />,
+    );
+    const wrapper = screen.getByLabelText(`${mockSubscription.name} subscription`);
+    fireEvent(wrapper, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
 });

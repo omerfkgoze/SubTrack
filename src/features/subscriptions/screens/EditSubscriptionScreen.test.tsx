@@ -33,7 +33,8 @@ jest.mock('react-native-paper-dates', () => ({
 const { EditSubscriptionScreen } = require('./EditSubscriptionScreen');
 
 const mockGoBack = jest.fn();
-const mockNavigation = { goBack: mockGoBack } as never;
+const mockSetOptions = jest.fn();
+const mockNavigation = { goBack: mockGoBack, setOptions: mockSetOptions, navigate: jest.fn() } as never;
 
 const mockSubscription: Subscription = {
   id: 'sub-1',
@@ -96,6 +97,9 @@ describe('EditSubscriptionScreen', () => {
 
   it('calls updateSubscription and navigates back on successful submit', async () => {
     const mockUpdate = jest.fn().mockResolvedValue(true);
+    const mockNavigate = jest.fn();
+    const navWithNavigate = { goBack: mockGoBack, setOptions: mockSetOptions, navigate: mockNavigate } as never;
+
     useSubscriptionStore.setState({
       subscriptions: [mockSubscription],
       isSubmitting: false,
@@ -103,7 +107,12 @@ describe('EditSubscriptionScreen', () => {
       updateSubscription: mockUpdate,
     });
 
-    renderWithProvider('sub-1');
+    const route = { params: { subscriptionId: 'sub-1' }, key: 'test', name: 'EditSubscription' as const };
+    render(
+      <PaperProvider theme={theme}>
+        <EditSubscriptionScreen route={route} navigation={navWithNavigate} />
+      </PaperProvider>,
+    );
     fireEvent.press(screen.getByText('Save Changes'));
 
     await waitFor(() => {
@@ -111,6 +120,7 @@ describe('EditSubscriptionScreen', () => {
         name: 'Netflix',
         price: 17.99,
       }));
+      expect(mockNavigate).toHaveBeenCalledWith('SubscriptionsList', { updated: true });
     });
   });
 
@@ -129,6 +139,10 @@ describe('EditSubscriptionScreen', () => {
 
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to update subscription. Please try again.')).toBeTruthy();
     });
   });
 });
