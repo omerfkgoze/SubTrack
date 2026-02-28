@@ -1,6 +1,6 @@
 # Story 2.4: Delete Subscription
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -32,53 +32,53 @@ so that my list stays clean and relevant.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `deleteSubscription` Service Method (AC: #3, #6)
-  - [ ] 1.1 Add `deleteSubscription(id: string)` to `src/features/subscriptions/services/subscriptionService.ts`
-  - [ ] 1.2 Method uses `supabase.from('subscriptions').delete().eq('id', id).eq('user_id', userId).select().single()`
-  - [ ] 1.3 Returns `SubscriptionResult` (same pattern as create/update) — returns deleted row data for undo capability
-  - [ ] 1.4 Error handling: AUTH_ERROR, DB_ERROR, NETWORK_ERROR (same pattern)
+- [x] Task 1: Add `deleteSubscription` Service Method (AC: #3, #6)
+  - [x] 1.1 Add `deleteSubscription(id: string)` to `src/features/subscriptions/services/subscriptionService.ts`
+  - [x] 1.2 Method uses `supabase.from('subscriptions').delete().eq('id', id).eq('user_id', userId).select().single()`
+  - [x] 1.3 Returns `SubscriptionResult` (same pattern as create/update) — returns deleted row data for undo capability
+  - [x] 1.4 Error handling: AUTH_ERROR, DB_ERROR, NETWORK_ERROR (same pattern)
 
-- [ ] Task 2: Add `deleteSubscription` Store Action (AC: #3, #4, #5, #6, #7)
-  - [ ] 2.1 Add `deleteSubscription(id: string)` action to `useSubscriptionStore`
-  - [ ] 2.2 Optimistic removal: immediately filter out subscription from `subscriptions` array, store removed item + original index for undo
-  - [ ] 2.3 Call `deleteSubscription` service in background
-  - [ ] 2.4 On failure: restore subscription to original position in array, set error
-  - [ ] 2.5 Add `undoDelete()` action: re-insert cached subscription at original index, call `createSubscription` service to restore server-side if needed
-  - [ ] 2.6 Add `pendingDelete` state: `{ subscription: Subscription; originalIndex: number } | null` — tracks the subscription being deleted for undo
-  - [ ] 2.7 Add `clearPendingDelete()` action: called when undo timer expires, clears cached data
+- [x] Task 2: Add `deleteSubscription` Store Action (AC: #3, #4, #5, #6, #7)
+  - [x] 2.1 Add `deleteSubscription(id: string)` action to `useSubscriptionStore`
+  - [x] 2.2 Optimistic removal: immediately filter out subscription from `subscriptions` array, store removed item + original index for undo
+  - [x] 2.3 Call `deleteSubscription` service in background
+  - [x] 2.4 On failure: restore subscription to original position in array, set error
+  - [x] 2.5 Add `undoDelete()` action: re-insert cached subscription at original index, call `createSubscription` service to restore server-side if needed
+  - [x] 2.6 Add `pendingDelete` state: `{ subscription: Subscription; originalIndex: number } | null` — tracks the subscription being deleted for undo
+  - [x] 2.7 Add `clearPendingDelete()` action: called when undo timer expires, clears cached data
 
-- [ ] Task 3: Create Delete Confirmation Dialog Component (AC: #2, #8)
-  - [ ] 3.1 Create `src/features/subscriptions/components/DeleteConfirmationDialog.tsx`
-  - [ ] 3.2 Uses React Native Paper `Dialog` + `Portal` pattern
-  - [ ] 3.3 Props: `visible: boolean`, `subscriptionName: string`, `onConfirm: () => void`, `onDismiss: () => void`
-  - [ ] 3.4 Trash icon, title "Delete [name]?", body text about undo, Cancel + Delete buttons
-  - [ ] 3.5 Delete button: red/destructive style (`buttonColor: theme.colors.error`)
-  - [ ] 3.6 Accessibility labels on all interactive elements
+- [x] Task 3: Create Delete Confirmation Dialog Component (AC: #2, #8)
+  - [x] 3.1 Create `src/features/subscriptions/components/DeleteConfirmationDialog.tsx`
+  - [x] 3.2 Uses React Native Paper `Dialog` + `Portal` pattern
+  - [x] 3.3 Props: `visible: boolean`, `subscriptionName: string`, `onConfirm: () => void`, `onDismiss: () => void`
+  - [x] 3.4 Trash icon, title "Delete [name]?", body text about undo, Cancel + Delete buttons
+  - [x] 3.5 Delete button: red/destructive style (`buttonColor: theme.colors.error`)
+  - [x] 3.6 Accessibility labels on all interactive elements
 
-- [ ] Task 4: Create UndoSnackbar Component (AC: #3, #4, #5, #8)
-  - [ ] 4.1 Create `src/shared/components/feedback/UndoSnackbar.tsx` (shared — reusable for future destructive operations)
-  - [ ] 4.2 Props: `visible`, `message`, `onUndo`, `onDismiss`, `duration` (default 5000ms)
-  - [ ] 4.3 Uses React Native Paper `Snackbar` with "UNDO" action button
-  - [ ] 4.4 Auto-dismiss after `duration` ms — calls `onDismiss` when timer expires
-  - [ ] 4.5 Accessibility: `accessibilityLabel` on undo action
-  - [ ] 4.6 Create `src/shared/components/feedback/UndoSnackbar.test.tsx`
+- [x] Task 4: Create UndoSnackbar Component (AC: #3, #4, #5, #8)
+  - [x] 4.1 Create `src/shared/components/feedback/UndoSnackbar.tsx` (shared — reusable for future destructive operations)
+  - [x] 4.2 Props: `visible`, `message`, `onUndo`, `onDismiss`, `duration` (default 5000ms)
+  - [x] 4.3 Uses React Native Paper `Snackbar` with "UNDO" action button
+  - [x] 4.4 Auto-dismiss after `duration` ms — calls `onDismiss` when timer expires
+  - [x] 4.5 Accessibility: `accessibilityLabel` on undo action
+  - [x] 4.6 Create `src/shared/components/feedback/UndoSnackbar.test.tsx`
 
-- [ ] Task 5: Wire Delete Flow in SubscriptionsScreen (AC: #1, #2, #3, #4, #5, #6, #7)
-  - [ ] 5.1 Add `handleDelete(subscription)` function: sets `selectedSubscription` state, opens confirmation dialog
-  - [ ] 5.2 Pass `onDelete` callback to SwipeableSubscriptionCard: `() => handleDelete(subscription)`
-  - [ ] 5.3 On dialog confirm: call `store.deleteSubscription(id)`, close dialog, show UndoSnackbar
-  - [ ] 5.4 On undo tap: call `store.undoDelete()`, dismiss snackbar
-  - [ ] 5.5 On snackbar dismiss (timer expiry): call `store.clearPendingDelete()`
-  - [ ] 5.6 On delete error: show error Snackbar (reuse existing error snackbar pattern)
-  - [ ] 5.7 Manage dialog and snackbar visibility state
+- [x] Task 5: Wire Delete Flow in SubscriptionsScreen (AC: #1, #2, #3, #4, #5, #6, #7)
+  - [x] 5.1 Add `handleDelete(subscription)` function: sets `selectedSubscription` state, opens confirmation dialog
+  - [x] 5.2 Pass `onDelete` callback to SwipeableSubscriptionCard: `() => handleDelete(subscription)`
+  - [x] 5.3 On dialog confirm: call `store.deleteSubscription(id)`, close dialog, show UndoSnackbar
+  - [x] 5.4 On undo tap: call `store.undoDelete()`, dismiss snackbar
+  - [x] 5.5 On snackbar dismiss (timer expiry): call `store.clearPendingDelete()`
+  - [x] 5.6 On delete error: show error Snackbar (reuse existing error snackbar pattern)
+  - [x] 5.7 Manage dialog and snackbar visibility state
 
-- [ ] Task 6: Update Feature Exports and Tests (AC: all)
-  - [ ] 6.1 Update `src/features/subscriptions/index.ts` with new exports: `DeleteConfirmationDialog`
-  - [ ] 6.2 Update `src/shared/components/feedback/` — ensure index exports UndoSnackbar
-  - [ ] 6.3 Create `src/features/subscriptions/components/DeleteConfirmationDialog.test.tsx`
-  - [ ] 6.4 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
-  - [ ] 6.5 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
-  - [ ] 6.6 Run all tests: `npx jest` — all pass (no regressions)
+- [x] Task 6: Update Feature Exports and Tests (AC: all)
+  - [x] 6.1 Update `src/features/subscriptions/index.ts` with new exports: `DeleteConfirmationDialog`
+  - [x] 6.2 Update `src/shared/components/feedback/` — ensure index exports UndoSnackbar
+  - [x] 6.3 Create `src/features/subscriptions/components/DeleteConfirmationDialog.test.tsx`
+  - [x] 6.4 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
+  - [x] 6.5 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
+  - [x] 6.6 Run all tests: `npx jest` — all pass (no regressions)
 
 ## Dev Notes
 
@@ -697,10 +697,38 @@ ca2db1a story 2.3 in review
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Fixed TypeScript error: `Dialog` component does not accept `accessibilityLabel` prop directly — removed from Dialog, accessibility handled via Dialog.Title content
+- Fixed TypeScript error: `subscription.currency` is `string | null` but DTO expects `string | undefined` — added `?? undefined` coercion
+- Fixed non-null assertion per Story 2.3 review finding: used `const serverSubscription = result.data` with type narrowing instead of `result.data!`
+- Fixed UndoSnackbar timer test: Paper Snackbar uses internal timing that doesn't advance with `jest.advanceTimersByTime` — switched to `jest.runAllTimers()`
+
 ### Completion Notes List
 
+- Task 1: Added `deleteSubscription` service method following exact pattern of create/update — AUTH_ERROR, DB_ERROR, NETWORK_ERROR handling, returns deleted row via `.select().single()` for undo capability
+- Task 2: Added `deleteSubscription`, `undoDelete`, `clearPendingDelete` actions + `pendingDelete` state to Zustand store. Changed `(set)` to `(set, get)` for reading current state. Optimistic removal with rollback on failure. Undo re-creates via `createSubscription` service.
+- Task 3: Created DeleteConfirmationDialog with Portal+Dialog pattern, trash-can-outline icon, Cancel/Delete buttons, theme.colors.error for destructive button, accessibility labels
+- Task 4: Created shared UndoSnackbar in `shared/components/feedback/` with Paper Snackbar, UNDO action, configurable duration (default 5000ms), accessibility labels
+- Task 5: Wired complete delete flow in SubscriptionsScreen: handleDelete opens dialog, handleConfirmDelete calls store + shows undo snackbar, handleUndoDelete restores, handleUndoDismiss clears pending state. Existing snackbar hidden when undo snackbar is visible to prevent overlap.
+- Task 6: Updated feature exports, created 10 new tests (6 for DeleteConfirmationDialog, 4 for UndoSnackbar). All 66 tests pass. TypeScript and ESLint clean.
+
 ### File List
+
+**Created:**
+- src/features/subscriptions/components/DeleteConfirmationDialog.tsx
+- src/features/subscriptions/components/DeleteConfirmationDialog.test.tsx
+- src/shared/components/feedback/UndoSnackbar.tsx
+- src/shared/components/feedback/UndoSnackbar.test.tsx
+
+**Modified:**
+- src/features/subscriptions/services/subscriptionService.ts — added `deleteSubscription` method
+- src/shared/stores/useSubscriptionStore.ts — added `deleteSubscription`, `undoDelete`, `clearPendingDelete` actions + `pendingDelete` state + `(set, get)` signature
+- src/features/subscriptions/screens/SubscriptionsScreen.tsx — added delete flow wiring: dialog, undo snackbar, handlers, `onDelete` callback
+- src/features/subscriptions/index.ts — added `DeleteConfirmationDialog` and `deleteSubscription` exports
+
+### Change Log
+
+- 2026-02-28: Implemented Story 2.4 Delete Subscription — full CRUD operation for subscriptions with optimistic delete, undo support via 5-second snackbar, confirmation dialog, error recovery with automatic restore

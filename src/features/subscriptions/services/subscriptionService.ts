@@ -151,6 +151,52 @@ export async function getSubscriptions(): Promise<SubscriptionListResult> {
   }
 }
 
+export async function deleteSubscription(id: string): Promise<SubscriptionResult> {
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        data: null,
+        error: { code: 'AUTH_ERROR', message: 'Please log in to delete subscriptions.' },
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('Supabase delete error:', error.message, error.code, error.details);
+      return {
+        data: null,
+        error: { code: 'DB_ERROR', message: 'Failed to delete subscription. Please try again.' },
+      };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    const isNetwork = err instanceof TypeError;
+    return {
+      data: null,
+      error: {
+        code: isNetwork ? 'NETWORK_ERROR' : 'UNKNOWN',
+        message: isNetwork
+          ? 'No internet connection. Please try again.'
+          : 'An error occurred. Please try again.',
+      },
+    };
+  }
+}
+
 export async function getSubscriptionCount(): Promise<number> {
   try {
     const { count, error } = await supabase

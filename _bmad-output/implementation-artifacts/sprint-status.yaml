@@ -56,7 +56,7 @@ development_status:
   2-1-add-new-subscription: done
   2-2-view-subscription-list: done
   2-3-edit-subscription-details: done
-  2-4-delete-subscription: ready-for-dev
+  2-4-delete-subscription: review
   2-5-trial-period-tracking: backlog
   2-6-subscription-categories: backlog
   2-7-subscription-status-management: backlog

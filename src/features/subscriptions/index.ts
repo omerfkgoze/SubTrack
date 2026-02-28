@@ -5,10 +5,12 @@ export { SubscriptionsScreen } from './screens/SubscriptionsScreen';
 export { SubscriptionCard } from './components/SubscriptionCard';
 export { SwipeableSubscriptionCard } from './components/SwipeableSubscriptionCard';
 export { CostSummaryHeader } from './components/CostSummaryHeader';
+export { DeleteConfirmationDialog } from './components/DeleteConfirmationDialog';
 export type { Subscription, CreateSubscriptionDTO, UpdateSubscriptionDTO, AppError } from './types';
 export {
   createSubscription,
   updateSubscription,
+  deleteSubscription,
   getSubscriptions,
   getSubscriptionCount,
 } from './services/subscriptionService';

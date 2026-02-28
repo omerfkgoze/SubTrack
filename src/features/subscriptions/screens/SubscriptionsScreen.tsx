@@ -15,6 +15,8 @@ import { SwipeableSubscriptionCard } from '@features/subscriptions/components/Sw
 import { CostSummaryHeader } from '@features/subscriptions/components/CostSummaryHeader';
 import { EmptySubscriptionState } from '@features/subscriptions/components/EmptySubscriptionState';
 import { SubscriptionListSkeleton } from '@features/subscriptions/components/SubscriptionListSkeleton';
+import { DeleteConfirmationDialog } from '@features/subscriptions/components/DeleteConfirmationDialog';
+import { UndoSnackbar } from '@shared/components/feedback/UndoSnackbar';
 
 const CARD_HEIGHT = 72;
 const SEPARATOR_HEIGHT = 12;
@@ -34,8 +36,13 @@ export function SubscriptionsScreen() {
   >();
   const route = useRoute<RouteProp<SubscriptionsStackParamList, 'SubscriptionsList'>>();
   const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const { subscriptions, isLoading, error, fetchSubscriptions, clearError } =
-    useSubscriptionStore();
+  const [deleteDialogSubscription, setDeleteDialogSubscription] = useState<Subscription | null>(null);
+  const [undoSnackbarVisible, setUndoSnackbarVisible] = useState(false);
+  const [deletedSubscriptionName, setDeletedSubscriptionName] = useState('');
+  const {
+    subscriptions, isLoading, error, fetchSubscriptions, clearError,
+    deleteSubscription: storeDelete, undoDelete, clearPendingDelete,
+  } = useSubscriptionStore();
 
   useEffect(() => {
     if (route.params?.updated) {
@@ -87,6 +94,33 @@ export function SubscriptionsScreen() {
     [navigation],
   );
 
+  const handleDelete = useCallback((subscription: Subscription) => {
+    setDeleteDialogSubscription(subscription);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteDialogSubscription) return;
+    const name = deleteDialogSubscription.name;
+    setDeleteDialogSubscription(null);
+    setSnackbar(null);
+
+    const success = await storeDelete(deleteDialogSubscription.id);
+    if (success) {
+      setDeletedSubscriptionName(name);
+      setUndoSnackbarVisible(true);
+    }
+  }, [deleteDialogSubscription, storeDelete]);
+
+  const handleUndoDelete = useCallback(async () => {
+    setUndoSnackbarVisible(false);
+    await undoDelete();
+  }, [undoDelete]);
+
+  const handleUndoDismiss = useCallback(() => {
+    setUndoSnackbarVisible(false);
+    clearPendingDelete();
+  }, [clearPendingDelete]);
+
   const totalMonthlyCost = calculateTotalMonthlyCost(subscriptions);
   const activeCount = subscriptions.filter((s) => s.is_active !== false).length;
 
@@ -95,11 +129,12 @@ export function SubscriptionsScreen() {
       <SwipeableSubscriptionCard
         subscription={item}
         onEdit={() => handleEdit(item.id)}
+        onDelete={() => handleDelete(item)}
         onPress={() => handleEdit(item.id)}
         onSwipeableOpen={handleSwipeableOpen}
       />
     ),
-    [handleEdit, handleSwipeableOpen],
+    [handleEdit, handleDelete, handleSwipeableOpen],
   );
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
@@ -174,13 +209,25 @@ export function SubscriptionsScreen() {
         accessibilityLiveRegion="polite"
       />
       <Snackbar
-        visible={!!snackbar}
+        visible={!!snackbar && !undoSnackbarVisible}
         onDismiss={() => setSnackbar(null)}
         duration={snackbar?.type === 'error' ? 4000 : 3000}
         action={snackbar?.type === 'error' ? { label: 'Retry', onPress: handleRetry } : undefined}
       >
         {snackbar?.message ?? ''}
       </Snackbar>
+      <DeleteConfirmationDialog
+        visible={!!deleteDialogSubscription}
+        subscriptionName={deleteDialogSubscription?.name ?? ''}
+        onConfirm={handleConfirmDelete}
+        onDismiss={() => setDeleteDialogSubscription(null)}
+      />
+      <UndoSnackbar
+        visible={undoSnackbarVisible}
+        message={`${deletedSubscriptionName} deleted`}
+        onUndo={handleUndoDelete}
+        onDismiss={handleUndoDismiss}
+      />
     </SafeAreaView>
   );
 }
