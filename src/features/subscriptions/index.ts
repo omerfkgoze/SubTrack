@@ -7,6 +7,7 @@ export { SwipeableSubscriptionCard } from './components/SwipeableSubscriptionCar
 export { CostSummaryHeader } from './components/CostSummaryHeader';
 export { DeleteConfirmationDialog } from './components/DeleteConfirmationDialog';
 export { TrialBadge } from './components/TrialBadge';
+export { CategoryChip } from './components/CategoryChip';
 export type { Subscription, CreateSubscriptionDTO, UpdateSubscriptionDTO, AppError } from './types';
 export {
   createSubscription,

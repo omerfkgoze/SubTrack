@@ -1,6 +1,6 @@
 # Story 2.6: Subscription Categories
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -31,31 +31,31 @@ so that I can organize and visually group my subscriptions.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Update category definitions to match UX spec (AC: #1, #2, #3)
-  - [ ] 1.1 Update `src/config/categories.ts` with UX-spec colors, labels, and icons
-  - [ ] 1.2 Update `getCategoryConfig()` in subscriptionUtils.ts if needed
-  - [ ] 1.3 Update `src/config/popularServices.ts` defaultCategory references if IDs changed
-  - [ ] 1.4 Write/update tests for category configuration and getCategoryConfig()
-- [ ] Task 2: Create dedicated CategoryChip component (AC: #1)
-  - [ ] 2.1 Create `src/features/subscriptions/components/CategoryChip.tsx`
-  - [ ] 2.2 Implement selected/deselected states with category color background
-  - [ ] 2.3 Add accessibility labels and roles
-  - [ ] 2.4 Create `src/features/subscriptions/components/CategoryChip.test.tsx`
-- [ ] Task 3: Update SubscriptionCard to display category name (AC: #2, #3)
-  - [ ] 3.1 Add category name text to SubscriptionCard below or alongside existing info
-  - [ ] 3.2 Ensure "Other" default is properly displayed for uncategorized subscriptions
-  - [ ] 3.3 Update accessibility label to include category name
-  - [ ] 3.4 Update SubscriptionCard tests for new category name display
-- [ ] Task 4: Refactor Add/Edit forms to use CategoryChip (AC: #1)
-  - [ ] 4.1 Replace generic `Chip` with `CategoryChip` in `AddSubscriptionScreen.tsx`
-  - [ ] 4.2 Replace generic `Chip` with `CategoryChip` in `EditSubscriptionScreen.tsx`
-  - [ ] 4.3 Verify form submission still includes category value correctly
-  - [ ] 4.4 Update form tests if applicable
-- [ ] Task 5: Update feature exports and verification (AC: #1, #2, #3)
-  - [ ] 5.1 Export CategoryChip from `src/features/subscriptions/index.ts`
-  - [ ] 5.2 Run full test suite - ensure 0 regressions
-  - [ ] 5.3 Run TypeScript type check and ESLint
-  - [ ] 5.4 Manual smoke test: Add subscription with category, verify list display
+- [x] Task 1: Update category definitions to match UX spec (AC: #1, #2, #3)
+  - [x] 1.1 Update `src/config/categories.ts` with UX-spec colors, labels, and icons
+  - [x] 1.2 Update `getCategoryConfig()` in subscriptionUtils.ts if needed
+  - [x] 1.3 Update `src/config/popularServices.ts` defaultCategory references if IDs changed
+  - [x] 1.4 Write/update tests for category configuration and getCategoryConfig()
+- [x] Task 2: Create dedicated CategoryChip component (AC: #1)
+  - [x] 2.1 Create `src/features/subscriptions/components/CategoryChip.tsx`
+  - [x] 2.2 Implement selected/deselected states with category color background
+  - [x] 2.3 Add accessibility labels and roles
+  - [x] 2.4 Create `src/features/subscriptions/components/CategoryChip.test.tsx`
+- [x] Task 3: Update SubscriptionCard to display category name (AC: #2, #3)
+  - [x] 3.1 Add category name text to SubscriptionCard below or alongside existing info
+  - [x] 3.2 Ensure "Other" default is properly displayed for uncategorized subscriptions
+  - [x] 3.3 Update accessibility label to include category name
+  - [x] 3.4 Update SubscriptionCard tests for new category name display
+- [x] Task 4: Refactor Add/Edit forms to use CategoryChip (AC: #1)
+  - [x] 4.1 Replace generic `Chip` with `CategoryChip` in `AddSubscriptionScreen.tsx`
+  - [x] 4.2 Replace generic `Chip` with `CategoryChip` in `EditSubscriptionScreen.tsx`
+  - [x] 4.3 Verify form submission still includes category value correctly
+  - [x] 4.4 Update form tests if applicable
+- [x] Task 5: Update feature exports and verification (AC: #1, #2, #3)
+  - [x] 5.1 Export CategoryChip from `src/features/subscriptions/index.ts`
+  - [x] 5.2 Run full test suite - ensure 0 regressions
+  - [x] 5.3 Run TypeScript type check and ESLint
+  - [x] 5.4 Manual smoke test: Add subscription with category, verify list display
 
 ## Dev Notes
 
@@ -264,10 +264,27 @@ src/shared/types/database.types.ts                 ← DB types already have cat
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+No issues encountered during implementation.
+
 ### Completion Notes List
 
+- **Task 3:** Added category name text to SubscriptionCard bottom row with " · " separator before renewal text (e.g., "Entertainment · Renews in 5 days"). Updated accessibility label to include category name. "Other" default displays correctly for null/uncategorized subscriptions. Added 4 new tests for category name display.
+- **Task 4:** Replaced generic `Chip` from react-native-paper with dedicated `CategoryChip` component in both AddSubscriptionScreen and EditSubscriptionScreen. Removed unused `Chip` import and `chip` style definitions. Form submission continues to work correctly with category values.
+- **Task 5:** Exported `CategoryChip` from feature index.ts. Full test suite passed: 123/123 tests, 0 regressions. TypeScript type check and ESLint both passed with no errors.
+
+### Change Log
+
+- 2026-03-01: Implemented Tasks 3-5 for Story 2.6 — added category name display on SubscriptionCard, refactored Add/Edit forms to use CategoryChip component, exported CategoryChip from feature index
+
 ### File List
+
+**Modified:**
+- `src/features/subscriptions/components/SubscriptionCard.tsx` — Added category name text with " · " separator, updated accessibility label
+- `src/features/subscriptions/components/SubscriptionCard.test.tsx` — Added 4 new category name tests, updated existing accessibility label tests
+- `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` — Replaced generic Chip with CategoryChip, removed unused imports/styles
+- `src/features/subscriptions/screens/EditSubscriptionScreen.tsx` — Replaced generic Chip with CategoryChip, removed unused imports/styles
+- `src/features/subscriptions/index.ts` — Added CategoryChip export

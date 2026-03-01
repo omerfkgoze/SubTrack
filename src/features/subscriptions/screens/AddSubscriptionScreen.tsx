@@ -7,7 +7,6 @@ import {
   HelperText,
   SegmentedButtons,
   Switch,
-  Chip,
   Snackbar,
   useTheme,
 } from 'react-native-paper';
@@ -21,6 +20,7 @@ import type { CreateSubscriptionFormData } from '@features/subscriptions/types/s
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
 import { searchPopularServices } from '@config/popularServices';
+import { CategoryChip } from '@features/subscriptions/components/CategoryChip';
 import { CelebrationOverlay } from '@shared/components/CelebrationOverlay';
 
 registerTranslation('en', en);
@@ -279,23 +279,15 @@ export function AddSubscriptionScreen() {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {SUBSCRIPTION_CATEGORIES.map((cat) => (
-              <Chip
+              <CategoryChip
                 key={cat.id}
+                category={cat}
                 selected={selectedCategory === cat.id}
                 onPress={() =>
                   setValue('category', selectedCategory === cat.id ? undefined : cat.id)
                 }
-                icon={cat.icon}
-                style={[
-                  styles.chip,
-                  selectedCategory === cat.id && { backgroundColor: cat.color + '20' },
-                ]}
                 disabled={isSubmitting}
-                accessibilityLabel={`${cat.label} category`}
-                accessibilityRole="button"
-              >
-                {cat.label}
-              </Chip>
+              />
             ))}
           </ScrollView>
         </View>
@@ -454,10 +446,6 @@ const styles = StyleSheet.create({
   },
   chipScroll: {
     flexDirection: 'row',
-  },
-  chip: {
-    marginRight: 8,
-    minHeight: 44,
   },
   trialRow: {
     flexDirection: 'row',

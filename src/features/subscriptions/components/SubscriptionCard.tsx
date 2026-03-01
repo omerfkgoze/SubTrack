@@ -30,7 +30,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
       onPress={onPress}
       style={[styles.card, isInactive && styles.inactiveCard]}
       {...(onPress ? { accessibilityRole: 'button' as const } : {})}
-      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}, ${renewalInfo.text}`}
+      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}, ${categoryConfig.label}, ${renewalInfo.text}`}
       {...(onPress ? { accessibilityHint: 'Swipe left for options' } : {})}
     >
       <View style={styles.cardContent}>
@@ -63,7 +63,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
               variant="bodySmall"
               style={{ color: theme.colors.onSurfaceVariant }}
             >
-              {renewalInfo.text}
+              {categoryConfig.label} · {renewalInfo.text}
             </Text>
             <TrialBadge
               isTrial={subscription.is_trial}

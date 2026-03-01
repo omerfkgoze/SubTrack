@@ -7,7 +7,6 @@ import {
   HelperText,
   SegmentedButtons,
   Switch,
-  Chip,
   Snackbar,
 } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
@@ -19,6 +18,7 @@ import type { CreateSubscriptionFormData } from '@features/subscriptions/types/s
 import type { BillingCycle } from '@features/subscriptions/types';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
+import { CategoryChip } from '@features/subscriptions/components/CategoryChip';
 import type { SubscriptionsStackScreenProps } from '@app/navigation/types';
 
 registerTranslation('en', en);
@@ -236,23 +236,15 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {SUBSCRIPTION_CATEGORIES.map((cat) => (
-              <Chip
+              <CategoryChip
                 key={cat.id}
+                category={cat}
                 selected={selectedCategory === cat.id}
                 onPress={() =>
                   setValue('category', selectedCategory === cat.id ? undefined : cat.id)
                 }
-                icon={cat.icon}
-                style={[
-                  styles.chip,
-                  selectedCategory === cat.id && { backgroundColor: cat.color + '20' },
-                ]}
                 disabled={isSubmitting}
-                accessibilityLabel={`${cat.label} category`}
-                accessibilityRole="button"
-              >
-                {cat.label}
-              </Chip>
+              />
             ))}
           </ScrollView>
         </View>
@@ -393,10 +385,6 @@ const styles = StyleSheet.create({
   },
   chipScroll: {
     flexDirection: 'row',
-  },
-  chip: {
-    marginRight: 8,
-    minHeight: 44,
   },
   trialRow: {
     flexDirection: 'row',

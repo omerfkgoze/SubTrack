@@ -156,7 +156,7 @@ describe('getCategoryConfig', () => {
   it('returns correct category for valid id', () => {
     const result = getCategoryConfig('entertainment');
     expect(result.id).toBe('entertainment');
-    expect(result.color).toBe('#6366F1');
+    expect(result.color).toBe('#8B5CF6');
     expect(result.icon).toBe('movie-open');
   });
 
@@ -171,10 +171,41 @@ describe('getCategoryConfig', () => {
     expect(result.id).toBe('other');
   });
 
-  it('returns music category', () => {
+  it('returns "Other" for empty string category', () => {
+    const result = getCategoryConfig('');
+    expect(result.id).toBe('other');
+  });
+
+  it('returns music category with updated color', () => {
     const result = getCategoryConfig('music');
     expect(result.id).toBe('music');
     expect(result.icon).toBe('music');
+    expect(result.color).toBe('#EF4444');
+  });
+
+  it('returns storage category (formerly cloud)', () => {
+    const result = getCategoryConfig('storage');
+    expect(result.id).toBe('storage');
+    expect(result.label).toBe('Storage');
+    expect(result.color).toBe('#F97316');
+  });
+
+  it('returns health category (formerly fitness)', () => {
+    const result = getCategoryConfig('health');
+    expect(result.id).toBe('health');
+    expect(result.label).toBe('Health');
+    expect(result.icon).toBe('heart-pulse');
+    expect(result.color).toBe('#EC4899');
+  });
+
+  it('falls back to Other for old "cloud" category ID', () => {
+    const result = getCategoryConfig('cloud');
+    expect(result.id).toBe('other');
+  });
+
+  it('falls back to Other for old "fitness" category ID', () => {
+    const result = getCategoryConfig('fitness');
+    expect(result.id).toBe('other');
   });
 });
 

@@ -44,7 +44,7 @@ describe('SubscriptionCard', () => {
 
   it('renders renewal info', () => {
     renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
-    expect(screen.getByText('Renews in 5 days')).toBeTruthy();
+    expect(screen.getByText(/Renews in 5 days/)).toBeTruthy();
   });
 
   it('shows trial badge when is_trial is true (no expiry date)', () => {
@@ -92,14 +92,14 @@ describe('SubscriptionCard', () => {
     };
     renderWithProvider(<SubscriptionCard subscription={trialSub} />);
     expect(
-      screen.getByLabelText('Netflix, 17.99 euros per monthly, 10 days left, Renews in 5 days'),
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, 10 days left, Entertainment, Renews in 5 days'),
     ).toBeTruthy();
   });
 
   it('accessibility label does NOT include trial info when not a trial', () => {
     renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
     expect(
-      screen.getByLabelText('Netflix, 17.99 euros per monthly, Renews in 5 days'),
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, Entertainment, Renews in 5 days'),
     ).toBeTruthy();
   });
 
@@ -128,7 +128,7 @@ describe('SubscriptionCard', () => {
   it('has correct accessibility label', () => {
     renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
     expect(
-      screen.getByLabelText('Netflix, 17.99 euros per monthly, Renews in 5 days'),
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, Entertainment, Renews in 5 days'),
     ).toBeTruthy();
   });
 
@@ -150,7 +150,7 @@ describe('SubscriptionCard', () => {
   it('renders category color stripe for entertainment', () => {
     const { toJSON } = renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
     const json = JSON.stringify(toJSON());
-    expect(json).toContain('#6366F1');
+    expect(json).toContain('#8B5CF6');
   });
 
   it('uses default "Other" category for null category', () => {
@@ -158,5 +158,28 @@ describe('SubscriptionCard', () => {
     const { toJSON } = renderWithProvider(<SubscriptionCard subscription={noCatSub} />);
     const json = JSON.stringify(toJSON());
     expect(json).toContain('#6B7280');
+  });
+
+  it('displays category name on card', () => {
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+    expect(screen.getByText(/Entertainment/)).toBeTruthy();
+  });
+
+  it('shows "Other" category name for uncategorized subscription', () => {
+    const noCatSub = { ...mockSubscription, category: null };
+    renderWithProvider(<SubscriptionCard subscription={noCatSub} />);
+    expect(screen.getByText(/Other/)).toBeTruthy();
+  });
+
+  it('displays category name with middle dot separator before renewal text', () => {
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+    expect(screen.getByText('Entertainment · Renews in 5 days')).toBeTruthy();
+  });
+
+  it('accessibility label includes category name', () => {
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+    expect(
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, Entertainment, Renews in 5 days'),
+    ).toBeTruthy();
   });
 });

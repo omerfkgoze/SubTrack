@@ -80,7 +80,7 @@ export function getRenewalInfo(renewalDate: string): {
 const DEFAULT_CATEGORY: SubscriptionCategory = {
   id: 'other',
   label: 'Other',
-  icon: 'dots-horizontal-circle',
+  icon: 'package-variant',
   color: '#6B7280',
 };
 
