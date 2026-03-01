@@ -1,6 +1,6 @@
 # Story 2.6: Subscription Categories
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -272,17 +272,29 @@ No issues encountered during implementation.
 
 ### Completion Notes List
 
+- **Task 1:** Updated `src/config/categories.ts` with UX-spec colors, labels, IDs, and icons. Changed IDs: cloud→storage, fitness→health. Updated `src/config/popularServices.ts` defaultCategory references. Added 6 new getCategoryConfig tests covering new IDs and old ID fallback behavior.
+- **Task 2:** Created `src/features/subscriptions/components/CategoryChip.tsx` — pure presentational component with selected/deselected states, category color tinted background (color + '1F'), accessibility labels. Created co-located test file with 8 tests.
 - **Task 3:** Added category name text to SubscriptionCard bottom row with " · " separator before renewal text (e.g., "Entertainment · Renews in 5 days"). Updated accessibility label to include category name. "Other" default displays correctly for null/uncategorized subscriptions. Added 4 new tests for category name display.
 - **Task 4:** Replaced generic `Chip` from react-native-paper with dedicated `CategoryChip` component in both AddSubscriptionScreen and EditSubscriptionScreen. Removed unused `Chip` import and `chip` style definitions. Form submission continues to work correctly with category values.
 - **Task 5:** Exported `CategoryChip` from feature index.ts. Full test suite passed: 123/123 tests, 0 regressions. TypeScript type check and ESLint both passed with no errors.
 
 ### Change Log
 
+- 2026-03-01: Implemented Tasks 1-2 for Story 2.6 — updated category config to match UX spec (colors, IDs, icons), updated popularServices references, created CategoryChip component with tests
 - 2026-03-01: Implemented Tasks 3-5 for Story 2.6 — added category name display on SubscriptionCard, refactored Add/Edit forms to use CategoryChip component, exported CategoryChip from feature index
+- 2026-03-01: Code review fixes — completed File List documentation, added missing completion notes for Tasks 1-2
 
 ### File List
 
+**Created:**
+- `src/features/subscriptions/components/CategoryChip.tsx` — New dedicated CategoryChip component with selected/deselected states and category color background
+- `src/features/subscriptions/components/CategoryChip.test.tsx` — 8 tests for CategoryChip component
+
 **Modified:**
+- `src/config/categories.ts` — Updated colors, labels, IDs, icons to match UX spec (cloud→storage, fitness→health, color changes)
+- `src/config/popularServices.ts` — Updated defaultCategory references for renamed IDs (cloud→storage, fitness→health)
+- `src/features/subscriptions/utils/subscriptionUtils.ts` — Updated DEFAULT_CATEGORY fallback to match new 'other' icon (package-variant)
+- `src/features/subscriptions/utils/subscriptionUtils.test.ts` — Added 6 new getCategoryConfig tests (storage, health, old ID fallback)
 - `src/features/subscriptions/components/SubscriptionCard.tsx` — Added category name text with " · " separator, updated accessibility label
 - `src/features/subscriptions/components/SubscriptionCard.test.tsx` — Added 4 new category name tests, updated existing accessibility label tests
 - `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` — Replaced generic Chip with CategoryChip, removed unused imports/styles

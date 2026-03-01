@@ -9,8 +9,12 @@ function renderWithProvider(ui: React.ReactElement) {
   return render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
 }
 
-const entertainmentCategory = SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'entertainment')!;
-const musicCategory = SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'music')!;
+const entertainmentCategory = SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'entertainment');
+const musicCategory = SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'music');
+
+if (!entertainmentCategory || !musicCategory) {
+  throw new Error('Test setup failed: required categories not found in SUBSCRIPTION_CATEGORIES');
+}
 
 describe('CategoryChip', () => {
   it('renders with category label', () => {
