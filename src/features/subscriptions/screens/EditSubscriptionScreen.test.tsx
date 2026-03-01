@@ -124,6 +124,31 @@ describe('EditSubscriptionScreen', () => {
     });
   });
 
+  describe('active status toggle', () => {
+    it('renders "Active" status switch', () => {
+      renderWithProvider('sub-1');
+      expect(screen.getByLabelText('Active status')).toBeTruthy();
+    });
+
+    it('switch reflects current subscription is_active state (true → on)', () => {
+      renderWithProvider('sub-1');
+      const switchEl = screen.getByLabelText('Active status');
+      expect(switchEl.props.value).toBe(true);
+    });
+
+    it('switch reflects cancelled subscription (is_active: false → off)', () => {
+      useSubscriptionStore.setState({
+        subscriptions: [{ ...mockSubscription, is_active: false }],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+      });
+      renderWithProvider('sub-1');
+      const switchEl = screen.getByLabelText('Active status');
+      expect(switchEl.props.value).toBe(false);
+    });
+  });
+
   it('shows error snackbar on failed submit', async () => {
     const mockUpdate = jest.fn().mockResolvedValue(false);
     useSubscriptionStore.setState({

@@ -99,4 +99,35 @@ describe('SwipeableSubscriptionCard', () => {
     fireEvent(wrappers[0], 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('renders toggle status action button', () => {
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} />,
+    );
+    expect(screen.getByLabelText('Toggle status for Netflix')).toBeTruthy();
+  });
+
+  it('calls onToggleStatus when toggle button is pressed', () => {
+    const onToggleStatus = jest.fn();
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} onToggleStatus={onToggleStatus} />,
+    );
+    fireEvent.press(screen.getByLabelText('Toggle status for Netflix'));
+    expect(onToggleStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows correct label for active subscription toggle button', () => {
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} />,
+    );
+    expect(screen.getByText('Cancel')).toBeTruthy();
+  });
+
+  it('shows correct label for cancelled subscription toggle button', () => {
+    const cancelledSub = { ...mockSubscription, is_active: false };
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={cancelledSub} />,
+    );
+    expect(screen.getByText('Activate')).toBeTruthy();
+  });
 });

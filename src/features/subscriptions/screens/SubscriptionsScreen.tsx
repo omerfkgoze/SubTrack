@@ -42,6 +42,7 @@ export function SubscriptionsScreen() {
   const {
     subscriptions, isLoading, error, fetchSubscriptions, clearError,
     deleteSubscription: storeDelete, undoDelete, clearPendingDelete,
+    toggleSubscriptionStatus,
   } = useSubscriptionStore();
 
   useEffect(() => {
@@ -98,6 +99,10 @@ export function SubscriptionsScreen() {
     setDeleteDialogSubscription(subscription);
   }, []);
 
+  const handleToggleStatus = useCallback(async (subscriptionId: string) => {
+    await toggleSubscriptionStatus(subscriptionId);
+  }, [toggleSubscriptionStatus]);
+
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteDialogSubscription) return;
     const name = deleteDialogSubscription.name;
@@ -135,11 +140,12 @@ export function SubscriptionsScreen() {
         subscription={item}
         onEdit={() => handleEdit(item.id)}
         onDelete={() => handleDelete(item)}
+        onToggleStatus={() => handleToggleStatus(item.id)}
         onPress={() => handleEdit(item.id)}
         onSwipeableOpen={handleSwipeableOpen}
       />
     ),
-    [handleEdit, handleDelete, handleSwipeableOpen],
+    [handleEdit, handleDelete, handleSwipeableOpen, handleToggleStatus],
   );
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);

@@ -10,6 +10,7 @@ interface SwipeableSubscriptionCardProps {
   subscription: Subscription;
   onEdit?: () => void;
   onDelete?: () => void;
+  onToggleStatus?: () => void;
   onPress?: () => void;
   onSwipeableOpen?: (close: () => void) => void;
 }
@@ -18,15 +19,32 @@ export function SwipeableSubscriptionCard({
   subscription,
   onEdit,
   onDelete,
+  onToggleStatus,
   onPress,
   onSwipeableOpen,
 }: SwipeableSubscriptionCardProps) {
   const swipeableRef = useRef<Swipeable>(null);
   const renewalInfo = getRenewalInfo(subscription.renewal_date);
   const detailedLabel = `${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle as BillingCycle}, ${renewalInfo.text}`;
+  const isInactive = subscription.is_active === false;
+  const toggleLabel = isInactive ? 'Activate' : 'Cancel';
+  const toggleIcon = isInactive ? 'check-circle-outline' : 'close-circle-outline';
+  const toggleBgColor = isInactive ? '#22C55E' : '#6B7280';
 
   const renderRightActions = () => (
     <View style={styles.actionsContainer}>
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: toggleBgColor }]}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onToggleStatus?.();
+        }}
+        accessibilityLabel={`Toggle status for ${subscription.name}`}
+        accessibilityRole="button"
+      >
+        <Icon source={toggleIcon} size={22} color="#FFFFFF" />
+        <Text style={styles.actionLabel}>{toggleLabel}</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         style={[styles.actionButton, styles.editAction]}
         onPress={() => {

@@ -10,6 +10,7 @@ export const createSubscriptionSchema = z
     trial_expiry_date: z.string().optional(),
     category: z.string().optional(),
     notes: z.string().optional(),
+    is_active: z.boolean().optional(),
   })
   .refine(
     (data) => !data.is_trial || (data.is_trial && data.trial_expiry_date),

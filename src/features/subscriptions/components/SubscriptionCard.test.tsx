@@ -182,4 +182,53 @@ describe('SubscriptionCard', () => {
       screen.getByLabelText('Netflix, 17.99 euros per monthly, Entertainment, Renews in 5 days'),
     ).toBeTruthy();
   });
+
+  describe('cancelled subscription styling', () => {
+    const cancelledSub = { ...mockSubscription, is_active: false };
+
+    it('shows strikethrough on price when cancelled', () => {
+      const { toJSON } = renderWithProvider(<SubscriptionCard subscription={cancelledSub} />);
+      const json = JSON.stringify(toJSON());
+      expect(json).toContain('line-through');
+    });
+
+    it('shows "Cancelled" text instead of renewal info when inactive', () => {
+      renderWithProvider(<SubscriptionCard subscription={cancelledSub} />);
+      expect(screen.getByText(/Cancelled/)).toBeTruthy();
+    });
+
+    it('does NOT show "Cancelled" for active subscription', () => {
+      renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+      expect(screen.queryByText('Cancelled')).toBeNull();
+    });
+
+    it('shows normal price (no strikethrough) for active subscription', () => {
+      const { toJSON } = renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+      const json = JSON.stringify(toJSON());
+      // line-through should NOT be in the styles for active
+      // We check that the cancelled-specific style object is not applied
+      const parsed = toJSON();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const findLineThroughOnPrice = (node: any): boolean => {
+        if (!node) return false;
+        if (node.type === 'Text' && node.children?.includes('€17.99/mo')) {
+          const styleArr = Array.isArray(node.props?.style) ? node.props.style : [node.props?.style];
+          return styleArr.some((s: Record<string, unknown>) => s && s.textDecorationLine === 'line-through');
+        }
+        if (node.children) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return node.children.some((child: any) => typeof child === 'object' && findLineThroughOnPrice(child));
+        }
+        return false;
+      };
+      expect(findLineThroughOnPrice(parsed)).toBe(false);
+    });
+
+    it('accessibility label includes "cancelled" for inactive subscription', () => {
+      renderWithProvider(<SubscriptionCard subscription={cancelledSub} />);
+      expect(
+        screen.getByLabelText(/cancelled/i),
+      ).toBeTruthy();
+    });
+  });
 });

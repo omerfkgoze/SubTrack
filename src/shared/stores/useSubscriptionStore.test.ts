@@ -17,6 +17,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 const {
   deleteSubscription: mockDeleteService,
   createSubscription: mockCreateService,
+  updateSubscription: mockUpdateService,
 } = jest.requireMock('@features/subscriptions/services/subscriptionService');
 
 const mockSubscription: Subscription = {
@@ -250,5 +251,131 @@ describe('useSubscriptionStore - delete operations', () => {
 
       expect(useSubscriptionStore.getState().pendingDelete).toBeNull();
     });
+  });
+});
+
+describe('useSubscriptionStore - toggleSubscriptionStatus', () => {
+  const activeSubscription: Subscription = {
+    id: 'sub-1',
+    user_id: 'user-1',
+    name: 'Netflix',
+    price: 9.99,
+    currency: 'EUR',
+    billing_cycle: 'monthly',
+    renewal_date: '2026-04-01',
+    is_trial: false,
+    trial_expiry_date: null,
+    category: null,
+    notes: null,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useSubscriptionStore.setState({
+      subscriptions: [activeSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+  });
+
+  it('flips is_active from true to false (optimistic)', async () => {
+    mockUpdateService.mockResolvedValue({
+      data: { ...activeSubscription, is_active: false },
+      error: null,
+    });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().toggleSubscriptionStatus('sub-1');
+    });
+
+    const state = useSubscriptionStore.getState();
+    expect(state.subscriptions[0].is_active).toBe(false);
+  });
+
+  it('flips is_active from false to true (optimistic)', async () => {
+    useSubscriptionStore.setState({
+      subscriptions: [{ ...activeSubscription, is_active: false }],
+    });
+
+    mockUpdateService.mockResolvedValue({
+      data: { ...activeSubscription, is_active: true },
+      error: null,
+    });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().toggleSubscriptionStatus('sub-1');
+    });
+
+    const state = useSubscriptionStore.getState();
+    expect(state.subscriptions[0].is_active).toBe(true);
+  });
+
+  it('treats null is_active as active and flips to false', async () => {
+    useSubscriptionStore.setState({
+      subscriptions: [{ ...activeSubscription, is_active: null }],
+    });
+
+    mockUpdateService.mockResolvedValue({
+      data: { ...activeSubscription, is_active: false },
+      error: null,
+    });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().toggleSubscriptionStatus('sub-1');
+    });
+
+    expect(mockUpdateService).toHaveBeenCalledWith(
+      'sub-1',
+      expect.objectContaining({ is_active: false }),
+    );
+  });
+
+  it('rolls back on service error', async () => {
+    mockUpdateService.mockResolvedValue({
+      data: null,
+      error: { code: 'DB_ERROR', message: 'Failed to update' },
+    });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().toggleSubscriptionStatus('sub-1');
+    });
+
+    const state = useSubscriptionStore.getState();
+    // Should roll back to original true value
+    expect(state.subscriptions[0].is_active).toBe(true);
+    expect(state.error?.code).toBe('DB_ERROR');
+  });
+
+  it('returns false when subscription not found', async () => {
+    let result: boolean;
+    await act(async () => {
+      result = await useSubscriptionStore.getState().toggleSubscriptionStatus('nonexistent');
+    });
+
+    expect(result!).toBe(false);
+    expect(mockUpdateService).not.toHaveBeenCalled();
+  });
+
+  it('undoDelete includes is_active in re-creation payload', async () => {
+    const cancelledSub = { ...activeSubscription, is_active: false };
+    useSubscriptionStore.setState({
+      subscriptions: [],
+      pendingDelete: { subscription: cancelledSub, originalIndex: 0 },
+    });
+
+    mockCreateService.mockResolvedValue({ data: { ...cancelledSub, id: 'sub-1-new' }, error: null });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().undoDelete();
+    });
+
+    expect(mockCreateService).toHaveBeenCalledWith(
+      expect.objectContaining({ is_active: false }),
+    );
   });
 });

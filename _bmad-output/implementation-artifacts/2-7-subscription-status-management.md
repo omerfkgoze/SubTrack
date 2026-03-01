@@ -1,6 +1,6 @@
 # Story 2.7: Subscription Status Management
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,40 +33,40 @@ so that I can keep track of which services I'm still paying for.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `is_active` support to service layer and DTO (AC: #1)
-  - [ ] 1.1 Add `is_active?: boolean` to `CreateSubscriptionDTO` in `src/features/subscriptions/types/index.ts`
-  - [ ] 1.2 Add `is_active` handling in `subscriptionService.ts` `createSubscription()` insert payload
-  - [ ] 1.3 Add `is_active` handling in `subscriptionService.ts` `updateSubscription()` update payload
-  - [ ] 1.4 Write tests for service `is_active` handling
+- [x] Task 1: Add `is_active` support to service layer and DTO (AC: #1)
+  - [x] 1.1 Add `is_active?: boolean` to `CreateSubscriptionDTO` in `src/features/subscriptions/types/index.ts`
+  - [x] 1.2 Add `is_active` handling in `subscriptionService.ts` `createSubscription()` insert payload
+  - [x] 1.3 Add `is_active` handling in `subscriptionService.ts` `updateSubscription()` update payload
+  - [x] 1.4 Write tests for service `is_active` handling
 
-- [ ] Task 2: Add `toggleSubscriptionStatus` action to Zustand store (AC: #1)
-  - [ ] 2.1 Add `toggleSubscriptionStatus: (id: string) => Promise<boolean>` to `SubscriptionActions` interface
-  - [ ] 2.2 Implement optimistic toggle: flip `is_active` locally, call `updateSubscription` service, rollback on error
-  - [ ] 2.3 Include `is_active` in `undoDelete` re-creation payload
-  - [ ] 2.4 Write store tests for toggleSubscriptionStatus (success, error rollback)
+- [x] Task 2: Add `toggleSubscriptionStatus` action to Zustand store (AC: #1)
+  - [x] 2.1 Add `toggleSubscriptionStatus: (id: string) => Promise<boolean>` to `SubscriptionActions` interface
+  - [x] 2.2 Implement optimistic toggle: flip `is_active` locally, call `updateSubscription` service, rollback on error
+  - [x] 2.3 Include `is_active` in `undoDelete` re-creation payload
+  - [x] 2.4 Write store tests for toggleSubscriptionStatus (success, error rollback)
 
-- [ ] Task 3: Update SubscriptionCard cancelled visual styling (AC: #2)
-  - [ ] 3.1 Add strikethrough style on price text when `is_active === false`
-  - [ ] 3.2 Add "Cancelled" label in bottom row (replacing or alongside renewal info) when inactive
-  - [ ] 3.3 Keep existing `opacity: 0.5` for inactive cards
-  - [ ] 3.4 Update accessibility label to include "cancelled" status
-  - [ ] 3.5 Write/update SubscriptionCard tests for cancelled styling
+- [x] Task 3: Update SubscriptionCard cancelled visual styling (AC: #2)
+  - [x] 3.1 Add strikethrough style on price text when `is_active === false`
+  - [x] 3.2 Add "Cancelled" label in bottom row (replacing or alongside renewal info) when inactive
+  - [x] 3.3 Keep existing `opacity: 0.5` for inactive cards
+  - [x] 3.4 Update accessibility label to include "cancelled" status
+  - [x] 3.5 Write/update SubscriptionCard tests for cancelled styling
 
-- [ ] Task 4: Add `is_active` toggle to Edit Subscription screen (AC: #3)
-  - [ ] 4.1 Add Switch/toggle control for "Active" status in `EditSubscriptionScreen.tsx`
-  - [ ] 4.2 Include `is_active` in form submission payload
-  - [ ] 4.3 Update Zod schema to include `is_active` (optional boolean)
-  - [ ] 4.4 Write/update EditSubscriptionScreen tests for status toggle
+- [x] Task 4: Add `is_active` toggle to Edit Subscription screen (AC: #3)
+  - [x] 4.1 Add Switch/toggle control for "Active" status in `EditSubscriptionScreen.tsx`
+  - [x] 4.2 Include `is_active` in form submission payload
+  - [x] 4.3 Update Zod schema to include `is_active` (optional boolean)
+  - [x] 4.4 Write/update EditSubscriptionScreen tests for status toggle
 
-- [ ] Task 5: Add swipe-to-toggle-status action (AC: #1)
-  - [ ] 5.1 Add "Toggle Status" swipe action to `SwipeableSubscriptionCard.tsx` (third swipe option or long-press)
-  - [ ] 5.2 Connect swipe action to store `toggleSubscriptionStatus`
-  - [ ] 5.3 Write/update SwipeableSubscriptionCard tests
+- [x] Task 5: Add swipe-to-toggle-status action (AC: #1)
+  - [x] 5.1 Add "Toggle Status" swipe action to `SwipeableSubscriptionCard.tsx` (third swipe option or long-press)
+  - [x] 5.2 Connect swipe action to store `toggleSubscriptionStatus`
+  - [x] 5.3 Write/update SwipeableSubscriptionCard tests
 
-- [ ] Task 6: Verify cost calculations and run full test suite (AC: #2)
-  - [ ] 6.1 Verify `calculateTotalMonthlyCost` already filters out inactive (it does — just confirm no regression)
-  - [ ] 6.2 Run full test suite — ensure 0 regressions
-  - [ ] 6.3 Run TypeScript type check and ESLint
+- [x] Task 6: Verify cost calculations and run full test suite (AC: #2)
+  - [x] 6.1 Verify `calculateTotalMonthlyCost` already filters out inactive (it does — just confirm no regression)
+  - [x] 6.2 Run full test suite — ensure 0 regressions
+  - [x] 6.3 Run TypeScript type check and ESLint
 
 ## Dev Notes
 
@@ -281,10 +281,45 @@ src/features/subscriptions/screens/SubscriptionsScreen.tsx   ← Already counts 
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
+No blockers. Service test mock pattern required `jest.requireMock` in helper functions (rather than module-level mock variables) to properly chain Supabase calls.
+
 ### Completion Notes List
 
+- **Task 1 (Service Layer):** Added `is_active?: boolean` to `CreateSubscriptionDTO`. Updated `createSubscription()` to conditionally include `is_active` in Supabase insert using spread `...(dto.is_active !== undefined && { is_active: dto.is_active })`. Updated `updateSubscription()` to handle `'is_active' in dto` check in the update payload. Created new service test file with 6 tests verifying payload inclusion/exclusion.
+
+- **Task 2 (Store):** Added `toggleSubscriptionStatus(id)` to `SubscriptionActions` interface and store implementation. Implements optimistic toggle: flips `is_active` locally (true↔false, null→false), calls `updateSubscription` service, rolls back with error on failure. Fixed `undoDelete` to include `is_active` in re-creation payload. 6 new store tests added.
+
+- **Task 3 (SubscriptionCard):** Added `textDecorationLine: 'line-through'` style (via `styles.strikethrough`) on price Text when `isInactive`. Bottom row now shows `'Cancelled'` instead of `renewalInfo.text` when inactive. Accessibility label updated to include `', cancelled'` segment for inactive subscriptions. 5 new tests added.
+
+- **Task 4 (EditSubscriptionScreen):** Added `is_active: z.boolean().optional()` to Zod schema. Form defaults `is_active` to `subscription.is_active !== false` (treats null as active). Added `Switch` with `accessibilityLabel="Active status"` after Notes field. Included `is_active: data.is_active` in form submission payload. 3 new tests added.
+
+- **Task 5 (SwipeableSubscriptionCard):** Added `onToggleStatus?: () => void` prop. Added a third swipe action button (leftmost position) showing 'Cancel'/'Activate' label and appropriate icon (`close-circle-outline`/`check-circle-outline`) with grey/green background. Connected `onToggleStatus` to `SubscriptionsScreen` via `handleToggleStatus` callback. 4 new tests added.
+
+- **Task 6:** `calculateTotalMonthlyCost` already filters inactive — confirmed no regression. All 147 tests pass. TypeScript clean. ESLint clean.
+
+**Total new tests: 24** (6 service + 6 store + 5 card + 3 edit screen + 4 swipeable)
+**Total tests: 147 (was 123)**
+
 ### File List
+
+- `src/features/subscriptions/types/index.ts` — Added `is_active?: boolean` to `CreateSubscriptionDTO`
+- `src/features/subscriptions/types/schemas.ts` — Added `is_active: z.boolean().optional()` to Zod schema
+- `src/features/subscriptions/services/subscriptionService.ts` — `is_active` in create/update payloads
+- `src/features/subscriptions/services/subscriptionService.test.ts` — NEW: 6 service tests for is_active
+- `src/shared/stores/useSubscriptionStore.ts` — Added `toggleSubscriptionStatus`, fixed `undoDelete`
+- `src/shared/stores/useSubscriptionStore.test.ts` — 6 new toggle tests added
+- `src/features/subscriptions/components/SubscriptionCard.tsx` — Strikethrough + "Cancelled" label + a11y
+- `src/features/subscriptions/components/SubscriptionCard.test.tsx` — 5 new cancelled styling tests
+- `src/features/subscriptions/components/SwipeableSubscriptionCard.tsx` — Toggle status swipe action
+- `src/features/subscriptions/components/SwipeableSubscriptionCard.test.tsx` — 4 new toggle tests
+- `src/features/subscriptions/screens/EditSubscriptionScreen.tsx` — Active Switch added
+- `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx` — 3 new toggle tests
+- `src/features/subscriptions/screens/SubscriptionsScreen.tsx` — `handleToggleStatus` wired up
+
+## Change Log
+
+- 2026-03-01: Story 2.7 implemented — subscription status management (is_active toggle, visual cancelled styling, swipe action, edit screen switch). 24 new tests added. Total: 147 tests passing.

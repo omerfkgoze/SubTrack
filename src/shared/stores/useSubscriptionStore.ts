@@ -22,6 +22,7 @@ interface SubscriptionActions {
   addSubscription: (dto: CreateSubscriptionDTO) => Promise<boolean>;
   updateSubscription: (id: string, dto: Partial<CreateSubscriptionDTO>) => Promise<boolean>;
   deleteSubscription: (id: string) => Promise<boolean>;
+  toggleSubscriptionStatus: (id: string) => Promise<boolean>;
   undoDelete: () => Promise<void>;
   clearPendingDelete: () => void;
   clearError: () => void;
@@ -89,6 +90,46 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           ),
           isSubmitting: false,
         }));
+        return true;
+      },
+
+      toggleSubscriptionStatus: async (id: string) => {
+        const state = get();
+        const sub = state.subscriptions.find((s) => s.id === id);
+        if (!sub) return false;
+
+        const newIsActive = sub.is_active === false ? true : false;
+
+        // Optimistic update
+        set((current) => ({
+          subscriptions: current.subscriptions.map((s) =>
+            s.id === id ? { ...s, is_active: newIsActive } : s
+          ),
+        }));
+
+        const result = await updateSubscription(id, { is_active: newIsActive });
+
+        if (result.error) {
+          // Rollback
+          set((current) => ({
+            subscriptions: current.subscriptions.map((s) =>
+              s.id === id ? { ...s, is_active: sub.is_active } : s
+            ),
+            error: result.error,
+          }));
+          return false;
+        }
+
+        // Update with server response if available
+        if (result.data) {
+          const serverSub = result.data;
+          set((current) => ({
+            subscriptions: current.subscriptions.map((s) =>
+              s.id === id ? serverSub : s
+            ),
+          }));
+        }
+
         return true;
       },
 
@@ -165,6 +206,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           trial_expiry_date: subscription.trial_expiry_date ?? undefined,
           category: subscription.category ?? undefined,
           notes: subscription.notes ?? undefined,
+          is_active: subscription.is_active ?? undefined,
         });
 
         if (result.error || !result.data) {

@@ -34,6 +34,7 @@ export async function createSubscription(
         trial_expiry_date: dto.trial_expiry_date ?? null,
         category: dto.category ?? null,
         notes: dto.notes ?? null,
+        ...(dto.is_active !== undefined && { is_active: dto.is_active }),
       })
       .select()
       .single();
@@ -89,6 +90,7 @@ export async function updateSubscription(
     if ('trial_expiry_date' in dto) updatePayload.trial_expiry_date = dto.trial_expiry_date ?? null;
     if ('category' in dto) updatePayload.category = dto.category ?? null;
     if ('notes' in dto) updatePayload.notes = dto.notes ?? null;
+    if ('is_active' in dto) updatePayload.is_active = dto.is_active;
 
     const { data, error } = await supabase
       .from('subscriptions')

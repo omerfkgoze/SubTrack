@@ -64,6 +64,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
       trial_expiry_date: subscription?.trial_expiry_date ?? undefined,
       category: subscription?.category ?? undefined,
       notes: subscription?.notes ?? undefined,
+      is_active: subscription?.is_active !== false,
     },
   });
 
@@ -91,6 +92,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
         trial_expiry_date: data.trial_expiry_date,
         category: data.category,
         notes: data.notes,
+        is_active: data.is_active,
       });
 
       if (success) {
@@ -326,6 +328,27 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
               />
             )}
           />
+        </View>
+
+        {/* Active Status Toggle */}
+        <View style={styles.fieldContainer}>
+          <View style={styles.trialRow}>
+            <Text variant="bodyLarge">Active</Text>
+            <Controller
+              control={control}
+              name="is_active"
+              render={({ field: { onChange, value } }) => (
+                <Switch
+                  value={value ?? true}
+                  onValueChange={onChange}
+                  disabled={isSubmitting}
+                  accessibilityLabel="Active status"
+                  accessibilityRole="switch"
+                  style={styles.switch}
+                />
+              )}
+            />
+          </View>
         </View>
 
         {/* Submit Button */}

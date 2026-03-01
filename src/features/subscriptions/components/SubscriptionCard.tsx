@@ -30,7 +30,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
       onPress={onPress}
       style={[styles.card, isInactive && styles.inactiveCard]}
       {...(onPress ? { accessibilityRole: 'button' as const } : {})}
-      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}, ${categoryConfig.label}, ${renewalInfo.text}`}
+      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}${isInactive ? ', cancelled' : ''}, ${categoryConfig.label}, ${isInactive ? 'Cancelled' : renewalInfo.text}`}
       {...(onPress ? { accessibilityHint: 'Swipe left for options' } : {})}
     >
       <View style={styles.cardContent}>
@@ -54,7 +54,14 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
             >
               {subscription.name}
             </Text>
-            <Text variant="titleMedium" style={[styles.price, { color: theme.colors.onSurface }]}>
+            <Text
+              variant="titleMedium"
+              style={[
+                styles.price,
+                { color: theme.colors.onSurface },
+                isInactive && styles.strikethrough,
+              ]}
+            >
               {priceLabel}
             </Text>
           </View>
@@ -63,7 +70,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
               variant="bodySmall"
               style={{ color: theme.colors.onSurfaceVariant }}
             >
-              {categoryConfig.label} · {renewalInfo.text}
+              {categoryConfig.label} · {isInactive ? 'Cancelled' : renewalInfo.text}
             </Text>
             <TrialBadge
               isTrial={subscription.is_trial}
@@ -124,5 +131,8 @@ const styles = StyleSheet.create({
   },
   price: {
     fontWeight: '600',
+  },
+  strikethrough: {
+    textDecorationLine: 'line-through',
   },
 });

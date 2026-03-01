@@ -14,6 +14,7 @@ export interface CreateSubscriptionDTO {
   trial_expiry_date?: string;
   category?: string;
   notes?: string;
+  is_active?: boolean;
 }
 
 export type UpdateSubscriptionDTO = Partial<CreateSubscriptionDTO> & { id: string };
