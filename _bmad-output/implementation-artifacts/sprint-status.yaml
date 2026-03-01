@@ -60,7 +60,7 @@ development_status:
   2-5-trial-period-tracking: done
   2-6-subscription-categories: done
   2-7-subscription-status-management: done
-  2-8-subscription-detail-view: review
+  2-8-subscription-detail-view: done
   epic-2-retrospective: optional
 
   # Epic 3: Spending Dashboard & Insights

@@ -133,9 +133,12 @@ describe('SubscriptionDetailScreen', () => {
     renderWithProvider('sub-cancelled');
     const cancelledTexts = screen.getAllByText('Cancelled');
     expect(cancelledTexts.length).toBeGreaterThan(0);
-    // The price text should exist with strikethrough styling
-    const priceTexts = screen.getAllByText(/17\.99/);
+    // The price text in the hero card should have strikethrough styling
+    const priceTexts = screen.getAllByText(/€17\.99\/mo/);
     expect(priceTexts.length).toBeGreaterThan(0);
+    const heroPrice = priceTexts[0];
+    const styleStr = JSON.stringify(heroPrice.props.style);
+    expect(styleStr).toContain('line-through');
   });
 
   it('Edit button navigates to EditSubscription screen', () => {
@@ -184,6 +187,41 @@ describe('SubscriptionDetailScreen', () => {
     renderWithProvider('sub-cancelled');
     expect(screen.getByText('Activate Subscription')).toBeTruthy();
     expect(screen.getByLabelText('Activate subscription')).toBeTruthy();
+  });
+
+  it('configures header with edit and delete icons via setOptions', () => {
+    renderWithProvider('sub-1');
+    expect(mockSetOptions).toHaveBeenCalled();
+    const lastCall = mockSetOptions.mock.calls[mockSetOptions.mock.calls.length - 1][0];
+    expect(lastCall).toHaveProperty('headerRight');
+    // Render the headerRight to verify icons
+    const { getByLabelText } = render(
+      <PaperProvider theme={theme}>{lastCall.headerRight()}</PaperProvider>,
+    );
+    expect(getByLabelText('Edit subscription')).toBeTruthy();
+    expect(getByLabelText('Delete subscription')).toBeTruthy();
+  });
+
+  it('header edit icon navigates to EditSubscription', () => {
+    renderWithProvider('sub-1');
+    const lastCall = mockSetOptions.mock.calls[mockSetOptions.mock.calls.length - 1][0];
+    const { getByLabelText } = render(
+      <PaperProvider theme={theme}>{lastCall.headerRight()}</PaperProvider>,
+    );
+    fireEvent.press(getByLabelText('Edit subscription'));
+    expect(mockNavigate).toHaveBeenCalledWith('EditSubscription', { subscriptionId: 'sub-1' });
+  });
+
+  it('header delete icon is rendered and pressable', () => {
+    renderWithProvider('sub-1');
+    const lastCall = mockSetOptions.mock.calls[mockSetOptions.mock.calls.length - 1][0];
+    const { getByLabelText } = render(
+      <PaperProvider theme={theme}>{lastCall.headerRight()}</PaperProvider>,
+    );
+    const deleteIcon = getByLabelText('Delete subscription');
+    expect(deleteIcon).toBeTruthy();
+    // Verify onPress is wired (doesn't throw)
+    fireEvent.press(deleteIcon);
   });
 
   it('confirms delete and navigates back', async () => {

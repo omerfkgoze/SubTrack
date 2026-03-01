@@ -69,6 +69,10 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
       setSnackbar({
         message: wasActive ? `${name} cancelled` : `${name} activated`,
       });
+    } else {
+      setSnackbar({
+        message: 'Failed to update subscription status. Please try again.',
+      });
     }
   }, [subscription, toggleSubscriptionStatus]);
 
@@ -162,7 +166,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         </Text>
         <Divider style={styles.divider} />
 
-        <DetailRow label="Price" value={`€${subscription.price.toFixed(2)}/${BILLING_CYCLE_LABELS[subscription.billing_cycle] ?? subscription.billing_cycle}`} />
+        <DetailRow label="Price" value={`${subscription.currency ?? '€'}${subscription.price.toFixed(2)}/${BILLING_CYCLE_LABELS[subscription.billing_cycle] ?? subscription.billing_cycle}`} />
         <DetailRow label="Billing Cycle" value={BILLING_CYCLE_LABELS[subscription.billing_cycle] ?? subscription.billing_cycle} />
         <DetailRow
           label="Next Renewal"
@@ -237,6 +241,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
             onPress={handleEdit}
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
+            disabled={isSubmitting}
             accessibilityLabel="Edit subscription details"
           >
             Edit Details

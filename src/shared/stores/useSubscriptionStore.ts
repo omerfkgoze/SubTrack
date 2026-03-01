@@ -102,6 +102,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
 
         // Optimistic update
         set((current) => ({
+          isSubmitting: true,
           subscriptions: current.subscriptions.map((s) =>
             s.id === id ? { ...s, is_active: newIsActive } : s
           ),
@@ -112,6 +113,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         if (result.error) {
           // Rollback
           set((current) => ({
+            isSubmitting: false,
             subscriptions: current.subscriptions.map((s) =>
               s.id === id ? { ...s, is_active: sub.is_active } : s
             ),
@@ -124,10 +126,13 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         if (result.data) {
           const serverSub = result.data;
           set((current) => ({
+            isSubmitting: false,
             subscriptions: current.subscriptions.map((s) =>
               s.id === id ? serverSub : s
             ),
           }));
+        } else {
+          set({ isSubmitting: false });
         }
 
         return true;
@@ -149,6 +154,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
 
         // Optimistic removal — instant UI feedback
         set({
+          isSubmitting: true,
           subscriptions: currentState.subscriptions.filter((s) => s.id !== id),
           pendingDelete: { subscription, originalIndex: index },
           error: null,
@@ -168,6 +174,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
               return {
                 subscriptions: restored,
                 pendingDelete: null,
+                isSubmitting: false,
                 error: result.error,
               };
             });
@@ -175,6 +182,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           return false;
         }
 
+        set({ isSubmitting: false });
         return true;
       },
 

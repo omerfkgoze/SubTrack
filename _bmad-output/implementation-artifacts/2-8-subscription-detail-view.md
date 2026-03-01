@@ -1,6 +1,6 @@
 # Story 2.8: Subscription Detail View
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -415,6 +415,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-01: Story 2.8 implementation — Subscription Detail View screen with full details, trial info, action buttons, header icons, and 13 tests
+- 2026-03-01: Code review fixes — C1: UndoSnackbar now shows after detail delete (pendingDelete observer in SubscriptionsScreen), H1: toggle error feedback, H2: 3 header icon tests added, H3: strikethrough style assertion, M1: Edit button disabled during submission, M2: isSubmitting in store for toggle/delete, M3: currency from subscription object. 164 tests total, 0 regressions.
 
 ### File List
 
@@ -426,5 +427,6 @@ Claude Opus 4.6
 - src/app/navigation/types.ts
 - src/app/navigation/SubscriptionsStack.tsx
 - src/features/subscriptions/screens/SubscriptionsScreen.tsx
+- src/shared/stores/useSubscriptionStore.ts (code review: isSubmitting for toggle/delete)
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - _bmad-output/implementation-artifacts/2-8-subscription-detail-view.md

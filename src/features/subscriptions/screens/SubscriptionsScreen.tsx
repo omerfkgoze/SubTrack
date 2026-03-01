@@ -64,6 +64,15 @@ export function SubscriptionsScreen() {
     }
   }, [error, subscriptions.length]);
 
+  // C1 fix: Show UndoSnackbar when returning from detail screen after delete
+  const pendingDelete = useSubscriptionStore((s) => s.pendingDelete);
+  useEffect(() => {
+    if (pendingDelete && !undoSnackbarVisible) {
+      setDeletedSubscriptionName(pendingDelete.subscription.name);
+      setUndoSnackbarVisible(true);
+    }
+  }, [pendingDelete, undoSnackbarVisible]);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchSubscriptions();
