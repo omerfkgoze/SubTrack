@@ -4,13 +4,7 @@ import { PaperProvider } from 'react-native-paper';
 import { SubscriptionCard } from './SubscriptionCard';
 import type { Subscription } from '@features/subscriptions/types';
 import { theme } from '@config/theme';
-
-function toLocalDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import { toLocalDateString } from '@features/subscriptions/utils/testHelpers';
 
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 5);

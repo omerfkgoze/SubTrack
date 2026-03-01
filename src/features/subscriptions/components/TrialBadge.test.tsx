@@ -3,13 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { TrialBadge } from './TrialBadge';
 import { theme } from '@config/theme';
-
-function toLocalDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import { toLocalDateString } from '@features/subscriptions/utils/testHelpers';
 
 function renderWithProvider(ui: React.ReactElement) {
   return render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
@@ -59,6 +53,11 @@ describe('TrialBadge', () => {
       <TrialBadge isTrial={true} trialExpiryDate={toLocalDateString(past)} />,
     );
     expect(screen.getByText('Trial expired')).toBeTruthy();
+  });
+
+  it('has correct accessibility label for trial without expiry date', () => {
+    renderWithProvider(<TrialBadge isTrial={true} trialExpiryDate={null} />);
+    expect(screen.getByLabelText('Trial')).toBeTruthy();
   });
 
   it('has correct accessibility label for active trial', () => {

@@ -1,6 +1,6 @@
 # Story 2.5: Trial Period Tracking
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -555,6 +555,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-01: Implemented Story 2.5 Trial Period Tracking — added `getTrialInfo` utility, created `TrialBadge` component with urgency-based color coding, replaced static "Trial" chip with dynamic countdown badge in SubscriptionCard, updated accessibility labels. 28 new tests added (105 total, 0 regressions).
+- 2026-03-01: Code review fixes — H1: Fixed TrialBadge accessibility label bug for trials without expiry date (was "Trial expires today", now correctly "Trial"). M1: Added missing accessibility label test for no-expiry trial. M2: Extracted duplicate `toLocalDateString` test helper to shared `testHelpers.ts`. 106 total tests, 0 regressions.
 
 ### File List
 
@@ -564,6 +565,7 @@ Claude Opus 4.6
 - `src/features/subscriptions/components/TrialBadge.test.tsx` — CREATED: 10 TrialBadge tests
 - `src/features/subscriptions/components/SubscriptionCard.tsx` — MODIFIED: Replaced Chip with TrialBadge, removed Chip import, removed unused styles, updated accessibility label
 - `src/features/subscriptions/components/SubscriptionCard.test.tsx` — MODIFIED: Updated existing trial test, added 4 new tests (countdown, expired, accessibility)
+- `src/features/subscriptions/utils/testHelpers.ts` — CREATED: Shared test helper `toLocalDateString` (extracted from 3 test files)
 - `src/features/subscriptions/index.ts` — MODIFIED: Added TrialBadge, getTrialInfo, and type exports
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` — MODIFIED: Updated 2-5-trial-period-tracking status
 - `_bmad-output/implementation-artifacts/2-5-trial-period-tracking.md` — MODIFIED: Updated task checkboxes, Dev Agent Record, File List, Change Log, Status

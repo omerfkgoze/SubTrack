@@ -36,9 +36,11 @@ export function TrialBadge({ isTrial, trialExpiryDate }: TrialBadgeProps) {
   const accessibilityText =
     trialInfo.status === 'expired'
       ? 'Trial expired'
-      : trialInfo.daysRemaining === 0
-        ? 'Trial expires today'
-        : `Trial, ${trialInfo.daysRemaining} ${trialInfo.daysRemaining === 1 ? 'day' : 'days'} remaining`;
+      : trialInfo.status === 'active' && !trialExpiryDate
+        ? 'Trial'
+        : trialInfo.daysRemaining === 0
+          ? 'Trial expires today'
+          : `Trial, ${trialInfo.daysRemaining} ${trialInfo.daysRemaining === 1 ? 'day' : 'days'} remaining`;
 
   return (
     <View
