@@ -4,13 +4,7 @@ import { PaperProvider } from 'react-native-paper';
 import { SwipeableSubscriptionCard } from './SwipeableSubscriptionCard';
 import type { Subscription } from '@features/subscriptions/types';
 import { theme } from '@config/theme';
-
-function toLocalDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import { toLocalDateString } from '@features/subscriptions/utils/testHelpers';
 
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 5);
@@ -129,5 +123,15 @@ describe('SwipeableSubscriptionCard', () => {
       <SwipeableSubscriptionCard subscription={cancelledSub} />,
     );
     expect(screen.getByText('Activate')).toBeTruthy();
+  });
+
+  it('calls onToggleStatus via accessibilityAction', () => {
+    const onToggleStatus = jest.fn();
+    renderWithProvider(
+      <SwipeableSubscriptionCard subscription={mockSubscription} onToggleStatus={onToggleStatus} />,
+    );
+    const wrappers = screen.getAllByLabelText(/Netflix, 17\.99 euros per monthly/);
+    fireEvent(wrappers[0], 'accessibilityAction', { nativeEvent: { actionName: 'toggleStatus' } });
+    expect(onToggleStatus).toHaveBeenCalledTimes(1);
   });
 });

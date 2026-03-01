@@ -77,6 +77,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
 
   const isTrial = watch('is_trial');
   const selectedCategory = watch('category');
+  const isActive = watch('is_active');
 
   const onSubmit = useCallback(
     async (data: CreateSubscriptionFormData) => {
@@ -333,7 +334,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
         {/* Active Status Toggle */}
         <View style={styles.fieldContainer}>
           <View style={styles.trialRow}>
-            <Text variant="bodyLarge">Active</Text>
+            <Text variant="bodyLarge">{isActive !== false ? 'Active' : 'Cancelled'}</Text>
             <Controller
               control={control}
               name="is_active"

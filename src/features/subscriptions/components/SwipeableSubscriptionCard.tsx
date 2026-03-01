@@ -86,6 +86,7 @@ export function SwipeableSubscriptionCard({
         accessibilityActions={[
           { name: 'edit', label: `Edit ${subscription.name}` },
           { name: 'delete', label: `Delete ${subscription.name}` },
+          { name: 'toggleStatus', label: `${toggleLabel} ${subscription.name}` },
         ]}
         onAccessibilityAction={(event) => {
           switch (event.nativeEvent.actionName) {
@@ -94,6 +95,9 @@ export function SwipeableSubscriptionCard({
               break;
             case 'delete':
               onDelete?.();
+              break;
+            case 'toggleStatus':
+              onToggleStatus?.();
               break;
           }
         }}

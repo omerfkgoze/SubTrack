@@ -100,8 +100,17 @@ export function SubscriptionsScreen() {
   }, []);
 
   const handleToggleStatus = useCallback(async (subscriptionId: string) => {
-    await toggleSubscriptionStatus(subscriptionId);
-  }, [toggleSubscriptionStatus]);
+    const sub = subscriptions.find((s) => s.id === subscriptionId);
+    const wasActive = sub?.is_active !== false;
+    const success = await toggleSubscriptionStatus(subscriptionId);
+    if (success) {
+      const name = sub?.name ?? 'Subscription';
+      setSnackbar({
+        message: wasActive ? `${name} cancelled` : `${name} activated`,
+        type: 'success',
+      });
+    }
+  }, [toggleSubscriptionStatus, subscriptions]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteDialogSubscription) return;

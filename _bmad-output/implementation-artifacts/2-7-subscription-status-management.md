@@ -1,6 +1,6 @@
 # Story 2.7: Subscription Status Management
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -320,6 +320,28 @@ No blockers. Service test mock pattern required `jest.requireMock` in helper fun
 - `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx` — 3 new toggle tests
 - `src/features/subscriptions/screens/SubscriptionsScreen.tsx` — `handleToggleStatus` wired up
 
+## Senior Developer Review (AI)
+
+**Reviewer:** GOZE on 2026-03-01
+**Outcome:** Approved with fixes applied
+
+### Findings Fixed:
+- **H1 (HIGH):** Added missing `toggleStatus` accessibility action to SwipeableSubscriptionCard — VoiceOver/TalkBack users can now toggle status
+- **M1 (MEDIUM):** Removed unused `json` variable in SubscriptionCard.test.tsx (ESLint warning resolved)
+- **M2 (MEDIUM):** Replaced duplicated `toLocalDateString` helper in SwipeableSubscriptionCard.test.tsx with import from shared testHelpers
+- **M3 (MEDIUM):** EditSubscriptionScreen "Active" label now dynamically changes to "Cancelled" when switch is toggled off
+- **M4 (MEDIUM):** Added success snackbar feedback after toggle status action ("Netflix cancelled" / "Netflix activated")
+
+### Remaining (LOW — accepted):
+- **L1:** SwipeableSubscriptionCard accessibility label uses renewal info for cancelled subs (minor inconsistency)
+- **L2:** `toggleSubscriptionStatus` doesn't set `isSubmitting` flag (no practical impact for optimistic updates)
+
+### Post-Review Stats:
+- 148 tests passing (1 new accessibility action test added)
+- 0 ESLint errors/warnings
+- TypeScript clean
+
 ## Change Log
 
+- 2026-03-01: Code review — 5 fixes applied (1 HIGH, 4 MEDIUM). Accessibility action for toggle status added, ESLint warning fixed, test helper deduplication, dynamic Active/Cancelled label, toggle success snackbar. Total: 148 tests passing.
 - 2026-03-01: Story 2.7 implemented — subscription status management (is_active toggle, visual cancelled styling, swipe action, edit screen switch). 24 new tests added. Total: 147 tests passing.

@@ -204,7 +204,6 @@ describe('SubscriptionCard', () => {
 
     it('shows normal price (no strikethrough) for active subscription', () => {
       const { toJSON } = renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
-      const json = JSON.stringify(toJSON());
       // line-through should NOT be in the styles for active
       // We check that the cancelled-specific style object is not applied
       const parsed = toJSON();
