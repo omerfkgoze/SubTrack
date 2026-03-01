@@ -23,6 +23,7 @@ export type SettingsStackParamList = {
 // Subscriptions Stack
 export type SubscriptionsStackParamList = {
   SubscriptionsList: { updated?: boolean } | undefined;
+  SubscriptionDetail: { subscriptionId: string };
   EditSubscription: { subscriptionId: string };
 };
 

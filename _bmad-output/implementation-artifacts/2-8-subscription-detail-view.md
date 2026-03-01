@@ -1,6 +1,6 @@
 # Story 2.8: Subscription Detail View
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -50,54 +50,54 @@ so that I can see all the relevant details including next renewal date.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add SubscriptionDetail route to navigation (AC: #5)
-  - [ ] 1.1 Add `SubscriptionDetail: { subscriptionId: string }` to `SubscriptionsStackParamList` in `src/app/navigation/types.ts`
-  - [ ] 1.2 Register `SubscriptionDetailScreen` in `src/app/navigation/SubscriptionsStack.tsx` between SubscriptionsList and EditSubscription
-  - [ ] 1.3 Update `SubscriptionsScreen.tsx` card onPress to navigate to `SubscriptionDetail` instead of `EditSubscription`
+- [x] Task 1: Add SubscriptionDetail route to navigation (AC: #5)
+  - [x] 1.1 Add `SubscriptionDetail: { subscriptionId: string }` to `SubscriptionsStackParamList` in `src/app/navigation/types.ts`
+  - [x] 1.2 Register `SubscriptionDetailScreen` in `src/app/navigation/SubscriptionsStack.tsx` between SubscriptionsList and EditSubscription
+  - [x] 1.3 Update `SubscriptionsScreen.tsx` card onPress to navigate to `SubscriptionDetail` instead of `EditSubscription`
 
-- [ ] Task 2: Create SubscriptionDetailScreen with full detail display (AC: #1, #4)
-  - [ ] 2.1 Create `src/features/subscriptions/screens/SubscriptionDetailScreen.tsx`
-  - [ ] 2.2 Get `subscriptionId` from route params, find subscription in store
-  - [ ] 2.3 Show "not found" message if subscription is missing (follow EditSubscriptionScreen pattern)
-  - [ ] 2.4 Display subscription header section: name (18px Medium), category icon + color stripe, price with billing cycle
-  - [ ] 2.5 Display key information section: price, billing cycle, next renewal date (highlighted with primary color), category name, status (Active/Cancelled badge), created date
-  - [ ] 2.6 Show strikethrough on price and "Cancelled" status badge when `is_active === false`
-  - [ ] 2.7 Display notes section if notes exist
+- [x] Task 2: Create SubscriptionDetailScreen with full detail display (AC: #1, #4)
+  - [x] 2.1 Create `src/features/subscriptions/screens/SubscriptionDetailScreen.tsx`
+  - [x] 2.2 Get `subscriptionId` from route params, find subscription in store
+  - [x] 2.3 Show "not found" message if subscription is missing (follow EditSubscriptionScreen pattern)
+  - [x] 2.4 Display subscription header section: name (18px Medium), category icon + color stripe, price with billing cycle
+  - [x] 2.5 Display key information section: price, billing cycle, next renewal date (highlighted with primary color), category name, status (Active/Cancelled badge), created date
+  - [x] 2.6 Show strikethrough on price and "Cancelled" status badge when `is_active === false`
+  - [x] 2.7 Display notes section if notes exist
 
-- [ ] Task 3: Add trial information display (AC: #2)
-  - [ ] 3.1 Use `getTrialInfo()` from `subscriptionUtils.ts` to get trial countdown and urgency
-  - [ ] 3.2 Display trial section with expiry date and color-coded countdown badge when `is_trial === true`
-  - [ ] 3.3 Hide trial section entirely when subscription is not a trial
+- [x] Task 3: Add trial information display (AC: #2)
+  - [x] 3.1 Use `getTrialInfo()` from `subscriptionUtils.ts` to get trial countdown and urgency
+  - [x] 3.2 Display trial section with expiry date and color-coded countdown badge when `is_trial === true`
+  - [x] 3.3 Hide trial section entirely when subscription is not a trial
 
-- [ ] Task 4: Add action buttons (AC: #3, #4)
-  - [ ] 4.1 Add "Edit Details" button (outlined/secondary style) — navigates to EditSubscription screen
-  - [ ] 4.2 Add "Delete Subscription" button (destructive style) — shows confirmation Dialog, then calls store `deleteSubscription`
-  - [ ] 4.3 Add "Cancel Subscription" / "Activate Subscription" text button (tertiary) — calls store `toggleSubscriptionStatus`
-  - [ ] 4.4 After delete, navigate back to subscription list and show UndoSnackbar
-  - [ ] 4.5 After toggle status, show success Snackbar ("Netflix cancelled" / "Netflix activated") and update UI
+- [x] Task 4: Add action buttons (AC: #3, #4)
+  - [x] 4.1 Add "Edit Details" button (outlined/secondary style) — navigates to EditSubscription screen
+  - [x] 4.2 Add "Delete Subscription" button (destructive style) — shows confirmation Dialog, then calls store `deleteSubscription`
+  - [x] 4.3 Add "Cancel Subscription" / "Activate Subscription" text button (tertiary) — calls store `toggleSubscriptionStatus`
+  - [x] 4.4 After delete, navigate back to subscription list and show UndoSnackbar
+  - [x] 4.5 After toggle status, show success Snackbar ("Netflix cancelled" / "Netflix activated") and update UI
 
-- [ ] Task 5: Set up screen header with action icons (AC: #5)
-  - [ ] 5.1 Configure React Navigation header: title "Subscription Details", back button
-  - [ ] 5.2 Add Edit (pencil) and Delete (trash) icons in header right
-  - [ ] 5.3 Wire header icons to same handlers as body buttons
+- [x] Task 5: Set up screen header with action icons (AC: #5)
+  - [x] 5.1 Configure React Navigation header: title "Subscription Details", back button
+  - [x] 5.2 Add Edit (pencil) and Delete (trash) icons in header right
+  - [x] 5.3 Wire header icons to same handlers as body buttons
 
-- [ ] Task 6: Write tests for SubscriptionDetailScreen (AC: #1-#5)
-  - [ ] 6.1 Create `src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx`
-  - [ ] 6.2 Test: renders all subscription details (name, price, cycle, renewal, category, status, notes)
-  - [ ] 6.3 Test: highlights next renewal date
-  - [ ] 6.4 Test: shows trial information when is_trial is true
-  - [ ] 6.5 Test: hides trial section when is_trial is false
-  - [ ] 6.6 Test: shows strikethrough price and "Cancelled" badge for inactive subscription
-  - [ ] 6.7 Test: Edit button navigates to EditSubscription screen
-  - [ ] 6.8 Test: Delete button shows confirmation dialog
-  - [ ] 6.9 Test: Toggle status button calls toggleSubscriptionStatus
-  - [ ] 6.10 Test: shows "Subscription not found" for invalid ID
-  - [ ] 6.11 Test: accessibility labels are correct
+- [x] Task 6: Write tests for SubscriptionDetailScreen (AC: #1-#5)
+  - [x] 6.1 Create `src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx`
+  - [x] 6.2 Test: renders all subscription details (name, price, cycle, renewal, category, status, notes)
+  - [x] 6.3 Test: highlights next renewal date
+  - [x] 6.4 Test: shows trial information when is_trial is true
+  - [x] 6.5 Test: hides trial section when is_trial is false
+  - [x] 6.6 Test: shows strikethrough price and "Cancelled" badge for inactive subscription
+  - [x] 6.7 Test: Edit button navigates to EditSubscription screen
+  - [x] 6.8 Test: Delete button shows confirmation dialog
+  - [x] 6.9 Test: Toggle status button calls toggleSubscriptionStatus
+  - [x] 6.10 Test: shows "Subscription not found" for invalid ID
+  - [x] 6.11 Test: accessibility labels are correct
 
-- [ ] Task 7: Update navigation tests and run full regression (AC: #5)
-  - [ ] 7.1 Verify SubscriptionsScreen card tap navigates to SubscriptionDetail (update existing test if needed)
-  - [ ] 7.2 Run full test suite — ensure 0 regressions
-  - [ ] 7.3 Run TypeScript type check and ESLint
+- [x] Task 7: Update navigation tests and run full regression (AC: #5)
+  - [x] 7.1 Verify SubscriptionsScreen card tap navigates to SubscriptionDetail (update existing test if needed)
+  - [x] 7.2 Run full test suite — ensure 0 regressions
+  - [x] 7.3 Run TypeScript type check and ESLint
 
 ## Dev Notes
 
@@ -391,10 +391,40 @@ useSubscriptionStore.setState({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Initial test run: 3 tests failed due to multiple text matches (price shown in hero card + details, "Cancelled" in multiple places, trial expiry date format). Fixed by using `getAllByText` and regex patterns.
+
 ### Completion Notes List
 
+- Created SubscriptionDetailScreen with hero card, details section, trial info, notes, and action buttons
+- Navigation route added to SubscriptionsStackParamList and registered in SubscriptionsStack
+- Card onPress in SubscriptionsScreen now navigates to SubscriptionDetail instead of EditSubscription
+- Edit action accessible from detail screen header icons and body button
+- Delete flow uses existing DeleteConfirmationDialog + store deleteSubscription, navigates back after delete (UndoSnackbar in SubscriptionsScreen picks up pendingDelete from store)
+- Toggle status uses store toggleSubscriptionStatus with snackbar feedback
+- Header configured with pencil (edit) and trash (delete) icons via useLayoutEffect
+- Renewal date highlighted with theme.colors.primary
+- Strikethrough price and "Cancelled" status for inactive subscriptions
+- Trial section shows TrialBadge + expiry date, hidden when not a trial
+- 13 new tests added (161 total, 0 regressions)
+- TypeScript and ESLint checks pass clean
+
+### Change Log
+
+- 2026-03-01: Story 2.8 implementation — Subscription Detail View screen with full details, trial info, action buttons, header icons, and 13 tests
+
 ### File List
+
+**Created:**
+- src/features/subscriptions/screens/SubscriptionDetailScreen.tsx
+- src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx
+
+**Modified:**
+- src/app/navigation/types.ts
+- src/app/navigation/SubscriptionsStack.tsx
+- src/features/subscriptions/screens/SubscriptionsScreen.tsx
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- _bmad-output/implementation-artifacts/2-8-subscription-detail-view.md

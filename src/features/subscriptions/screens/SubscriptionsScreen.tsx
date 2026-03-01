@@ -95,6 +95,13 @@ export function SubscriptionsScreen() {
     [navigation],
   );
 
+  const handleViewDetail = useCallback(
+    (subscriptionId: string) => {
+      navigation.navigate('SubscriptionDetail', { subscriptionId });
+    },
+    [navigation],
+  );
+
   const handleDelete = useCallback((subscription: Subscription) => {
     setDeleteDialogSubscription(subscription);
   }, []);
@@ -150,11 +157,11 @@ export function SubscriptionsScreen() {
         onEdit={() => handleEdit(item.id)}
         onDelete={() => handleDelete(item)}
         onToggleStatus={() => handleToggleStatus(item.id)}
-        onPress={() => handleEdit(item.id)}
+        onPress={() => handleViewDetail(item.id)}
         onSwipeableOpen={handleSwipeableOpen}
       />
     ),
-    [handleEdit, handleDelete, handleSwipeableOpen, handleToggleStatus],
+    [handleEdit, handleDelete, handleSwipeableOpen, handleToggleStatus, handleViewDetail],
   );
 
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
