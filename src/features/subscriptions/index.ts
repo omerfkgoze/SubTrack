@@ -6,6 +6,7 @@ export { SubscriptionCard } from './components/SubscriptionCard';
 export { SwipeableSubscriptionCard } from './components/SwipeableSubscriptionCard';
 export { CostSummaryHeader } from './components/CostSummaryHeader';
 export { DeleteConfirmationDialog } from './components/DeleteConfirmationDialog';
+export { TrialBadge } from './components/TrialBadge';
 export type { Subscription, CreateSubscriptionDTO, UpdateSubscriptionDTO, AppError } from './types';
 export {
   createSubscription,
@@ -21,4 +22,6 @@ export {
   calculateTotalMonthlyCost,
   getRenewalInfo,
   getCategoryConfig,
+  getTrialInfo,
 } from './utils/subscriptionUtils';
+export type { TrialInfo, TrialStatus, TrialUrgency } from './utils/subscriptionUtils';

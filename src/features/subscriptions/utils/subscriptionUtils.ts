@@ -3,6 +3,16 @@ import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
 import type { SubscriptionCategory } from '@config/categories';
 import type { BillingCycle } from '@features/subscriptions/types';
 
+export type TrialStatus = 'active' | 'expiring-soon' | 'critical' | 'expired' | 'none';
+export type TrialUrgency = 'low' | 'medium' | 'high' | 'critical';
+
+export interface TrialInfo {
+  daysRemaining: number;
+  status: TrialStatus;
+  text: string;
+  urgencyLevel: TrialUrgency;
+}
+
 export function formatBillingCycleShort(cycle: BillingCycle): string {
   switch (cycle) {
     case 'monthly':
@@ -73,6 +83,44 @@ const DEFAULT_CATEGORY: SubscriptionCategory = {
   icon: 'dots-horizontal-circle',
   color: '#6B7280',
 };
+
+export function getTrialInfo(
+  isTrial: boolean | null,
+  trialExpiryDate: string | null,
+): TrialInfo {
+  if (!isTrial) {
+    return { daysRemaining: 0, status: 'none', text: '', urgencyLevel: 'low' };
+  }
+
+  if (!trialExpiryDate) {
+    return { daysRemaining: 0, status: 'active', text: 'Trial', urgencyLevel: 'low' };
+  }
+
+  const expiryDate = startOfDay(parseISO(trialExpiryDate));
+  const today = startOfDay(new Date());
+
+  if (isToday(expiryDate)) {
+    return { daysRemaining: 0, status: 'critical', text: 'Expires today', urgencyLevel: 'critical' };
+  }
+
+  const days = differenceInDays(expiryDate, today);
+
+  if (days < 0) {
+    return { daysRemaining: days, status: 'expired', text: 'Trial expired', urgencyLevel: 'critical' };
+  }
+
+  const dayText = `${days} ${days === 1 ? 'day' : 'days'} left`;
+
+  if (days <= 3) {
+    return { daysRemaining: days, status: 'critical', text: dayText, urgencyLevel: 'high' };
+  }
+
+  if (days <= 7) {
+    return { daysRemaining: days, status: 'expiring-soon', text: dayText, urgencyLevel: 'medium' };
+  }
+
+  return { daysRemaining: days, status: 'active', text: dayText, urgencyLevel: 'low' };
+}
 
 export function getCategoryConfig(categoryId: string | null): SubscriptionCategory {
   if (!categoryId) {

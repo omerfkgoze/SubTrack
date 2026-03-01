@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Card, Text, Icon, Chip, useTheme } from 'react-native-paper';
+import { Card, Text, Icon, useTheme } from 'react-native-paper';
 import type { Subscription, BillingCycle } from '@features/subscriptions/types';
 import {
   getCategoryConfig,
   formatPrice,
   getRenewalInfo,
+  getTrialInfo,
 } from '@features/subscriptions/utils/subscriptionUtils';
+import { TrialBadge } from '@features/subscriptions/components/TrialBadge';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -17,6 +19,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
   const theme = useTheme();
   const categoryConfig = getCategoryConfig(subscription.category);
   const renewalInfo = getRenewalInfo(subscription.renewal_date);
+  const trialInfo = getTrialInfo(subscription.is_trial, subscription.trial_expiry_date);
   const priceLabel = formatPrice(subscription.price, subscription.billing_cycle as BillingCycle);
   const isInactive = subscription.is_active === false;
 
@@ -27,7 +30,7 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
       onPress={onPress}
       style={[styles.card, isInactive && styles.inactiveCard]}
       {...(onPress ? { accessibilityRole: 'button' as const } : {})}
-      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}, ${renewalInfo.text}`}
+      accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}, ${renewalInfo.text}`}
       {...(onPress ? { accessibilityHint: 'Swipe left for options' } : {})}
     >
       <View style={styles.cardContent}>
@@ -62,11 +65,10 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
             >
               {renewalInfo.text}
             </Text>
-            {subscription.is_trial && (
-              <Chip compact textStyle={styles.trialChipText} style={styles.trialChip}>
-                Trial
-              </Chip>
-            )}
+            <TrialBadge
+              isTrial={subscription.is_trial}
+              trialExpiryDate={subscription.trial_expiry_date}
+            />
           </View>
         </View>
       </View>
@@ -122,11 +124,5 @@ const styles = StyleSheet.create({
   },
   price: {
     fontWeight: '600',
-  },
-  trialChip: {
-    height: 24,
-  },
-  trialChipText: {
-    fontSize: 11,
   },
 });

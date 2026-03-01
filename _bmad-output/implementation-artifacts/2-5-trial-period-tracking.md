@@ -1,6 +1,6 @@
 # Story 2.5: Trial Period Tracking
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,36 +33,36 @@ so that I don't forget to cancel before I'm charged.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `getTrialInfo` Utility Function (AC: #5)
-  - [ ] 1.1 Add `getTrialInfo(isTrial: boolean | null, trialExpiryDate: string | null)` to `src/features/subscriptions/utils/subscriptionUtils.ts`
-  - [ ] 1.2 Return type: `{ daysRemaining: number; status: 'active' | 'expiring-soon' | 'critical' | 'expired' | 'none'; text: string; urgencyLevel: 'low' | 'medium' | 'high' | 'critical' }`
-  - [ ] 1.3 Implement day calculation using `date-fns` (`differenceInDays`, `parseISO`, `startOfDay`, `isToday`) — same pattern as existing `getRenewalInfo`
-  - [ ] 1.4 Handle edge cases: `is_trial === false` → status 'none'; `is_trial === true` with null expiry → status 'active' with text "Trial"
-  - [ ] 1.5 Add `getTrialInfo` tests to `subscriptionUtils.test.ts` (all urgency levels, edge cases, singular/plural days)
+- [x] Task 1: Add `getTrialInfo` Utility Function (AC: #5)
+  - [x] 1.1 Add `getTrialInfo(isTrial: boolean | null, trialExpiryDate: string | null)` to `src/features/subscriptions/utils/subscriptionUtils.ts`
+  - [x] 1.2 Return type: `{ daysRemaining: number; status: 'active' | 'expiring-soon' | 'critical' | 'expired' | 'none'; text: string; urgencyLevel: 'low' | 'medium' | 'high' | 'critical' }`
+  - [x] 1.3 Implement day calculation using `date-fns` (`differenceInDays`, `parseISO`, `startOfDay`, `isToday`) — same pattern as existing `getRenewalInfo`
+  - [x] 1.4 Handle edge cases: `is_trial === false` → status 'none'; `is_trial === true` with null expiry → status 'active' with text "Trial"
+  - [x] 1.5 Add `getTrialInfo` tests to `subscriptionUtils.test.ts` (all urgency levels, edge cases, singular/plural days)
 
-- [ ] Task 2: Create `TrialBadge` Component (AC: #1, #2, #3, #4, #6)
-  - [ ] 2.1 Create `src/features/subscriptions/components/TrialBadge.tsx`
-  - [ ] 2.2 Props: `isTrial: boolean | null`, `trialExpiryDate: string | null`
-  - [ ] 2.3 Use `getTrialInfo()` internally to compute display state
-  - [ ] 2.4 Render nothing if status is 'none' (not a trial)
-  - [ ] 2.5 Render compact badge with icon + text, color-coded by urgency level
-  - [ ] 2.6 Use `MaterialCommunityIcons` via React Native Paper `Icon` component: `timer-sand` (low/medium), `alert` (high), `alert-circle` (critical/expired)
-  - [ ] 2.7 Add `accessibilityLabel` with descriptive text (e.g., "Trial, 5 days remaining")
-  - [ ] 2.8 Create `src/features/subscriptions/components/TrialBadge.test.tsx`
+- [x] Task 2: Create `TrialBadge` Component (AC: #1, #2, #3, #4, #6)
+  - [x] 2.1 Create `src/features/subscriptions/components/TrialBadge.tsx`
+  - [x] 2.2 Props: `isTrial: boolean | null`, `trialExpiryDate: string | null`
+  - [x] 2.3 Use `getTrialInfo()` internally to compute display state
+  - [x] 2.4 Render nothing if status is 'none' (not a trial)
+  - [x] 2.5 Render compact badge with icon + text, color-coded by urgency level
+  - [x] 2.6 Use `MaterialCommunityIcons` via React Native Paper `Icon` component: `timer-sand` (low/medium), `alert` (high), `alert-circle` (critical/expired)
+  - [x] 2.7 Add `accessibilityLabel` with descriptive text (e.g., "Trial, 5 days remaining")
+  - [x] 2.8 Create `src/features/subscriptions/components/TrialBadge.test.tsx`
 
-- [ ] Task 3: Update `SubscriptionCard` to Use `TrialBadge` (AC: #1, #3, #4, #6)
-  - [ ] 3.1 Replace the existing `<Chip>Trial</Chip>` block (lines 65-69) with `<TrialBadge isTrial={subscription.is_trial} trialExpiryDate={subscription.trial_expiry_date} />`
-  - [ ] 3.2 Remove unused `Chip` import if no longer needed
-  - [ ] 3.3 Remove `trialChip` and `trialChipText` styles from StyleSheet (no longer used)
-  - [ ] 3.4 Update `accessibilityLabel` on Card to include trial info when applicable
-  - [ ] 3.5 Update existing SubscriptionCard tests for new trial badge behavior
+- [x] Task 3: Update `SubscriptionCard` to Use `TrialBadge` (AC: #1, #3, #4, #6)
+  - [x] 3.1 Replace the existing `<Chip>Trial</Chip>` block (lines 65-69) with `<TrialBadge isTrial={subscription.is_trial} trialExpiryDate={subscription.trial_expiry_date} />`
+  - [x] 3.2 Remove unused `Chip` import if no longer needed
+  - [x] 3.3 Remove `trialChip` and `trialChipText` styles from StyleSheet (no longer used)
+  - [x] 3.4 Update `accessibilityLabel` on Card to include trial info when applicable
+  - [x] 3.5 Update existing SubscriptionCard tests for new trial badge behavior
 
-- [ ] Task 4: Update Feature Exports and Final Verification (AC: all)
-  - [ ] 4.1 Add `TrialBadge` export to `src/features/subscriptions/index.ts`
-  - [ ] 4.2 Add `getTrialInfo` export to `src/features/subscriptions/index.ts`
-  - [ ] 4.3 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
-  - [ ] 4.4 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
-  - [ ] 4.5 Run all tests: `npx jest` — all pass (no regressions)
+- [x] Task 4: Update Feature Exports and Final Verification (AC: all)
+  - [x] 4.1 Add `TrialBadge` export to `src/features/subscriptions/index.ts`
+  - [x] 4.2 Add `getTrialInfo` export to `src/features/subscriptions/index.ts`
+  - [x] 4.3 Verify TypeScript compiles: `npx tsc --noEmit` — zero errors
+  - [x] 4.4 Verify ESLint passes: `npx eslint src/` — zero errors/warnings
+  - [x] 4.5 Run all tests: `npx jest` — all pass (no regressions)
 
 ## Dev Notes
 
@@ -539,10 +539,31 @@ c0f2918 story 2.2 done
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- TrialBadge test fix: PaperProvider wraps all rendered output so `toJSON()` never returns null for empty components. Used `queryByRole('text')` instead. Icon names not serialized in test renderer — tested urgency colors instead.
+
 ### Completion Notes List
 
+- **Task 1:** Added `getTrialInfo()` utility function to `subscriptionUtils.ts` following the exact same pattern as `getRenewalInfo()`. Exports `TrialInfo`, `TrialStatus`, `TrialUrgency` types. 14 tests added covering all urgency levels, boundaries, edge cases, singular/plural.
+- **Task 2:** Created `TrialBadge` component as a pure presentational component. Uses hardcoded urgency colors (gray/amber/orange/red) with hex alpha backgrounds. 10 tests added covering render states, accessibility labels, urgency colors.
+- **Task 3:** Replaced `<Chip>Trial</Chip>` in SubscriptionCard with `<TrialBadge>`. Removed `Chip` import and unused `trialChip`/`trialChipText` styles. Updated accessibility label to include trial countdown info. 4 new tests added.
+- **Task 4:** Added `TrialBadge`, `getTrialInfo`, and type exports to feature `index.ts`. All quality gates passed: TypeScript (0 errors), ESLint (0 errors/warnings), Jest (105/105 tests pass).
+
+### Change Log
+
+- 2026-03-01: Implemented Story 2.5 Trial Period Tracking — added `getTrialInfo` utility, created `TrialBadge` component with urgency-based color coding, replaced static "Trial" chip with dynamic countdown badge in SubscriptionCard, updated accessibility labels. 28 new tests added (105 total, 0 regressions).
+
 ### File List
+
+- `src/features/subscriptions/utils/subscriptionUtils.ts` — MODIFIED: Added `TrialStatus`, `TrialUrgency`, `TrialInfo` types and `getTrialInfo()` function
+- `src/features/subscriptions/utils/subscriptionUtils.test.ts` — MODIFIED: Added 14 `getTrialInfo` tests
+- `src/features/subscriptions/components/TrialBadge.tsx` — CREATED: Color-coded trial countdown badge component
+- `src/features/subscriptions/components/TrialBadge.test.tsx` — CREATED: 10 TrialBadge tests
+- `src/features/subscriptions/components/SubscriptionCard.tsx` — MODIFIED: Replaced Chip with TrialBadge, removed Chip import, removed unused styles, updated accessibility label
+- `src/features/subscriptions/components/SubscriptionCard.test.tsx` — MODIFIED: Updated existing trial test, added 4 new tests (countdown, expired, accessibility)
+- `src/features/subscriptions/index.ts` — MODIFIED: Added TrialBadge, getTrialInfo, and type exports
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — MODIFIED: Updated 2-5-trial-period-tracking status
+- `_bmad-output/implementation-artifacts/2-5-trial-period-tracking.md` — MODIFIED: Updated task checkboxes, Dev Agent Record, File List, Change Log, Status

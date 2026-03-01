@@ -5,6 +5,7 @@ import {
   calculateTotalMonthlyCost,
   getRenewalInfo,
   getCategoryConfig,
+  getTrialInfo,
 } from './subscriptionUtils';
 
 function toLocalDateString(date: Date): string {
@@ -180,5 +181,130 @@ describe('getCategoryConfig', () => {
     const result = getCategoryConfig('music');
     expect(result.id).toBe('music');
     expect(result.icon).toBe('music');
+  });
+});
+
+describe('getTrialInfo', () => {
+  it('returns status "none" when isTrial is false', () => {
+    const result = getTrialInfo(false, null);
+    expect(result.status).toBe('none');
+    expect(result.text).toBe('');
+    expect(result.daysRemaining).toBe(0);
+  });
+
+  it('returns status "none" when isTrial is null', () => {
+    const result = getTrialInfo(null, null);
+    expect(result.status).toBe('none');
+    expect(result.text).toBe('');
+  });
+
+  it('returns status "active" with text "Trial" when isTrial is true but trialExpiryDate is null', () => {
+    const result = getTrialInfo(true, null);
+    expect(result.status).toBe('active');
+    expect(result.text).toBe('Trial');
+    expect(result.urgencyLevel).toBe('low');
+    expect(result.daysRemaining).toBe(0);
+  });
+
+  it('returns status "active" with urgencyLevel "low" for >7 days remaining', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 15);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.status).toBe('active');
+    expect(result.urgencyLevel).toBe('low');
+    expect(result.daysRemaining).toBe(15);
+    expect(result.text).toBe('15 days left');
+  });
+
+  it('returns status "expiring-soon" with urgencyLevel "medium" for 4-7 days remaining', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.status).toBe('expiring-soon');
+    expect(result.urgencyLevel).toBe('medium');
+    expect(result.text).toBe('5 days left');
+  });
+
+  it('returns status "critical" with urgencyLevel "high" for 1-3 days remaining', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 2);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.status).toBe('critical');
+    expect(result.urgencyLevel).toBe('high');
+    expect(result.text).toBe('2 days left');
+  });
+
+  it('returns singular "1 day left" for exactly 1 day remaining', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const result = getTrialInfo(true, toLocalDateString(tomorrow));
+    expect(result.status).toBe('critical');
+    expect(result.urgencyLevel).toBe('high');
+    expect(result.text).toBe('1 day left');
+    expect(result.daysRemaining).toBe(1);
+  });
+
+  it('returns status "critical" with urgencyLevel "critical" for 0 days (today)', () => {
+    const today = toLocalDateString(new Date());
+    const result = getTrialInfo(true, today);
+    expect(result.status).toBe('critical');
+    expect(result.urgencyLevel).toBe('critical');
+    expect(result.text).toBe('Expires today');
+    expect(result.daysRemaining).toBe(0);
+  });
+
+  it('returns status "expired" with urgencyLevel "critical" for past dates', () => {
+    const past = new Date();
+    past.setDate(past.getDate() - 5);
+    const result = getTrialInfo(true, toLocalDateString(past));
+    expect(result.status).toBe('expired');
+    expect(result.urgencyLevel).toBe('critical');
+    expect(result.text).toBe('Trial expired');
+    expect(result.daysRemaining).toBe(-5);
+  });
+
+  it('returns correct daysRemaining values (positive, zero, negative)', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 10);
+    expect(getTrialInfo(true, toLocalDateString(future)).daysRemaining).toBe(10);
+
+    const today = toLocalDateString(new Date());
+    expect(getTrialInfo(true, today).daysRemaining).toBe(0);
+
+    const past = new Date();
+    past.setDate(past.getDate() - 3);
+    expect(getTrialInfo(true, toLocalDateString(past)).daysRemaining).toBe(-3);
+  });
+
+  it('boundary: exactly 7 days returns urgencyLevel "medium"', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 7);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.urgencyLevel).toBe('medium');
+    expect(result.status).toBe('expiring-soon');
+  });
+
+  it('boundary: exactly 8 days returns urgencyLevel "low"', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 8);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.urgencyLevel).toBe('low');
+    expect(result.status).toBe('active');
+  });
+
+  it('boundary: exactly 3 days returns urgencyLevel "high"', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 3);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.urgencyLevel).toBe('high');
+    expect(result.status).toBe('critical');
+  });
+
+  it('boundary: exactly 4 days returns urgencyLevel "medium"', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 4);
+    const result = getTrialInfo(true, toLocalDateString(future));
+    expect(result.urgencyLevel).toBe('medium');
+    expect(result.status).toBe('expiring-soon');
   });
 });

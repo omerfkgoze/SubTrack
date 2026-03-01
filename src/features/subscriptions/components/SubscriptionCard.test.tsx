@@ -53,7 +53,7 @@ describe('SubscriptionCard', () => {
     expect(screen.getByText('Renews in 5 days')).toBeTruthy();
   });
 
-  it('shows trial badge when is_trial is true', () => {
+  it('shows trial badge when is_trial is true (no expiry date)', () => {
     const trialSub = { ...mockSubscription, is_trial: true };
     renderWithProvider(<SubscriptionCard subscription={trialSub} />);
     expect(screen.getByText('Trial')).toBeTruthy();
@@ -62,6 +62,51 @@ describe('SubscriptionCard', () => {
   it('does not show trial badge when is_trial is false', () => {
     renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
     expect(screen.queryByText('Trial')).toBeNull();
+  });
+
+  it('shows trial countdown when trial has expiry date', () => {
+    const trialExpiry = new Date();
+    trialExpiry.setDate(trialExpiry.getDate() + 10);
+    const trialSub = {
+      ...mockSubscription,
+      is_trial: true,
+      trial_expiry_date: toLocalDateString(trialExpiry),
+    };
+    renderWithProvider(<SubscriptionCard subscription={trialSub} />);
+    expect(screen.getByText('10 days left')).toBeTruthy();
+  });
+
+  it('shows "Trial expired" for expired trial', () => {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 3);
+    const expiredTrialSub = {
+      ...mockSubscription,
+      is_trial: true,
+      trial_expiry_date: toLocalDateString(pastDate),
+    };
+    renderWithProvider(<SubscriptionCard subscription={expiredTrialSub} />);
+    expect(screen.getByText('Trial expired')).toBeTruthy();
+  });
+
+  it('accessibility label includes trial info when trial is active', () => {
+    const trialExpiry = new Date();
+    trialExpiry.setDate(trialExpiry.getDate() + 10);
+    const trialSub = {
+      ...mockSubscription,
+      is_trial: true,
+      trial_expiry_date: toLocalDateString(trialExpiry),
+    };
+    renderWithProvider(<SubscriptionCard subscription={trialSub} />);
+    expect(
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, 10 days left, Renews in 5 days'),
+    ).toBeTruthy();
+  });
+
+  it('accessibility label does NOT include trial info when not a trial', () => {
+    renderWithProvider(<SubscriptionCard subscription={mockSubscription} />);
+    expect(
+      screen.getByLabelText('Netflix, 17.99 euros per monthly, Renews in 5 days'),
+    ).toBeTruthy();
   });
 
   it('applies inactive styling when is_active is false', () => {
