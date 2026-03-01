@@ -59,7 +59,7 @@ development_status:
   2-4-delete-subscription: done
   2-5-trial-period-tracking: done
   2-6-subscription-categories: done
-  2-7-subscription-status-management: backlog
+  2-7-subscription-status-management: ready-for-dev
   2-8-subscription-detail-view: backlog
   epic-2-retrospective: optional
 
