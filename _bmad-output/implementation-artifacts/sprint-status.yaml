@@ -52,7 +52,7 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Subscription Tracking Core
-  epic-2: in-progress
+  epic-2: done
   2-1-add-new-subscription: done
   2-2-view-subscription-list: done
   2-3-edit-subscription-details: done
@@ -65,7 +65,7 @@ development_status:
 
   # Epic 3: Spending Dashboard & Insights
   epic-3: in-progress
-  3-1-monthly-yearly-cost-summary: review
+  3-1-monthly-yearly-cost-summary: done
   3-2-category-spending-breakdown: backlog
   3-3-visual-spending-summary: backlog
   3-4-upcoming-renewals-overview: backlog

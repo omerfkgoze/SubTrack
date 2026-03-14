@@ -1,6 +1,6 @@
 # Story 3.1: Monthly & Yearly Cost Summary
 
-Status: review
+Status: done
 
 ## Story
 
@@ -363,7 +363,9 @@ claude-sonnet-4-6
 - `src/features/dashboard/components/SpendingHero.test.tsx` (created)
 - `src/features/dashboard/screens/HomeScreen.tsx` (rewritten)
 - `src/features/dashboard/screens/HomeScreen.test.tsx` (created)
+- `src/features/dashboard/index.ts` (updated — added public exports)
 
 ## Change Log
 
 - 2026-03-14: Story 3.1 implemented — SpendingHero component created, HomeScreen rewritten with dashboard layout, 11 new tests added (175 total passing).
+- 2026-03-14: Code review complete — dashboard/index.ts updated with public exports (M2 fix). All 175 tests pass, TypeScript/ESLint clean.
