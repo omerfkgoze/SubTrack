@@ -168,7 +168,7 @@ describe('HomeScreen', () => {
       pendingDelete: null,
     });
     renderWithProvider();
-    expect(screen.getByLabelText(/1 active subscriptions/)).toBeTruthy();
+    expect(screen.getByLabelText(/1 active subscription/)).toBeTruthy();
   });
 
   it('does NOT render SavingsIndicator when no subscriptions', () => {

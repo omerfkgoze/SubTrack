@@ -77,7 +77,7 @@ export function SpendingHero({
           <View
             style={styles.statCard}
             accessible
-            accessibilityLabel={`${subscriptionCount} active subscriptions`}
+            accessibilityLabel={`${subscriptionCount} active ${subscriptionCount === 1 ? 'subscription' : 'subscriptions'}`}
           >
             <Text style={styles.statValue}>{subscriptionCount}</Text>
             <Text style={styles.statLabel}>active</Text>

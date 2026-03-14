@@ -49,6 +49,11 @@ describe('SpendingHero', () => {
     expect(screen.getByLabelText(/5 active subscriptions/)).toBeTruthy();
   });
 
+  it('uses singular "subscription" in accessibility label for subscriptionCount = 1', () => {
+    renderComponent(17.99, { showQuickStats: true, subscriptionCount: 1 });
+    expect(screen.getByLabelText('1 active subscription')).toBeTruthy();
+  });
+
   it('renders average amount stat card when showQuickStats and subscriptionCount > 0', () => {
     renderComponent(17.99, { showQuickStats: true, subscriptionCount: 2, averageAmount: 8.99 });
     expect(screen.getByLabelText(/8\.99 average monthly cost/)).toBeTruthy();

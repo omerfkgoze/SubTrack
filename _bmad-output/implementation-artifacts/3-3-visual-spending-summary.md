@@ -1,6 +1,6 @@
 # Story 3.3: Visual Spending Summary
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -624,3 +624,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-03-14: Story 3.3 implemented — Added 4 utility functions (calculateActiveCount, calculateAverageMonthlyCost, calculateMonthlySavings, calculateInactiveCount), extended SpendingHero with quick stats display, created SavingsIndicator component, updated HomeScreen to wire all new data. 37 new tests added; 230 total tests pass.
+- 2026-03-14: Code review fix — Fixed pluralization bug in SpendingHero accessibility label ("1 active subscriptions" → "1 active subscription"). Added regression test. 231 total tests pass.
