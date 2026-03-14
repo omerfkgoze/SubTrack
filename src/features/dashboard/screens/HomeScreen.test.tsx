@@ -175,4 +175,37 @@ describe('HomeScreen', () => {
     renderWithProvider();
     expect(screen.queryByText(/You're saving/)).toBeNull();
   });
+
+  it('renders UpcomingRenewals section when subscriptions exist', () => {
+    useSubscriptionStore.setState({
+      subscriptions: [mockSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.getByText('Upcoming Renewals')).toBeTruthy();
+  });
+
+  it('does not render UpcomingRenewals when no subscriptions', () => {
+    renderWithProvider();
+    expect(screen.queryByText('Upcoming Renewals')).toBeNull();
+  });
+
+  it('shows empty state in UpcomingRenewals when subscription renewal is beyond 30 days', () => {
+    const farFutureSubscription: Subscription = {
+      ...mockSubscription,
+      renewal_date: '2026-05-01',
+    };
+    useSubscriptionStore.setState({
+      subscriptions: [farFutureSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.getByText('No upcoming renewals in the next 30 days')).toBeTruthy();
+  });
 });

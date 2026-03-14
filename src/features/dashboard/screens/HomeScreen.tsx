@@ -12,10 +12,12 @@ import {
   calculateAverageMonthlyCost,
   calculateMonthlySavings,
   calculateInactiveCount,
+  getUpcomingRenewals,
 } from '@features/subscriptions/utils/subscriptionUtils';
 import { SpendingHero } from '../components/SpendingHero';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { SavingsIndicator } from '../components/SavingsIndicator';
+import { UpcomingRenewals } from '../components/UpcomingRenewals';
 
 export function HomeScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
@@ -27,6 +29,7 @@ export function HomeScreen() {
   const monthlySavings = calculateMonthlySavings(subscriptions);
   const inactiveCount = calculateInactiveCount(subscriptions);
   const hasSubscriptions = subscriptions.length > 0;
+  const upcomingRenewals = getUpcomingRenewals(subscriptions);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -45,6 +48,7 @@ export function HomeScreen() {
       {monthlySavings > 0 && (
         <SavingsIndicator savingsAmount={monthlySavings} inactiveCount={inactiveCount} />
       )}
+      {hasSubscriptions && <UpcomingRenewals renewals={upcomingRenewals} />}
       {!hasSubscriptions && (
         <Button
           mode="contained"

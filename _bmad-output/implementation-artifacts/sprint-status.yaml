@@ -68,7 +68,7 @@ development_status:
   3-1-monthly-yearly-cost-summary: done
   3-2-category-spending-breakdown: done
   3-3-visual-spending-summary: done
-  3-4-upcoming-renewals-overview: ready-for-dev
+  3-4-upcoming-renewals-overview: review
   epic-3-retrospective: optional
 
   # Epic 4: Smart Reminders & Notifications

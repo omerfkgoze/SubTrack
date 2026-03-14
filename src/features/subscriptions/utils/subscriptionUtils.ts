@@ -1,7 +1,7 @@
 import { differenceInDays, isToday, parseISO, startOfDay } from 'date-fns';
 import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
 import type { SubscriptionCategory } from '@config/categories';
-import type { BillingCycle } from '@features/subscriptions/types';
+import type { BillingCycle, Subscription } from '@features/subscriptions/types';
 
 export type TrialStatus = 'active' | 'expiring-soon' | 'critical' | 'expired' | 'none';
 export type TrialUrgency = 'low' | 'medium' | 'high' | 'critical';
@@ -190,6 +190,41 @@ export function calculateMonthlySavings(
 
 export function calculateInactiveCount(subscriptions: { is_active: boolean | null }[]): number {
   return subscriptions.filter((sub) => sub.is_active === false).length;
+}
+
+export interface UpcomingRenewal {
+  subscription: Subscription;
+  daysUntil: number;
+  isUrgent: boolean;
+  renewalText: string;
+  isTrial: boolean;
+  trialText: string;
+}
+
+export function getUpcomingRenewals(subscriptions: Subscription[]): UpcomingRenewal[] {
+  const result: UpcomingRenewal[] = [];
+
+  for (const sub of subscriptions) {
+    if (sub.is_active === false) continue;
+
+    const renewalInfo = getRenewalInfo(sub.renewal_date);
+    const { daysUntil } = renewalInfo;
+
+    if (daysUntil < 0 || daysUntil > 30) continue;
+
+    const trialInfo = getTrialInfo(sub.is_trial, sub.trial_expiry_date);
+
+    result.push({
+      subscription: sub,
+      daysUntil,
+      isUrgent: daysUntil <= 3,
+      renewalText: renewalInfo.text,
+      isTrial: trialInfo.status !== 'none',
+      trialText: trialInfo.text,
+    });
+  }
+
+  return result.sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
 export function getCategoryConfig(categoryId: string | null): SubscriptionCategory {

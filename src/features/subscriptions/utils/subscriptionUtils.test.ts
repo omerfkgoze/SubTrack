@@ -11,7 +11,9 @@ import {
   calculateAverageMonthlyCost,
   calculateMonthlySavings,
   calculateInactiveCount,
+  getUpcomingRenewals,
 } from './subscriptionUtils';
+import type { Subscription } from '@features/subscriptions/types';
 import { toLocalDateString } from './testHelpers';
 
 describe('formatBillingCycleShort', () => {
@@ -583,5 +585,155 @@ describe('calculateInactiveCount', () => {
     expect(
       calculateInactiveCount([{ is_active: false }, { is_active: false }]),
     ).toBe(2);
+  });
+});
+
+const baseSubscription: Subscription = {
+  id: '1',
+  name: 'Netflix',
+  price: 17.99,
+  billing_cycle: 'monthly',
+  is_active: true,
+  renewal_date: '',
+  currency: '€',
+  category: null,
+  notes: null,
+  is_trial: false,
+  trial_expiry_date: null,
+  user_id: 'user-1',
+  created_at: '2026-01-01',
+  updated_at: '2026-01-01',
+};
+
+describe('getUpcomingRenewals', () => {
+  it('returns empty array for empty subscriptions', () => {
+    expect(getUpcomingRenewals([])).toEqual([]);
+  });
+
+  it('returns empty array when no upcoming renewals in 30 days', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 31);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(future) };
+    expect(getUpcomingRenewals([sub])).toEqual([]);
+  });
+
+  it('includes subscription renewing today (daysUntil = 0)', () => {
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(new Date()) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result).toHaveLength(1);
+    expect(result[0].daysUntil).toBe(0);
+    expect(result[0].isUrgent).toBe(true);
+  });
+
+  it('includes subscription renewing in 30 days', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 30);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result).toHaveLength(1);
+    expect(result[0].daysUntil).toBe(30);
+  });
+
+  it('excludes subscription renewing in 31 days', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 31);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(future) };
+    expect(getUpcomingRenewals([sub])).toHaveLength(0);
+  });
+
+  it('excludes overdue subscriptions (daysUntil < 0)', () => {
+    const past = new Date();
+    past.setDate(past.getDate() - 1);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(past) };
+    expect(getUpcomingRenewals([sub])).toHaveLength(0);
+  });
+
+  it('excludes subscriptions with is_active === false', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, is_active: false, renewal_date: toLocalDateString(future) };
+    expect(getUpcomingRenewals([sub])).toHaveLength(0);
+  });
+
+  it('includes subscriptions with is_active === null (treated as active)', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, is_active: null, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result).toHaveLength(1);
+  });
+
+  it('includes subscriptions with is_active === true', () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, is_active: true, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result).toHaveLength(1);
+  });
+
+  it('sorts by daysUntil ascending (soonest first)', () => {
+    const d10 = new Date(); d10.setDate(d10.getDate() + 10);
+    const d5 = new Date(); d5.setDate(d5.getDate() + 5);
+    const d20 = new Date(); d20.setDate(d20.getDate() + 20);
+    const subs = [
+      { ...baseSubscription, id: '1', name: 'A', renewal_date: toLocalDateString(d10) },
+      { ...baseSubscription, id: '2', name: 'B', renewal_date: toLocalDateString(d5) },
+      { ...baseSubscription, id: '3', name: 'C', renewal_date: toLocalDateString(d20) },
+    ];
+    const result = getUpcomingRenewals(subs);
+    expect(result[0].daysUntil).toBe(5);
+    expect(result[1].daysUntil).toBe(10);
+    expect(result[2].daysUntil).toBe(20);
+  });
+
+  it('sets isUrgent = true when daysUntil <= 3', () => {
+    const d2 = new Date(); d2.setDate(d2.getDate() + 2);
+    const d3 = new Date(); d3.setDate(d3.getDate() + 3);
+    const d4 = new Date(); d4.setDate(d4.getDate() + 4);
+    const subs = [
+      { ...baseSubscription, id: '1', renewal_date: toLocalDateString(d2) },
+      { ...baseSubscription, id: '2', renewal_date: toLocalDateString(d3) },
+      { ...baseSubscription, id: '3', renewal_date: toLocalDateString(d4) },
+    ];
+    const result = getUpcomingRenewals(subs);
+    expect(result.find(r => r.daysUntil === 2)?.isUrgent).toBe(true);
+    expect(result.find(r => r.daysUntil === 3)?.isUrgent).toBe(true);
+    expect(result.find(r => r.daysUntil === 4)?.isUrgent).toBe(false);
+  });
+
+  it('sets isTrial = true for trial subscriptions', () => {
+    const future = new Date(); future.setDate(future.getDate() + 5);
+    const trialExpiry = new Date(); trialExpiry.setDate(trialExpiry.getDate() + 10);
+    const sub = {
+      ...baseSubscription,
+      is_trial: true,
+      trial_expiry_date: toLocalDateString(trialExpiry),
+      renewal_date: toLocalDateString(future),
+    };
+    const result = getUpcomingRenewals([sub]);
+    expect(result[0].isTrial).toBe(true);
+    expect(result[0].trialText).toBeTruthy();
+  });
+
+  it('sets isTrial = false for non-trial subscriptions', () => {
+    const future = new Date(); future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, is_trial: false, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result[0].isTrial).toBe(false);
+    expect(result[0].trialText).toBe('');
+  });
+
+  it('includes renewalText from getRenewalInfo', () => {
+    const future = new Date(); future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result[0].renewalText).toBe('Renews in 5 days');
+  });
+
+  it('returns subscription object in result', () => {
+    const future = new Date(); future.setDate(future.getDate() + 5);
+    const sub = { ...baseSubscription, renewal_date: toLocalDateString(future) };
+    const result = getUpcomingRenewals([sub]);
+    expect(result[0].subscription).toEqual(sub);
   });
 });

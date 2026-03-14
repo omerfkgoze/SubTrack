@@ -1,6 +1,6 @@
 # Story 3.4: Upcoming Renewals Overview
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -30,34 +30,34 @@ so that I can prepare for upcoming charges and make decisions.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `getUpcomingRenewals` utility function (AC: #1, #2)
-  - [ ] 1.1: Filter active subscriptions (`is_active !== false`) with `renewal_date` within next 30 days
-  - [ ] 1.2: Sort by `daysUntil` ascending (soonest first)
-  - [ ] 1.3: Return array of `{ subscription, daysUntil, isUrgent, isTrial, trialInfo, renewalInfo }` objects
-  - [ ] 1.4: Return empty array when no upcoming renewals
-  - [ ] 1.5: Write unit tests for the utility
+- [x] Task 1: Create `getUpcomingRenewals` utility function (AC: #1, #2)
+  - [x] 1.1: Filter active subscriptions (`is_active !== false`) with `renewal_date` within next 30 days
+  - [x] 1.2: Sort by `daysUntil` ascending (soonest first)
+  - [x] 1.3: Return array of `{ subscription, daysUntil, isUrgent, isTrial, trialInfo, renewalInfo }` objects
+  - [x] 1.4: Return empty array when no upcoming renewals
+  - [x] 1.5: Write unit tests for the utility
 
-- [ ] Task 2: Create `UpcomingRenewals` component (AC: #1, #2, #3)
-  - [ ] 2.1: Section title "Upcoming Renewals" (`titleMedium`)
-  - [ ] 2.2: Render renewal rows: subscription name, formatted renewal date, price with billing cycle, days-until text
-  - [ ] 2.3: Trial subscriptions: show warning indicator (TrialBadge or amber icon)
-  - [ ] 2.4: Urgent renewals (≤3 days): visually distinct — use Warning color `#F59E0B` border/text
-  - [ ] 2.5: Empty state: calm message "No upcoming renewals in the next 30 days"
-  - [ ] 2.6: Wrap in `Surface` card (elevation=1, borderRadius=12) matching existing dashboard cards
-  - [ ] 2.7: Add `accessibilityLabel` on each renewal row
-  - [ ] 2.8: Write component tests (rendering, empty state, urgent highlight, trial indicator)
+- [x] Task 2: Create `UpcomingRenewals` component (AC: #1, #2, #3)
+  - [x] 2.1: Section title "Upcoming Renewals" (`titleMedium`)
+  - [x] 2.2: Render renewal rows: subscription name, formatted renewal date, price with billing cycle, days-until text
+  - [x] 2.3: Trial subscriptions: show warning indicator (TrialBadge or amber icon)
+  - [x] 2.4: Urgent renewals (≤3 days): visually distinct — use Warning color `#F59E0B` border/text
+  - [x] 2.5: Empty state: calm message "No upcoming renewals in the next 30 days"
+  - [x] 2.6: Wrap in `Surface` card (elevation=1, borderRadius=12) matching existing dashboard cards
+  - [x] 2.7: Add `accessibilityLabel` on each renewal row
+  - [x] 2.8: Write component tests (rendering, empty state, urgent highlight, trial indicator)
 
-- [ ] Task 3: Integrate into HomeScreen (AC: #1, #2)
-  - [ ] 3.1: Import and wire `getUpcomingRenewals` + `UpcomingRenewals` component
-  - [ ] 3.2: Render between `SavingsIndicator` and empty-state CTA (or after CategoryBreakdown if no savings)
-  - [ ] 3.3: Only render when `hasSubscriptions` is true
-  - [ ] 3.4: Export from `src/features/dashboard/index.ts`
-  - [ ] 3.5: Write HomeScreen integration tests
+- [x] Task 3: Integrate into HomeScreen (AC: #1, #2)
+  - [x] 3.1: Import and wire `getUpcomingRenewals` + `UpcomingRenewals` component
+  - [x] 3.2: Render between `SavingsIndicator` and empty-state CTA (or after CategoryBreakdown if no savings)
+  - [x] 3.3: Only render when `hasSubscriptions` is true
+  - [x] 3.4: Export from `src/features/dashboard/index.ts`
+  - [x] 3.5: Write HomeScreen integration tests
 
-- [ ] Task 4: Verify all tests pass (AC: all)
-  - [ ] 4.1: `npx tsc --noEmit` — zero errors
-  - [ ] 4.2: `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors
-  - [ ] 4.3: Full test suite green (baseline: 230+ tests)
+- [x] Task 4: Verify all tests pass (AC: all)
+  - [x] 4.1: `npx tsc --noEmit` — zero errors
+  - [x] 4.2: `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors
+  - [x] 4.3: Full test suite green (baseline: 230+ tests)
 
 ## Dev Notes
 
@@ -268,10 +268,30 @@ const upcomingRenewals = getUpcomingRenewals(subscriptions);
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- HomeScreen test: mockSubscription renewal_date '2026-04-01' is 18 days away (within 30 days), so empty-state test needed a date beyond 30 days ('2026-05-01').
+
 ### Completion Notes List
 
+- Added `UpcomingRenewal` interface and `getUpcomingRenewals` function to `subscriptionUtils.ts` — filters active subs renewing in 0-30 days, sorts ascending, flags urgent (≤3 days) and trial
+- Created `UpcomingRenewals.tsx` component using Surface/Text/Icon from react-native-paper; urgent row gets amber left border + background tint; trial badge with timer-sand icon; empty state message
+- Integrated into `HomeScreen.tsx` after `SavingsIndicator`, only when `hasSubscriptions`
+- Exported from `src/features/dashboard/index.ts`
+- 259 tests passing (up from 230+); TSC zero errors; ESLint zero errors
+
 ### File List
+
+- src/features/subscriptions/utils/subscriptionUtils.ts (modified — added UpcomingRenewal interface + getUpcomingRenewals)
+- src/features/subscriptions/utils/subscriptionUtils.test.ts (modified — added getUpcomingRenewals tests)
+- src/features/dashboard/components/UpcomingRenewals.tsx (created)
+- src/features/dashboard/components/UpcomingRenewals.test.tsx (created)
+- src/features/dashboard/screens/HomeScreen.tsx (modified — integrated UpcomingRenewals)
+- src/features/dashboard/screens/HomeScreen.test.tsx (modified — added integration tests)
+- src/features/dashboard/index.ts (modified — added UpcomingRenewals export)
+
+### Change Log
+
+- 2026-03-14: Implemented Story 3.4 — Upcoming Renewals Overview feature (utility, component, HomeScreen integration, tests)
