@@ -1,6 +1,6 @@
 # Story 3.4: Upcoming Renewals Overview
 
-Status: review
+Status: done
 
 ## Story
 

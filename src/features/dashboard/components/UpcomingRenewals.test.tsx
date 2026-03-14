@@ -108,11 +108,12 @@ describe('UpcomingRenewals', () => {
     const urgentRenewal = makeRenewal({
       daysUntil: 2,
       isUrgent: true,
-      renewalText: 'Renews in 2 days 🔥',
+      renewalText: 'Renews in 2 days',
     });
     renderWithProvider(<UpcomingRenewals renewals={[urgentRenewal]} />);
-    // The urgent row exists — name is still rendered
+    // Component appends ' 🔥' when isUrgent && daysUntil > 0
     expect(screen.getByText('Netflix')).toBeTruthy();
+    expect(screen.getByText('Renews in 2 days 🔥')).toBeTruthy();
   });
 
   it('has accessibility label on each renewal row', () => {
