@@ -1,6 +1,6 @@
 # Story 3.2: Category Spending Breakdown
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
