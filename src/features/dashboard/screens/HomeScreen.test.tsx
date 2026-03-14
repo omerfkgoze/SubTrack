@@ -74,7 +74,7 @@ describe('HomeScreen', () => {
       pendingDelete: null,
     });
     renderWithProvider();
-    expect(screen.getByText('€15.99')).toBeTruthy();
+    expect(screen.getAllByText('€15.99').length).toBeGreaterThanOrEqual(1);
   });
 
   it('only active subscriptions included in total (is_active=false excluded)', () => {
@@ -87,7 +87,7 @@ describe('HomeScreen', () => {
     });
     renderWithProvider();
     // Only mockSubscription (€15.99) should be counted, not inactiveSubscription (€9.99)
-    expect(screen.getByText('€15.99')).toBeTruthy();
+    expect(screen.getAllByText('€15.99').length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText('€25.98')).toBeNull();
   });
 
@@ -112,5 +112,26 @@ describe('HomeScreen', () => {
     });
     renderWithProvider();
     expect(screen.queryByText('Add First Subscription')).toBeNull();
+  });
+
+  it('renders CategoryBreakdown when subscriptions exist', () => {
+    const subWithCategory: Subscription = {
+      ...mockSubscription,
+      category: 'entertainment',
+    };
+    useSubscriptionStore.setState({
+      subscriptions: [subWithCategory],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.getByText('Spending by Category')).toBeTruthy();
+  });
+
+  it('does not render CategoryBreakdown when no subscriptions', () => {
+    renderWithProvider();
+    expect(screen.queryByText('Spending by Category')).toBeNull();
   });
 });

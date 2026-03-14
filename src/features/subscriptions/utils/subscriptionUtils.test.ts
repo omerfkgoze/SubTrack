@@ -3,6 +3,7 @@ import {
   formatPrice,
   calculateMonthlyEquivalent,
   calculateTotalMonthlyCost,
+  calculateCategoryBreakdown,
   getRenewalInfo,
   getCategoryConfig,
   getTrialInfo,
@@ -331,5 +332,112 @@ describe('getTrialInfo', () => {
     const result = getTrialInfo(true, toLocalDateString(future));
     expect(result.urgencyLevel).toBe('medium');
     expect(result.status).toBe('expiring-soon');
+  });
+});
+
+describe('calculateCategoryBreakdown', () => {
+  it('returns empty array for empty subscriptions', () => {
+    expect(calculateCategoryBreakdown([])).toEqual([]);
+  });
+
+  it('returns empty array when all subscriptions are inactive', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: false, category: 'music' },
+      { price: 20, billing_cycle: 'monthly', is_active: false, category: 'entertainment' },
+    ];
+    expect(calculateCategoryBreakdown(subs)).toEqual([]);
+  });
+
+  it('groups subscriptions by category with correct totals', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'music' },
+      { price: 5, billing_cycle: 'monthly', is_active: true, category: 'music' },
+      { price: 120, billing_cycle: 'yearly', is_active: true, category: 'entertainment' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result).toHaveLength(2);
+    expect(result[0].categoryId).toBe('music');
+    expect(result[0].monthlyTotal).toBe(15);
+    expect(result[1].categoryId).toBe('entertainment');
+    expect(result[1].monthlyTotal).toBe(10);
+  });
+
+  it('normalizes billing cycles (yearly/quarterly/weekly → monthly equivalent)', () => {
+    const subs = [
+      { price: 120, billing_cycle: 'yearly', is_active: true, category: 'entertainment' },
+      { price: 30, billing_cycle: 'quarterly', is_active: true, category: 'music' },
+      { price: 2, billing_cycle: 'weekly', is_active: true, category: 'gaming' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    const entertainment = result.find((r) => r.categoryId === 'entertainment');
+    const music = result.find((r) => r.categoryId === 'music');
+    const gaming = result.find((r) => r.categoryId === 'gaming');
+    expect(entertainment?.monthlyTotal).toBe(10);
+    expect(music?.monthlyTotal).toBe(10);
+    expect(gaming?.monthlyTotal).toBeCloseTo(2 * (52 / 12), 2);
+  });
+
+  it('sorts categories by monthly total descending', () => {
+    const subs = [
+      { price: 5, billing_cycle: 'monthly', is_active: true, category: 'music' },
+      { price: 20, billing_cycle: 'monthly', is_active: true, category: 'entertainment' },
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'gaming' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result[0].categoryId).toBe('entertainment');
+    expect(result[1].categoryId).toBe('gaming');
+    expect(result[2].categoryId).toBe('music');
+  });
+
+  it('calculates correct percentages summing to ~100%', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'music' },
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'entertainment' },
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'gaming' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    const totalPercentage = result.reduce((sum, item) => sum + item.percentage, 0);
+    expect(totalPercentage).toBeCloseTo(100, 1);
+    expect(result[0].percentage).toBeCloseTo(33.33, 1);
+  });
+
+  it('maps subscriptions with null category to "Other"', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: null },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result).toHaveLength(1);
+    expect(result[0].categoryId).toBe('other');
+    expect(result[0].categoryLabel).toBe('Other');
+    expect(result[0].color).toBe('#6B7280');
+  });
+
+  it('single category shows 100%', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'music' },
+      { price: 5, billing_cycle: 'monthly', is_active: true, category: 'music' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result).toHaveLength(1);
+    expect(result[0].percentage).toBe(100);
+    expect(result[0].monthlyTotal).toBe(15);
+  });
+
+  it('includes correct color and icon from category config', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: true, category: 'entertainment' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result[0].color).toBe('#8B5CF6');
+    expect(result[0].icon).toBe('movie-open');
+  });
+
+  it('treats is_active null as active', () => {
+    const subs = [
+      { price: 10, billing_cycle: 'monthly', is_active: null, category: 'music' },
+    ];
+    const result = calculateCategoryBreakdown(subs);
+    expect(result).toHaveLength(1);
+    expect(result[0].monthlyTotal).toBe(10);
   });
 });

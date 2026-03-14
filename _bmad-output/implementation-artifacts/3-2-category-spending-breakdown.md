@@ -1,6 +1,6 @@
 # Story 3.2: Category Spending Breakdown
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -38,54 +38,54 @@ so that I can understand where most of my subscription money goes.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `calculateCategoryBreakdown` utility function (AC: #1, #3, #4)
-  - [ ] 1.1 Add function to `src/features/subscriptions/utils/subscriptionUtils.ts`
-  - [ ] 1.2 Accept `subscriptions` array, return sorted array of `{ categoryId, categoryLabel, color, icon, monthlyTotal, percentage }`
-  - [ ] 1.3 Filter only active subscriptions (`is_active !== false`) — reuse same filter logic as `calculateTotalMonthlyCost`
-  - [ ] 1.4 Use `calculateMonthlyEquivalent` for each subscription to normalize billing cycles
-  - [ ] 1.5 Use `getCategoryConfig` to resolve category colors/labels (subscriptions with `null` category → "Other")
-  - [ ] 1.6 Sort by `monthlyTotal` descending (highest first per AC #1)
-  - [ ] 1.7 Calculate percentage as `(categoryTotal / grandTotal) * 100`, handle division-by-zero (return 0%)
+- [x] Task 1: Create `calculateCategoryBreakdown` utility function (AC: #1, #3, #4)
+  - [x] 1.1 Add function to `src/features/subscriptions/utils/subscriptionUtils.ts`
+  - [x] 1.2 Accept `subscriptions` array, return sorted array of `{ categoryId, categoryLabel, color, icon, monthlyTotal, percentage }`
+  - [x] 1.3 Filter only active subscriptions (`is_active !== false`) — reuse same filter logic as `calculateTotalMonthlyCost`
+  - [x] 1.4 Use `calculateMonthlyEquivalent` for each subscription to normalize billing cycles
+  - [x] 1.5 Use `getCategoryConfig` to resolve category colors/labels (subscriptions with `null` category → "Other")
+  - [x] 1.6 Sort by `monthlyTotal` descending (highest first per AC #1)
+  - [x] 1.7 Calculate percentage as `(categoryTotal / grandTotal) * 100`, handle division-by-zero (return 0%)
 
-- [ ] Task 2: Create `CategoryBreakdown` component (AC: #1, #2, #3)
-  - [ ] 2.1 Create `src/features/dashboard/components/CategoryBreakdown.tsx`
-  - [ ] 2.2 Accept props: `breakdownData` (array from Task 1), `totalMonthly` (number)
-  - [ ] 2.3 Render section header: "Spending by Category" (Text variant `titleMedium`, 24px semibold per UX typography scale)
-  - [ ] 2.4 Render a proportional horizontal bar at the top — colored segments representing each category's percentage, using category colors
-  - [ ] 2.5 Below the bar, render a list of category rows, each showing: color dot (10px circle), category name, monthly cost (right-aligned), percentage (right-aligned)
-  - [ ] 2.6 Use React Native Paper `Surface` for card container, `Text` for labels
-  - [ ] 2.7 Set `accessibilityLabel` on each row: "[Category] spending: [amount] euros, [percentage] percent of total"
+- [x] Task 2: Create `CategoryBreakdown` component (AC: #1, #2, #3)
+  - [x] 2.1 Create `src/features/dashboard/components/CategoryBreakdown.tsx`
+  - [x] 2.2 Accept props: `breakdownData` (array from Task 1), `totalMonthly` (number)
+  - [x] 2.3 Render section header: "Spending by Category" (Text variant `titleMedium`, 24px semibold per UX typography scale)
+  - [x] 2.4 Render a proportional horizontal bar at the top — colored segments representing each category's percentage, using category colors
+  - [x] 2.5 Below the bar, render a list of category rows, each showing: color dot (10px circle), category name, monthly cost (right-aligned), percentage (right-aligned)
+  - [x] 2.6 Use React Native Paper `Surface` for card container, `Text` for labels
+  - [x] 2.7 Set `accessibilityLabel` on each row: "[Category] spending: [amount] euros, [percentage] percent of total"
 
-- [ ] Task 3: Integrate into HomeScreen (AC: #1, #4)
-  - [ ] 3.1 Import `CategoryBreakdown` and `calculateCategoryBreakdown` in `HomeScreen.tsx`
-  - [ ] 3.2 Compute breakdown data from existing `subscriptions` state (NO new store or service calls)
-  - [ ] 3.3 Render `CategoryBreakdown` below `SpendingHero` (inside the existing `ScrollView`)
-  - [ ] 3.4 Only render when `hasSubscriptions` is true AND at least one active subscription exists
-  - [ ] 3.5 Add 16px top margin between SpendingHero and CategoryBreakdown
+- [x] Task 3: Integrate into HomeScreen (AC: #1, #4)
+  - [x] 3.1 Import `CategoryBreakdown` and `calculateCategoryBreakdown` in `HomeScreen.tsx`
+  - [x] 3.2 Compute breakdown data from existing `subscriptions` state (NO new store or service calls)
+  - [x] 3.3 Render `CategoryBreakdown` below `SpendingHero` (inside the existing `ScrollView`)
+  - [x] 3.4 Only render when `hasSubscriptions` is true AND at least one active subscription exists
+  - [x] 3.5 Add 16px top margin between SpendingHero and CategoryBreakdown
 
-- [ ] Task 4: Write tests (AC: #1, #2, #3, #4)
-  - [ ] 4.1 Add tests for `calculateCategoryBreakdown` in `subscriptionUtils.test.ts`
-  - [ ] 4.2 Test: returns empty array when no subscriptions
-  - [ ] 4.3 Test: returns empty array when all subscriptions are inactive
-  - [ ] 4.4 Test: groups subscriptions by category with correct totals
-  - [ ] 4.5 Test: normalizes billing cycles (yearly/quarterly/weekly → monthly equivalent)
-  - [ ] 4.6 Test: sorts categories by monthly total descending
-  - [ ] 4.7 Test: calculates correct percentages (summing to ~100%)
-  - [ ] 4.8 Test: subscriptions with null category mapped to "Other"
-  - [ ] 4.9 Test: single category shows 100%
-  - [ ] 4.10 Create `src/features/dashboard/components/CategoryBreakdown.test.tsx`
-  - [ ] 4.11 Test: renders section header "Spending by Category"
-  - [ ] 4.12 Test: renders category names and amounts
-  - [ ] 4.13 Test: renders color bar segments
-  - [ ] 4.14 Test: renders correct percentage values
-  - [ ] 4.15 Test: accessibility labels contain category name and amount
-  - [ ] 4.16 Update `HomeScreen.test.tsx` — test that CategoryBreakdown appears when subscriptions exist
-  - [ ] 4.17 Update `HomeScreen.test.tsx` — test that CategoryBreakdown does NOT appear when no subscriptions
-  - [ ] 4.18 Run full regression — all 175 existing tests must pass
+- [x] Task 4: Write tests (AC: #1, #2, #3, #4)
+  - [x] 4.1 Add tests for `calculateCategoryBreakdown` in `subscriptionUtils.test.ts`
+  - [x] 4.2 Test: returns empty array when no subscriptions
+  - [x] 4.3 Test: returns empty array when all subscriptions are inactive
+  - [x] 4.4 Test: groups subscriptions by category with correct totals
+  - [x] 4.5 Test: normalizes billing cycles (yearly/quarterly/weekly → monthly equivalent)
+  - [x] 4.6 Test: sorts categories by monthly total descending
+  - [x] 4.7 Test: calculates correct percentages (summing to ~100%)
+  - [x] 4.8 Test: subscriptions with null category mapped to "Other"
+  - [x] 4.9 Test: single category shows 100%
+  - [x] 4.10 Create `src/features/dashboard/components/CategoryBreakdown.test.tsx`
+  - [x] 4.11 Test: renders section header "Spending by Category"
+  - [x] 4.12 Test: renders category names and amounts
+  - [x] 4.13 Test: renders color bar segments
+  - [x] 4.14 Test: renders correct percentage values
+  - [x] 4.15 Test: accessibility labels contain category name and amount
+  - [x] 4.16 Update `HomeScreen.test.tsx` — test that CategoryBreakdown appears when subscriptions exist
+  - [x] 4.17 Update `HomeScreen.test.tsx` — test that CategoryBreakdown does NOT appear when no subscriptions
+  - [x] 4.18 Run full regression — all 175 existing tests pass (193 total with 18 new)
 
-- [ ] Task 5: TypeScript and lint checks
-  - [ ] 5.1 Run `npx tsc --noEmit` — zero errors
-  - [ ] 5.2 Run `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors/warnings
+- [x] Task 5: TypeScript and lint checks
+  - [x] 5.1 Run `npx tsc --noEmit` — zero errors
+  - [x] 5.2 Run `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -383,10 +383,35 @@ bf5512e epic-2 retro
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- HomeScreen tests had duplicate text matches after CategoryBreakdown integration (€15.99 appeared in both SpendingHero and CategoryBreakdown). Fixed by using `getAllByText` instead of `getByText`.
+
 ### Completion Notes List
 
+- Implemented `calculateCategoryBreakdown` utility in subscriptionUtils.ts — groups active subscriptions by category, normalizes billing cycles, calculates percentages, sorts by cost descending
+- Created `CategoryBreakdown` component with proportional color bar (plain View + flex), category rows with color dots, amounts, and percentages
+- Integrated into HomeScreen below SpendingHero, only rendered when active subscriptions exist
+- Added 18 new tests (9 unit tests for utility, 6 component tests, 2 HomeScreen integration tests, 1 regression confirmation)
+- All 193 tests pass, TypeScript clean, ESLint clean
+- No new dependencies added — color bar built with plain View components
+- Accessibility labels on every category row
+
+### Change Log
+
+- 2026-03-14: Story 3.2 implementation complete — category spending breakdown with proportional color bar and category list
+
 ### File List
+
+**Created:**
+- src/features/dashboard/components/CategoryBreakdown.tsx
+- src/features/dashboard/components/CategoryBreakdown.test.tsx
+
+**Modified:**
+- src/features/subscriptions/utils/subscriptionUtils.ts (added CategoryBreakdownItem interface + calculateCategoryBreakdown function)
+- src/features/subscriptions/utils/subscriptionUtils.test.ts (added 9 tests for calculateCategoryBreakdown)
+- src/features/dashboard/screens/HomeScreen.tsx (imported and rendered CategoryBreakdown)
+- src/features/dashboard/screens/HomeScreen.test.tsx (added 2 integration tests, fixed duplicate text matches)
+- src/features/dashboard/index.ts (added CategoryBreakdown export)

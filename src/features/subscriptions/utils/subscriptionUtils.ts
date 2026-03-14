@@ -122,6 +122,45 @@ export function getTrialInfo(
   return { daysRemaining: days, status: 'active', text: dayText, urgencyLevel: 'low' };
 }
 
+export interface CategoryBreakdownItem {
+  categoryId: string;
+  categoryLabel: string;
+  color: string;
+  icon: string;
+  monthlyTotal: number;
+  percentage: number;
+}
+
+export function calculateCategoryBreakdown(
+  subscriptions: { price: number; billing_cycle: string; is_active: boolean | null; category: string | null }[],
+): CategoryBreakdownItem[] {
+  const active = subscriptions.filter((sub) => sub.is_active !== false);
+  if (active.length === 0) return [];
+
+  const categoryMap = new Map<string, number>();
+  for (const sub of active) {
+    const config = getCategoryConfig(sub.category);
+    const monthly = calculateMonthlyEquivalent(sub.price, sub.billing_cycle as BillingCycle);
+    categoryMap.set(config.id, (categoryMap.get(config.id) ?? 0) + monthly);
+  }
+
+  const grandTotal = [...categoryMap.values()].reduce((sum, val) => sum + val, 0);
+
+  return [...categoryMap.entries()]
+    .map(([catId, total]) => {
+      const config = getCategoryConfig(catId);
+      return {
+        categoryId: catId,
+        categoryLabel: config.label,
+        color: config.color,
+        icon: config.icon,
+        monthlyTotal: total,
+        percentage: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
+      };
+    })
+    .sort((a, b) => b.monthlyTotal - a.monthlyTotal);
+}
+
 export function getCategoryConfig(categoryId: string | null): SubscriptionCategory {
   if (!categoryId) {
     return SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other') ?? DEFAULT_CATEGORY;
