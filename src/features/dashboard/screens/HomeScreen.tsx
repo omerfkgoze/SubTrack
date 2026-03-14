@@ -1,27 +1,44 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { ScrollView, StyleSheet } from 'react-native';
+import { Button } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { MainTabsParamList } from '@app/navigation/types';
+import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
+import { calculateTotalMonthlyCost } from '@features/subscriptions/utils/subscriptionUtils';
+import { SpendingHero } from '../components/SpendingHero';
 
 export function HomeScreen() {
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions);
+  const monthlyTotal = calculateTotalMonthlyCost(subscriptions);
+  const hasSubscriptions = subscriptions.length > 0;
+
   return (
-    <View style={styles.container}>
-      <Text variant="headlineMedium">Dashboard</Text>
-      <Text variant="bodyMedium" style={styles.placeholder}>
-        Spending dashboard will be implemented in Epic 3
-      </Text>
-    </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <SpendingHero amount={monthlyTotal} currency="€" showYearly animateOnChange />
+      {!hasSubscriptions && (
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('Add')}
+          style={styles.ctaButton}
+        >
+          Add First Subscription
+        </Button>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
-  placeholder: {
-    marginTop: 8,
-    opacity: 0.5,
+  content: {
+    paddingBottom: 32,
+  },
+  ctaButton: {
+    marginHorizontal: 16,
+    marginTop: 24,
   },
 });
