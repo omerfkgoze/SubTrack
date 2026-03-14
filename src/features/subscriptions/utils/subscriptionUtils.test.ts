@@ -7,6 +7,10 @@ import {
   getRenewalInfo,
   getCategoryConfig,
   getTrialInfo,
+  calculateActiveCount,
+  calculateAverageMonthlyCost,
+  calculateMonthlySavings,
+  calculateInactiveCount,
 } from './subscriptionUtils';
 import { toLocalDateString } from './testHelpers';
 
@@ -439,5 +443,145 @@ describe('calculateCategoryBreakdown', () => {
     const result = calculateCategoryBreakdown(subs);
     expect(result).toHaveLength(1);
     expect(result[0].monthlyTotal).toBe(10);
+  });
+});
+
+describe('calculateActiveCount', () => {
+  it('returns 0 for empty array', () => {
+    expect(calculateActiveCount([])).toBe(0);
+  });
+
+  it('counts all as active when all are active', () => {
+    expect(calculateActiveCount([{ is_active: true }, { is_active: true }])).toBe(2);
+  });
+
+  it('counts active and null as active', () => {
+    expect(
+      calculateActiveCount([
+        { is_active: true },
+        { is_active: null },
+        { is_active: false },
+      ]),
+    ).toBe(2);
+  });
+
+  it('returns 0 when all are inactive', () => {
+    expect(calculateActiveCount([{ is_active: false }, { is_active: false }])).toBe(0);
+  });
+});
+
+describe('calculateAverageMonthlyCost', () => {
+  it('returns 0 for empty array', () => {
+    expect(calculateAverageMonthlyCost([])).toBe(0);
+  });
+
+  it('returns 0 when all inactive', () => {
+    expect(
+      calculateAverageMonthlyCost([
+        { price: 10, billing_cycle: 'monthly', is_active: false },
+      ]),
+    ).toBe(0);
+  });
+
+  it('returns price for single active monthly subscription', () => {
+    expect(
+      calculateAverageMonthlyCost([
+        { price: 10, billing_cycle: 'monthly', is_active: true },
+      ]),
+    ).toBe(10);
+  });
+
+  it('calculates average of monthly equivalents', () => {
+    // 10/month + 120/year(=10/month) = 20 total / 2 = 10 average
+    expect(
+      calculateAverageMonthlyCost([
+        { price: 10, billing_cycle: 'monthly', is_active: true },
+        { price: 120, billing_cycle: 'yearly', is_active: true },
+      ]),
+    ).toBe(10);
+  });
+
+  it('excludes inactive subscriptions from average', () => {
+    expect(
+      calculateAverageMonthlyCost([
+        { price: 10, billing_cycle: 'monthly', is_active: true },
+        { price: 50, billing_cycle: 'monthly', is_active: false },
+      ]),
+    ).toBe(10);
+  });
+
+  it('treats null is_active as active', () => {
+    expect(
+      calculateAverageMonthlyCost([
+        { price: 20, billing_cycle: 'monthly', is_active: null },
+        { price: 20, billing_cycle: 'monthly', is_active: true },
+      ]),
+    ).toBe(20);
+  });
+});
+
+describe('calculateMonthlySavings', () => {
+  it('returns 0 for empty array', () => {
+    expect(calculateMonthlySavings([])).toBe(0);
+  });
+
+  it('returns 0 when no inactive subscriptions', () => {
+    expect(
+      calculateMonthlySavings([
+        { price: 10, billing_cycle: 'monthly', is_active: true },
+      ]),
+    ).toBe(0);
+  });
+
+  it('returns 0 for null is_active (not considered inactive)', () => {
+    expect(
+      calculateMonthlySavings([
+        { price: 10, billing_cycle: 'monthly', is_active: null },
+      ]),
+    ).toBe(0);
+  });
+
+  it('sums monthly equivalents of inactive subscriptions', () => {
+    expect(
+      calculateMonthlySavings([
+        { price: 10, billing_cycle: 'monthly', is_active: false },
+        { price: 120, billing_cycle: 'yearly', is_active: false },
+        { price: 5, billing_cycle: 'monthly', is_active: true }, // excluded
+      ]),
+    ).toBeCloseTo(20); // 10 + 120/12
+  });
+
+  it('handles different billing cycles for inactive subs', () => {
+    expect(
+      calculateMonthlySavings([
+        { price: 30, billing_cycle: 'quarterly', is_active: false },
+      ]),
+    ).toBe(10);
+  });
+});
+
+describe('calculateInactiveCount', () => {
+  it('returns 0 for empty array', () => {
+    expect(calculateInactiveCount([])).toBe(0);
+  });
+
+  it('returns 0 when no inactive subscriptions', () => {
+    expect(calculateInactiveCount([{ is_active: true }, { is_active: null }])).toBe(0);
+  });
+
+  it('counts only is_active === false (not null)', () => {
+    expect(
+      calculateInactiveCount([
+        { is_active: false },
+        { is_active: null },
+        { is_active: true },
+      ]),
+    ).toBe(1);
+  });
+
+  it('counts all when all inactive', () => {
+    expect(
+      calculateInactiveCount([{ is_active: false }, { is_active: false }]),
+    ).toBe(2);
   });
 });

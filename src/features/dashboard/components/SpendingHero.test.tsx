@@ -43,4 +43,29 @@ describe('SpendingHero', () => {
     renderComponent(17.99);
     expect(screen.getByLabelText(/17\.99/)).toBeTruthy();
   });
+
+  it('renders active count stat card when showQuickStats and subscriptionCount > 0', () => {
+    renderComponent(17.99, { showQuickStats: true, subscriptionCount: 5 });
+    expect(screen.getByLabelText(/5 active subscriptions/)).toBeTruthy();
+  });
+
+  it('renders average amount stat card when showQuickStats and subscriptionCount > 0', () => {
+    renderComponent(17.99, { showQuickStats: true, subscriptionCount: 2, averageAmount: 8.99 });
+    expect(screen.getByLabelText(/8\.99 average monthly cost/)).toBeTruthy();
+  });
+
+  it('does not render stat cards when subscriptionCount is 0', () => {
+    renderComponent(0, { showQuickStats: true, subscriptionCount: 0 });
+    expect(screen.queryByLabelText(/active subscriptions/)).toBeNull();
+  });
+
+  it('does not render stat cards when showQuickStats is false', () => {
+    renderComponent(17.99, { showQuickStats: false, subscriptionCount: 5 });
+    expect(screen.queryByLabelText(/active subscriptions/)).toBeNull();
+  });
+
+  it('stat cards not rendered when showQuickStats not provided', () => {
+    renderComponent(17.99, { subscriptionCount: 5 });
+    expect(screen.queryByLabelText(/active subscriptions/)).toBeNull();
+  });
 });

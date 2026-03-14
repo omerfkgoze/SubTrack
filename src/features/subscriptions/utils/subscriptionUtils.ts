@@ -161,6 +161,37 @@ export function calculateCategoryBreakdown(
     .sort((a, b) => b.monthlyTotal - a.monthlyTotal);
 }
 
+export function calculateActiveCount(subscriptions: { is_active: boolean | null }[]): number {
+  return subscriptions.filter((sub) => sub.is_active !== false).length;
+}
+
+export function calculateAverageMonthlyCost(
+  subscriptions: { price: number; billing_cycle: string; is_active: boolean | null }[],
+): number {
+  const active = subscriptions.filter((sub) => sub.is_active !== false);
+  if (active.length === 0) return 0;
+  const total = active.reduce(
+    (sum, sub) => sum + calculateMonthlyEquivalent(sub.price, sub.billing_cycle as BillingCycle),
+    0,
+  );
+  return total / active.length;
+}
+
+export function calculateMonthlySavings(
+  subscriptions: { price: number; billing_cycle: string; is_active: boolean | null }[],
+): number {
+  return subscriptions
+    .filter((sub) => sub.is_active === false)
+    .reduce(
+      (sum, sub) => sum + calculateMonthlyEquivalent(sub.price, sub.billing_cycle as BillingCycle),
+      0,
+    );
+}
+
+export function calculateInactiveCount(subscriptions: { is_active: boolean | null }[]): number {
+  return subscriptions.filter((sub) => sub.is_active === false).length;
+}
+
 export function getCategoryConfig(categoryId: string | null): SubscriptionCategory {
   if (!categoryId) {
     return SUBSCRIPTION_CATEGORIES.find((c) => c.id === 'other') ?? DEFAULT_CATEGORY;

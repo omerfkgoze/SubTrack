@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import Animated, {
   useSharedValue,
@@ -14,6 +14,9 @@ interface SpendingHeroProps {
   currency?: string;
   showYearly?: boolean;
   animateOnChange?: boolean;
+  subscriptionCount?: number;
+  averageAmount?: number;
+  showQuickStats?: boolean;
 }
 
 export function SpendingHero({
@@ -21,6 +24,9 @@ export function SpendingHero({
   currency = '€',
   showYearly = true,
   animateOnChange = true,
+  subscriptionCount,
+  averageAmount,
+  showQuickStats = false,
 }: SpendingHeroProps) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
@@ -38,7 +44,7 @@ export function SpendingHero({
         withTiming(1, { duration: 300 }),
       );
     }
-  }, [amount, animateOnChange, reducedMotion, scale]);
+  }, [amount, subscriptionCount, averageAmount, animateOnChange, reducedMotion, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -46,6 +52,7 @@ export function SpendingHero({
 
   const monthlyFormatted = `${currency}${amount.toFixed(2)}`;
   const yearlyFormatted = `${currency}${(amount * 12).toFixed(2)}`;
+  const showStats = showQuickStats && (subscriptionCount ?? 0) > 0;
 
   return (
     <Animated.View
@@ -64,6 +71,26 @@ export function SpendingHero({
         <Text style={styles.emptyMessage}>
           Add your first subscription to see your spending
         </Text>
+      )}
+      {showStats && (
+        <View style={styles.quickStatsRow}>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${subscriptionCount} active subscriptions`}
+          >
+            <Text style={styles.statValue}>{subscriptionCount}</Text>
+            <Text style={styles.statLabel}>active</Text>
+          </View>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${currency}${(averageAmount ?? 0).toFixed(2)} average monthly cost`}
+          >
+            <Text style={styles.statValue}>{`${currency}${(averageAmount ?? 0).toFixed(2)}`}</Text>
+            <Text style={styles.statLabel}>average</Text>
+          </View>
+        </View>
       )}
     </Animated.View>
   );
@@ -97,5 +124,28 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 16,
     textAlign: 'center',
+  },
+  quickStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  statCard: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    minWidth: 90,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
   },
 });

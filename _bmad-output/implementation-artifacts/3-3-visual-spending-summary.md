@@ -1,6 +1,6 @@
 # Story 3.3: Visual Spending Summary
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -47,63 +47,63 @@ so that I feel the emotional impact and am motivated to take action.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add utility functions to `subscriptionUtils.ts` (AC: #1, #4, #5)
-  - [ ] 1.1 Add `calculateActiveCount(subscriptions)`: returns count of active subs (`is_active !== false`)
-  - [ ] 1.2 Add `calculateAverageMonthlyCost(subscriptions)`: returns `monthlyTotal / activeCount` (0 if no active)
-  - [ ] 1.3 Add `calculateMonthlySavings(subscriptions)`: returns sum of monthly equivalents for `is_active === false` subs
-  - [ ] 1.4 Add `calculateInactiveCount(subscriptions)`: returns count of subs where `is_active === false`
+- [x] Task 1: Add utility functions to `subscriptionUtils.ts` (AC: #1, #4, #5)
+  - [x] 1.1 Add `calculateActiveCount(subscriptions)`: returns count of active subs (`is_active !== false`)
+  - [x] 1.2 Add `calculateAverageMonthlyCost(subscriptions)`: returns `monthlyTotal / activeCount` (0 if no active)
+  - [x] 1.3 Add `calculateMonthlySavings(subscriptions)`: returns sum of monthly equivalents for `is_active === false` subs
+  - [x] 1.4 Add `calculateInactiveCount(subscriptions)`: returns count of subs where `is_active === false`
 
-- [ ] Task 2: Extend `SpendingHero` component (AC: #1, #2, #3, #5)
-  - [ ] 2.1 Add new optional props: `subscriptionCount?: number`, `averageAmount?: number`, `showQuickStats?: boolean`
-  - [ ] 2.2 Render quick stats row when `showQuickStats && subscriptionCount > 0`: show count card ("N Active") and average card ("€X.XX avg")
-  - [ ] 2.3 Quick stats card layout: small numeric value (24px bold white) above a label (12px white/70%)
-  - [ ] 2.4 Stat card accessibility: `accessibilityLabel` on each card (e.g., "12 active subscriptions", "€15.83 average monthly cost")
-  - [ ] 2.5 Animate new stats in with the existing scale pulse (`useSharedValue`, `withSequence`) when `subscriptionCount` or `averageAmount` changes
-  - [ ] 2.6 Do NOT animate on first render (existing `isFirstRender` ref pattern already in place)
+- [x] Task 2: Extend `SpendingHero` component (AC: #1, #2, #3, #5)
+  - [x] 2.1 Add new optional props: `subscriptionCount?: number`, `averageAmount?: number`, `showQuickStats?: boolean`
+  - [x] 2.2 Render quick stats row when `showQuickStats && subscriptionCount > 0`: show count card ("N Active") and average card ("€X.XX avg")
+  - [x] 2.3 Quick stats card layout: small numeric value (24px bold white) above a label (12px white/70%)
+  - [x] 2.4 Stat card accessibility: `accessibilityLabel` on each card (e.g., "12 active subscriptions", "€15.83 average monthly cost")
+  - [x] 2.5 Animate new stats in with the existing scale pulse (`useSharedValue`, `withSequence`) when `subscriptionCount` or `averageAmount` changes
+  - [x] 2.6 Do NOT animate on first render (existing `isFirstRender` ref pattern already in place)
 
-- [ ] Task 3: Add `SavingsIndicator` component (AC: #4, #5)
-  - [ ] 3.1 Create `src/features/dashboard/components/SavingsIndicator.tsx`
-  - [ ] 3.2 Accept props: `savingsAmount: number`, `inactiveCount: number`
-  - [ ] 3.3 Only render when `savingsAmount > 0` AND `inactiveCount > 0`
-  - [ ] 3.4 Display text: "You're saving €X.XX/month by cancelling N subscription(s)" (pluralize "subscription")
-  - [ ] 3.5 Use `Surface` with `elevation={1}`, `borderRadius: 12`, `marginHorizontal: 16`, `marginTop: 16`
-  - [ ] 3.6 Style savings amount in success green: use inline style `color: '#10B981'` (UX spec success color)
-  - [ ] 3.7 Set `accessibilityLabel`: "You are saving €X.XX per month by cancelling N subscriptions"
-  - [ ] 3.8 Add savings icon: use `react-native-paper` `Icon` component with `source="trending-down"` in green
+- [x] Task 3: Add `SavingsIndicator` component (AC: #4, #5)
+  - [x] 3.1 Create `src/features/dashboard/components/SavingsIndicator.tsx`
+  - [x] 3.2 Accept props: `savingsAmount: number`, `inactiveCount: number`
+  - [x] 3.3 Only render when `savingsAmount > 0` AND `inactiveCount > 0`
+  - [x] 3.4 Display text: "You're saving €X.XX/month by cancelling N subscription(s)" (pluralize "subscription")
+  - [x] 3.5 Use `Surface` with `elevation={1}`, `borderRadius: 12`, `marginHorizontal: 16`, `marginTop: 16`
+  - [x] 3.6 Style savings amount in success green: use inline style `color: '#10B981'` (UX spec success color)
+  - [x] 3.7 Set `accessibilityLabel`: "You are saving €X.XX per month by cancelling N subscriptions"
+  - [x] 3.8 Add savings icon: use `react-native-paper` `Icon` component with `source="trending-down"` in green
 
-- [ ] Task 4: Update `HomeScreen` to pass new props (AC: #1, #3, #4, #5)
-  - [ ] 4.1 Import new utilities: `calculateActiveCount`, `calculateAverageMonthlyCost`, `calculateMonthlySavings`, `calculateInactiveCount`
-  - [ ] 4.2 Compute all values from existing `subscriptions` store state — NO new store or service calls
-  - [ ] 4.3 Pass `subscriptionCount`, `averageAmount`, `showQuickStats={true}` to `SpendingHero`
-  - [ ] 4.4 Render `SavingsIndicator` below `CategoryBreakdown`, only when `savingsAmount > 0`
-  - [ ] 4.5 Export `SavingsIndicator` from `src/features/dashboard/index.ts`
+- [x] Task 4: Update `HomeScreen` to pass new props (AC: #1, #3, #4, #5)
+  - [x] 4.1 Import new utilities: `calculateActiveCount`, `calculateAverageMonthlyCost`, `calculateMonthlySavings`, `calculateInactiveCount`
+  - [x] 4.2 Compute all values from existing `subscriptions` store state — NO new store or service calls
+  - [x] 4.3 Pass `subscriptionCount`, `averageAmount`, `showQuickStats={true}` to `SpendingHero`
+  - [x] 4.4 Render `SavingsIndicator` below `CategoryBreakdown`, only when `savingsAmount > 0`
+  - [x] 4.5 Export `SavingsIndicator` from `src/features/dashboard/index.ts`
 
-- [ ] Task 5: Write tests (AC: #1, #2, #3, #4, #5)
-  - [ ] 5.1 Add unit tests in `subscriptionUtils.test.ts` for all 4 new utilities:
-    - [ ] `calculateActiveCount`: empty array → 0; all active → count; mixed → only active; is_active=null → counted as active
-    - [ ] `calculateAverageMonthlyCost`: empty → 0; single active → price; multiple active + billing cycle normalization; all inactive → 0
-    - [ ] `calculateMonthlySavings`: empty → 0; no inactive → 0; inactive with billing cycles → monthly equivalent sum
-    - [ ] `calculateInactiveCount`: empty → 0; no inactive → 0; mixed → count of false only
-  - [ ] 5.2 Create `src/features/dashboard/components/SavingsIndicator.test.tsx`
-    - [ ] Test: renders savings message when amount > 0
-    - [ ] Test: renders correct amount formatted as €X.XX
-    - [ ] Test: pluralizes "subscription" correctly (1 vs N)
-    - [ ] Test: does NOT render when savingsAmount = 0
-    - [ ] Test: accessibility label contains amount and count
-  - [ ] 5.3 Update `SpendingHero.test.tsx`:
-    - [ ] Test: renders active count card when `showQuickStats` and `subscriptionCount > 0`
-    - [ ] Test: renders average amount card when `showQuickStats` and `averageAmount > 0`
-    - [ ] Test: does NOT render quick stats when `subscriptionCount = 0`
-    - [ ] Test: accessibility labels on stat cards
-  - [ ] 5.4 Update `HomeScreen.test.tsx`:
-    - [ ] Test: SavingsIndicator renders when inactive subscriptions exist
-    - [ ] Test: SavingsIndicator does NOT render when all subscriptions are active
-    - [ ] Test: quick stats card shows correct subscription count
-    - [ ] Run full regression — all 193 existing tests must pass
+- [x] Task 5: Write tests (AC: #1, #2, #3, #4, #5)
+  - [x] 5.1 Add unit tests in `subscriptionUtils.test.ts` for all 4 new utilities:
+    - [x] `calculateActiveCount`: empty array → 0; all active → count; mixed → only active; is_active=null → counted as active
+    - [x] `calculateAverageMonthlyCost`: empty → 0; single active → price; multiple active + billing cycle normalization; all inactive → 0
+    - [x] `calculateMonthlySavings`: empty → 0; no inactive → 0; inactive with billing cycles → monthly equivalent sum
+    - [x] `calculateInactiveCount`: empty → 0; no inactive → 0; mixed → count of false only
+  - [x] 5.2 Create `src/features/dashboard/components/SavingsIndicator.test.tsx`
+    - [x] Test: renders savings message when amount > 0
+    - [x] Test: renders correct amount formatted as €X.XX
+    - [x] Test: pluralizes "subscription" correctly (1 vs N)
+    - [x] Test: does NOT render when savingsAmount = 0
+    - [x] Test: accessibility label contains amount and count
+  - [x] 5.3 Update `SpendingHero.test.tsx`:
+    - [x] Test: renders active count card when `showQuickStats` and `subscriptionCount > 0`
+    - [x] Test: renders average amount card when `showQuickStats` and `averageAmount > 0`
+    - [x] Test: does NOT render quick stats when `subscriptionCount = 0`
+    - [x] Test: accessibility labels on stat cards
+  - [x] 5.4 Update `HomeScreen.test.tsx`:
+    - [x] Test: SavingsIndicator renders when inactive subscriptions exist
+    - [x] Test: SavingsIndicator does NOT render when all subscriptions are active
+    - [x] Test: quick stats card shows correct subscription count
+    - [x] Run full regression — 230 tests pass (193 existing + 37 new)
 
-- [ ] Task 6: TypeScript and lint checks
-  - [ ] 6.1 Run `npx tsc --noEmit` — zero errors
-  - [ ] 6.2 Run `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors/warnings
+- [x] Task 6: TypeScript and lint checks
+  - [x] 6.1 Run `npx tsc --noEmit` — zero errors
+  - [x] 6.2 Run `npx eslint src/features/dashboard/ src/features/subscriptions/utils/` — zero errors/warnings
 
 ## Dev Notes
 
@@ -597,4 +597,30 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- ✅ Task 1: 4 pure utility functions added to subscriptionUtils.ts — calculateActiveCount, calculateAverageMonthlyCost, calculateMonthlySavings, calculateInactiveCount. All follow is_active semantics (null=active, false=inactive).
+- ✅ Task 2: SpendingHero extended with subscriptionCount, averageAmount, showQuickStats props. Quick stats row renders when showQuickStats && subscriptionCount > 0. Animation dependencies updated to include new props. isFirstRender pattern preserved.
+- ✅ Task 3: SavingsIndicator component created at src/features/dashboard/components/SavingsIndicator.tsx. Renders only when savingsAmount > 0 AND inactiveCount > 0. Pluralization handled. Green (#10B981) amount styling and trending-down icon applied.
+- ✅ Task 4: HomeScreen updated — 4 new utility imports, all values computed from existing subscriptions store state (no new store/service calls), showQuickStats props passed to SpendingHero, SavingsIndicator rendered conditionally. SavingsIndicator exported from dashboard/index.ts.
+- ✅ Task 5: 37 new tests across 4 files. Full regression: 230 tests pass (0 failures, 0 regressions).
+- ✅ Task 6: npx tsc --noEmit = zero errors. npx eslint = zero errors/warnings.
+
 ### File List
+
+**Created:**
+- src/features/dashboard/components/SavingsIndicator.tsx
+- src/features/dashboard/components/SavingsIndicator.test.tsx
+
+**Modified:**
+- src/features/subscriptions/utils/subscriptionUtils.ts
+- src/features/subscriptions/utils/subscriptionUtils.test.ts
+- src/features/dashboard/components/SpendingHero.tsx
+- src/features/dashboard/components/SpendingHero.test.tsx
+- src/features/dashboard/screens/HomeScreen.tsx
+- src/features/dashboard/screens/HomeScreen.test.tsx
+- src/features/dashboard/index.ts
+- _bmad-output/implementation-artifacts/3-3-visual-spending-summary.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+## Change Log
+
+- 2026-03-14: Story 3.3 implemented — Added 4 utility functions (calculateActiveCount, calculateAverageMonthlyCost, calculateMonthlySavings, calculateInactiveCount), extended SpendingHero with quick stats display, created SavingsIndicator component, updated HomeScreen to wire all new data. 37 new tests added; 230 total tests pass.

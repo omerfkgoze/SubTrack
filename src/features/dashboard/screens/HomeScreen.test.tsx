@@ -134,4 +134,45 @@ describe('HomeScreen', () => {
     renderWithProvider();
     expect(screen.queryByText('Spending by Category')).toBeNull();
   });
+
+  it('renders SavingsIndicator when inactive subscriptions exist', () => {
+    useSubscriptionStore.setState({
+      subscriptions: [mockSubscription, inactiveSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.getByText(/You're saving/)).toBeTruthy();
+  });
+
+  it('does NOT render SavingsIndicator when all subscriptions are active', () => {
+    useSubscriptionStore.setState({
+      subscriptions: [mockSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.queryByText(/You're saving/)).toBeNull();
+  });
+
+  it('quick stats card shows correct subscription count', () => {
+    useSubscriptionStore.setState({
+      subscriptions: [mockSubscription],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+    renderWithProvider();
+    expect(screen.getByLabelText(/1 active subscriptions/)).toBeTruthy();
+  });
+
+  it('does NOT render SavingsIndicator when no subscriptions', () => {
+    renderWithProvider();
+    expect(screen.queryByText(/You're saving/)).toBeNull();
+  });
 });
