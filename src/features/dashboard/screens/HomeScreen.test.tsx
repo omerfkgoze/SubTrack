@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@config/theme';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
+import { useNotificationStore } from '@shared/stores/useNotificationStore';
 import { HomeScreen } from './HomeScreen';
 import type { Subscription } from '@features/subscriptions/types';
 
@@ -14,6 +15,27 @@ jest.mock('@shared/services/supabase', () => ({
   supabase: {
     auth: { getUser: jest.fn() },
     from: jest.fn(),
+  },
+}));
+
+jest.mock('expo-notifications', () => ({
+  getPermissionsAsync: jest.fn(),
+  requestPermissionsAsync: jest.fn(),
+  getExpoPushTokenAsync: jest.fn(),
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  AndroidImportance: { HIGH: 4 },
+}));
+
+jest.mock('expo-device', () => ({
+  isDevice: true,
+}));
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { extra: { eas: { projectId: 'test-project-id' } } },
+    easConfig: { projectId: 'test-project-id' },
   },
 }));
 
@@ -207,5 +229,25 @@ describe('HomeScreen', () => {
     });
     renderWithProvider();
     expect(screen.getByText('No upcoming renewals in the next 30 days')).toBeTruthy();
+  });
+
+  describe('NotificationStatusBanner integration', () => {
+    it('renders notification banner when notifications are denied', () => {
+      useNotificationStore.setState({ permissionStatus: 'denied' });
+      renderWithProvider();
+      expect(screen.getByText(/Notifications are off/)).toBeTruthy();
+    });
+
+    it('does not render notification banner when notifications are granted', () => {
+      useNotificationStore.setState({ permissionStatus: 'granted' });
+      renderWithProvider();
+      expect(screen.queryByText(/Notifications are off/)).toBeNull();
+    });
+
+    it('does not render notification banner when permission is undetermined', () => {
+      useNotificationStore.setState({ permissionStatus: 'undetermined' });
+      renderWithProvider();
+      expect(screen.queryByText(/Notifications are off/)).toBeNull();
+    });
   });
 });

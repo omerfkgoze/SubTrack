@@ -1,6 +1,6 @@
 # Story 4.1: Push Notification Permission & Setup
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -567,6 +567,8 @@ Claude Opus 4.6
 - `src/app/navigation/SettingsStack.tsx` (added Notifications screen route)
 - `src/app/navigation/index.tsx` (added foreground permission check)
 - `src/features/dashboard/screens/HomeScreen.tsx` (integrated NotificationStatusBanner)
+- `src/features/dashboard/screens/HomeScreen.test.tsx` (added NotificationStatusBanner integration tests)
+- `src/features/settings/screens/SettingsScreen.tsx` (added Notifications section with navigation to NotificationPermissionScreen)
 
 ### Change Log
 

@@ -93,7 +93,7 @@ describe('useNotificationStore', () => {
     });
 
     it('sets isLoading during request', async () => {
-      let resolveRegister: (value: string | null) => void;
+      let resolveRegister: ((value: string | null) => void) | undefined;
       mockRegister.mockReturnValue(
         new Promise<string | null>((resolve) => {
           resolveRegister = resolve;
@@ -108,7 +108,7 @@ describe('useNotificationStore', () => {
       expect(useNotificationStore.getState().isLoading).toBe(true);
 
       await act(async () => {
-        resolveRegister!(null);
+        resolveRegister?.(null);
         await requestPromise;
       });
 
