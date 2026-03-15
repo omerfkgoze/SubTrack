@@ -72,8 +72,8 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4: Smart Reminders & Notifications
-  epic-4: backlog
-  4-1-push-notification-permission-setup: backlog
+  epic-4: in-progress
+  4-1-push-notification-permission-setup: ready-for-dev
   4-2-renewal-reminder-scheduling: backlog
   4-3-customizable-reminder-timing: backlog
   4-4-trial-expiry-notifications: backlog
