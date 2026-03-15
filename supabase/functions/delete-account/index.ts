@@ -49,10 +49,10 @@ Deno.serve(async (req: Request) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     // Delete user data (defense-in-depth — ON DELETE CASCADE also handles this at DB level)
+    await supabaseAdmin.from('push_tokens').delete().eq('user_id', user.id)
+    await supabaseAdmin.from('reminder_settings').delete().eq('user_id', user.id)
+    await supabaseAdmin.from('notification_log').delete().eq('user_id', user.id)
     await supabaseAdmin.from('subscriptions').delete().eq('user_id', user.id)
-    // TODO: When additional data tables are created, add deletion queries here:
-    // await supabaseAdmin.from('reminder_settings').delete().eq('user_id', user.id)
-    // await supabaseAdmin.from('user_settings').delete().eq('user_id', user.id)
 
     // Delete auth user (this is the final step — no recovery after this)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)

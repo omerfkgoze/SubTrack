@@ -8,3 +8,10 @@ export {
   openNotificationSettings,
   removePushToken,
 } from './services/notificationService';
+export {
+  getReminderSettings,
+  createDefaultReminder,
+  updateReminder,
+  deleteReminder,
+} from './services/reminderService';
+export type { ReminderSetting } from './services/reminderService';

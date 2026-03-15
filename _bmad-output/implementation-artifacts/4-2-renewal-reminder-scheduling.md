@@ -1,6 +1,6 @@
 # Story 4.2: Renewal Reminder Scheduling
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -58,59 +58,59 @@ so that I can decide whether to keep or cancel before being charged.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `reminder_settings` Supabase migration (AC: #1)
-  - [ ] 1.1: Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_reminder_settings.sql`
-  - [ ] 1.2: Table schema: `id` UUID PK, `user_id` FK → auth.users ON DELETE CASCADE, `subscription_id` FK → subscriptions ON DELETE CASCADE, `remind_days_before` INTEGER DEFAULT 3 NOT NULL, `is_enabled` BOOLEAN DEFAULT true NOT NULL, `created_at` TIMESTAMPTZ, `updated_at` TIMESTAMPTZ
-  - [ ] 1.3: Add UNIQUE constraint on (`user_id`, `subscription_id`)
-  - [ ] 1.4: Enable RLS + create policies (SELECT/INSERT/UPDATE/DELETE for own rows) using `(select auth.uid()) = user_id` pattern
-  - [ ] 1.5: Add `update_updated_at` trigger (reuse existing `update_updated_at_column()` function)
-  - [ ] 1.6: Add index on `user_id` and `subscription_id`
-  - [ ] 1.7: Run `npx supabase db push` to apply migration
+- [x] Task 1: Create `reminder_settings` Supabase migration (AC: #1)
+  - [x] 1.1: Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_reminder_settings.sql`
+  - [x] 1.2: Table schema: `id` UUID PK, `user_id` FK → auth.users ON DELETE CASCADE, `subscription_id` FK → subscriptions ON DELETE CASCADE, `remind_days_before` INTEGER DEFAULT 3 NOT NULL, `is_enabled` BOOLEAN DEFAULT true NOT NULL, `created_at` TIMESTAMPTZ, `updated_at` TIMESTAMPTZ
+  - [x] 1.3: Add UNIQUE constraint on (`user_id`, `subscription_id`)
+  - [x] 1.4: Enable RLS + create policies (SELECT/INSERT/UPDATE/DELETE for own rows) using `(select auth.uid()) = user_id` pattern
+  - [x] 1.5: Add `update_updated_at` trigger (reuse existing `update_updated_at_column()` function)
+  - [x] 1.6: Add index on `user_id` and `subscription_id`
+  - [x] 1.7: Run `npx supabase db push` to apply migration
 
-- [ ] Task 2: Create `notification_log` table for deduplication & tracking (AC: #2, #5)
-  - [ ] 2.1: Add to same or separate migration: `notification_log` table with `id` UUID PK, `user_id` UUID NOT NULL, `subscription_id` UUID NOT NULL, `renewal_date` DATE NOT NULL, `sent_at` TIMESTAMPTZ DEFAULT now(), `status` TEXT CHECK IN ('sent', 'failed', 'retrying'), `expo_receipt_id` TEXT, `error_message` TEXT
-  - [ ] 2.2: Add UNIQUE constraint on (`subscription_id`, `renewal_date`) to prevent duplicate sends
-  - [ ] 2.3: Enable RLS — service_role only (no client access needed for this table), or user SELECT for future Story 4.6
-  - [ ] 2.4: Add index on (`subscription_id`, `renewal_date`) and `user_id`
+- [x] Task 2: Create `notification_log` table for deduplication & tracking (AC: #2, #5)
+  - [x] 2.1: Add to same or separate migration: `notification_log` table with `id` UUID PK, `user_id` UUID NOT NULL, `subscription_id` UUID NOT NULL, `renewal_date` DATE NOT NULL, `sent_at` TIMESTAMPTZ DEFAULT now(), `status` TEXT CHECK IN ('sent', 'failed', 'retrying'), `expo_receipt_id` TEXT, `error_message` TEXT
+  - [x] 2.2: Add UNIQUE constraint on (`subscription_id`, `renewal_date`) to prevent duplicate sends
+  - [x] 2.3: Enable RLS — service_role only (no client access needed for this table), or user SELECT for future Story 4.6
+  - [x] 2.4: Add index on (`subscription_id`, `renewal_date`) and `user_id`
 
-- [ ] Task 3: Create `calculate-reminders` Edge Function (AC: #2, #4, #5)
-  - [ ] 3.1: Create `supabase/functions/calculate-reminders/index.ts`
-  - [ ] 3.2: Use `SUPABASE_SERVICE_ROLE_KEY` for database access (bypasses RLS — this is a server-side function)
-  - [ ] 3.3: Query logic: find active subscriptions where `renewal_date - remind_days_before = today` (default 3 days if no `reminder_settings` row exists)
-  - [ ] 3.4: For each match, fetch user's push tokens from `push_tokens`
-  - [ ] 3.5: Check `notification_log` for existing entry — skip if already sent for this subscription+renewal_date
-  - [ ] 3.6: Send to Expo Push API: `POST https://exp.host/--/api/v2/push/send` with `Authorization: Bearer ${EXPO_ACCESS_TOKEN}`
-  - [ ] 3.7: Notification payload: `{ to: token, title: "📅 {name} renews in {days} days", body: "{price} {currency} will be charged on {date}", sound: "default", data: { subscription_id } }`
-  - [ ] 3.8: Log result to `notification_log` (status: 'sent' or 'failed')
-  - [ ] 3.9: Implement retry logic: up to 3 attempts with exponential backoff (1s, 2s, 4s) for transient failures
-  - [ ] 3.10: Return summary: `{ processed: N, sent: N, skipped: N, failed: N }`
+- [x] Task 3: Create `calculate-reminders` Edge Function (AC: #2, #4, #5)
+  - [x] 3.1: Create `supabase/functions/calculate-reminders/index.ts`
+  - [x] 3.2: Use `SUPABASE_SERVICE_ROLE_KEY` for database access (bypasses RLS — this is a server-side function)
+  - [x] 3.3: Query logic: find active subscriptions where `renewal_date - remind_days_before = today` (default 3 days if no `reminder_settings` row exists)
+  - [x] 3.4: For each match, fetch user's push tokens from `push_tokens`
+  - [x] 3.5: Check `notification_log` for existing entry — skip if already sent for this subscription+renewal_date
+  - [x] 3.6: Send to Expo Push API: `POST https://exp.host/--/api/v2/push/send` with `Authorization: Bearer ${EXPO_ACCESS_TOKEN}`
+  - [x] 3.7: Notification payload: `{ to: token, title: "📅 {name} renews in {days} days", body: "{price} {currency} will be charged on {date}", sound: "default", data: { subscription_id } }`
+  - [x] 3.8: Log result to `notification_log` (status: 'sent' or 'failed')
+  - [x] 3.9: Implement retry logic: up to 3 attempts with exponential backoff (1s, 2s, 4s) for transient failures
+  - [x] 3.10: Return summary: `{ processed: N, sent: N, skipped: N, failed: N }`
 
-- [ ] Task 4: Configure pg_cron job via migration (AC: #3)
-  - [ ] 4.1: Create migration file for pg_cron setup
-  - [ ] 4.2: Enable `pg_cron` and `pg_net` extensions if not already enabled
-  - [ ] 4.3: Store `project_url` and `service_role_key` in Supabase vault (`vault.secrets`)
-  - [ ] 4.4: Create cron job: `cron.schedule('calculate-reminders-daily', '0 9 * * *', ...)` — calls Edge Function via `net.http_post` with vault-sourced credentials
-  - [ ] 4.5: Document how to verify the cron job is active: `SELECT * FROM cron.job;`
+- [x] Task 4: Configure pg_cron job via migration (AC: #3)
+  - [x] 4.1: Create migration file for pg_cron setup
+  - [x] 4.2: Enable `pg_cron` and `pg_net` extensions if not already enabled
+  - [x] 4.3: Store `project_url` and `service_role_key` in Supabase vault (`vault.secrets`)
+  - [x] 4.4: Create cron job: `cron.schedule('calculate-reminders-daily', '0 9 * * *', ...)` — calls Edge Function via `net.http_post` with vault-sourced credentials
+  - [x] 4.5: Document how to verify the cron job is active: `SELECT * FROM cron.job;`
 
-- [ ] Task 5: Create `reminderService.ts` (AC: #6)
-  - [ ] 5.1: Create `src/features/notifications/services/reminderService.ts`
-  - [ ] 5.2: `getReminderSettings(subscriptionId)` — fetch from `reminder_settings` table
-  - [ ] 5.3: `createDefaultReminder(userId, subscriptionId)` — insert with `remind_days_before: 3, is_enabled: true`
-  - [ ] 5.4: `updateReminder(id, data)` — update `remind_days_before` and/or `is_enabled`
-  - [ ] 5.5: `deleteReminder(id)` — delete row
-  - [ ] 5.6: Write unit tests for all service functions (mock Supabase client)
+- [x] Task 5: Create `reminderService.ts` (AC: #6)
+  - [x] 5.1: Create `src/features/notifications/services/reminderService.ts`
+  - [x] 5.2: `getReminderSettings(subscriptionId)` — fetch from `reminder_settings` table
+  - [x] 5.3: `createDefaultReminder(userId, subscriptionId)` — insert with `remind_days_before: 3, is_enabled: true`
+  - [x] 5.4: `updateReminder(id, data)` — update `remind_days_before` and/or `is_enabled`
+  - [x] 5.5: `deleteReminder(id)` — delete row
+  - [x] 5.6: Write unit tests for all service functions (mock Supabase client)
 
-- [ ] Task 6: Update `delete-account` Edge Function (AC: #1)
-  - [ ] 6.1: Add `reminder_settings` deletion to `supabase/functions/delete-account/index.ts` (uncomment/add the TODO line for `reminder_settings`)
-  - [ ] 6.2: Add `notification_log` cleanup as well
+- [x] Task 6: Update `delete-account` Edge Function (AC: #1)
+  - [x] 6.1: Add `reminder_settings` deletion to `supabase/functions/delete-account/index.ts` (uncomment/add the TODO line for `reminder_settings`)
+  - [x] 6.2: Add `notification_log` cleanup as well
 
-- [ ] Task 7: Update notifications feature exports (AC: #6)
-  - [ ] 7.1: Add `reminderService` exports to `src/features/notifications/index.ts`
+- [x] Task 7: Update notifications feature exports (AC: #6)
+  - [x] 7.1: Add `reminderService` exports to `src/features/notifications/index.ts`
 
-- [ ] Task 8: Integration and testing (AC: all)
-  - [ ] 8.1: `npx tsc --noEmit` — zero errors
-  - [ ] 8.2: `npx eslint src/features/notifications/` — zero errors
-  - [ ] 8.3: Full test suite green (baseline: 305+ tests)
+- [x] Task 8: Integration and testing (AC: all)
+  - [x] 8.1: `npx tsc --noEmit` — zero errors
+  - [x] 8.2: `npx eslint src/features/notifications/` — zero errors
+  - [x] 8.3: Full test suite green (baseline: 305+ tests)
 
 ## Dev Notes
 
@@ -710,10 +710,38 @@ Recent commits show pattern: story file created → implementation → review �
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- No debug issues encountered. All tasks completed cleanly.
+
 ### Completion Notes List
 
+- Created `reminder_settings` table with UUID PK, FK cascades, CHECK constraint for remind_days_before IN (1,3,7), UNIQUE(user_id, subscription_id), RLS policies, updated_at trigger, indexes
+- Created `notification_log` table with deduplication UNIQUE constraint on (subscription_id, renewal_date), user SELECT RLS policy, service_role writes only
+- Created `get_reminder_candidates` SECURITY DEFINER function for efficient reminder candidate queries with LEFT JOIN default logic
+- Created `calculate-reminders` Edge Function with Expo Push API integration, deduplication check, retry logic (3 attempts, exponential backoff 1s/2s/4s), notification logging
+- Created pg_cron migration with daily schedule at 9:00 AM UTC, vault-sourced credentials, pg_net HTTP POST
+- Created `reminderService.ts` with 4 CRUD functions (getReminderSettings, createDefaultReminder, updateReminder, deleteReminder)
+- Created 13 unit tests for reminderService covering all functions, success/error/null paths
+- Updated `delete-account` Edge Function with push_tokens, reminder_settings, notification_log cleanup (defense-in-depth)
+- Updated notifications feature exports with reminderService functions and ReminderSetting type
+- TSC: zero errors, ESLint: zero errors, Test suite: 318 tests passing (13 new, 0 regressions)
+
+### Change Log
+
+- 2026-03-15: Story 4.2 implementation complete — server-side notification pipeline with reminder settings, notification logging, Edge Function, pg_cron scheduling, and client-side reminder service
+
 ### File List
+
+**New files:**
+- `supabase/migrations/20260315100000_create_reminder_settings.sql`
+- `supabase/migrations/20260315100001_setup_pg_cron_reminders.sql`
+- `supabase/functions/calculate-reminders/index.ts`
+- `src/features/notifications/services/reminderService.ts`
+- `src/features/notifications/services/reminderService.test.ts`
+
+**Modified files:**
+- `supabase/functions/delete-account/index.ts`
+- `src/features/notifications/index.ts`
