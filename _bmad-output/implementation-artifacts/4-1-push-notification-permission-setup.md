@@ -1,6 +1,6 @@
 # Story 4.1: Push Notification Permission & Setup
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -43,52 +43,52 @@ so that I understand why notifications are critical and grant permission willing
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install `expo-notifications` and `expo-device` dependencies (AC: #2)
-  - [ ] 1.1: `npx expo install expo-notifications expo-device expo-constants`
-  - [ ] 1.2: Configure `app.json` — add `"plugins": ["expo-notifications"]` and Android notification icon/color
-  - [ ] 1.3: Verify installation with `npx tsc --noEmit`
+- [x] Task 1: Install `expo-notifications` and `expo-device` dependencies (AC: #2)
+  - [x] 1.1: `npx expo install expo-notifications expo-device expo-constants`
+  - [x] 1.2: Configure `app.json` — add `"plugins": ["expo-notifications"]` and Android notification icon/color
+  - [x] 1.3: Verify installation with `npx tsc --noEmit`
 
-- [ ] Task 2: Create Supabase `push_tokens` migration (AC: #2)
-  - [ ] 2.1: Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_push_tokens.sql`
-  - [ ] 2.2: Table: `push_tokens` with columns: id (UUID PK), user_id (FK → auth.users ON DELETE CASCADE), token (TEXT NOT NULL), platform (TEXT NOT NULL CHECK IN ('ios', 'android')), created_at (TIMESTAMPTZ), updated_at (TIMESTAMPTZ)
-  - [ ] 2.3: Add UNIQUE constraint on (user_id, token) to prevent duplicates
-  - [ ] 2.4: Enable RLS + create policies (SELECT/INSERT/UPDATE/DELETE for own tokens)
-  - [ ] 2.5: Add `update_updated_at` trigger (reuse existing function)
-  - [ ] 2.6: Add index on `user_id`
-  - [ ] 2.7: Run `npx supabase db push` to apply migration
+- [x] Task 2: Create Supabase `push_tokens` migration (AC: #2)
+  - [x] 2.1: Create migration file `supabase/migrations/YYYYMMDDHHMMSS_create_push_tokens.sql`
+  - [x] 2.2: Table: `push_tokens` with columns: id (UUID PK), user_id (FK → auth.users ON DELETE CASCADE), token (TEXT NOT NULL), platform (TEXT NOT NULL CHECK IN ('ios', 'android')), created_at (TIMESTAMPTZ), updated_at (TIMESTAMPTZ)
+  - [x] 2.3: Add UNIQUE constraint on (user_id, token) to prevent duplicates
+  - [x] 2.4: Enable RLS + create policies (SELECT/INSERT/UPDATE/DELETE for own tokens)
+  - [x] 2.5: Add `update_updated_at` trigger (reuse existing function)
+  - [x] 2.6: Add index on `user_id`
+  - [x] 2.7: Run `npx supabase db push` to apply migration
 
-- [ ] Task 3: Create `notificationService.ts` (AC: #1, #2, #3)
-  - [ ] 3.1: `registerForPushNotificationsAsync()` — check device, request permission, get ExpoPushToken
-  - [ ] 3.2: `savePushToken(userId, token, platform)` — upsert token to Supabase `push_tokens`
-  - [ ] 3.3: `getPermissionStatus()` — check current notification permission status
-  - [ ] 3.4: `openNotificationSettings()` — open device notification settings (Linking)
-  - [ ] 3.5: Write unit tests for service functions
+- [x] Task 3: Create `notificationService.ts` (AC: #1, #2, #3)
+  - [x] 3.1: `registerForPushNotificationsAsync()` — check device, request permission, get ExpoPushToken
+  - [x] 3.2: `savePushToken(userId, token, platform)` — upsert token to Supabase `push_tokens`
+  - [x] 3.3: `getPermissionStatus()` — check current notification permission status
+  - [x] 3.4: `openNotificationSettings()` — open device notification settings (Linking)
+  - [x] 3.5: Write unit tests for service functions
 
-- [ ] Task 4: Create `useNotificationStore` (AC: #4)
-  - [ ] 4.1: State: permissionStatus, expoPushToken, isLoading, error
-  - [ ] 4.2: Actions: requestPermission, checkPermission, registerToken
-  - [ ] 4.3: Persist permissionStatus to AsyncStorage
-  - [ ] 4.4: Write store tests
+- [x] Task 4: Create `useNotificationStore` (AC: #4)
+  - [x] 4.1: State: permissionStatus, expoPushToken, isLoading, error
+  - [x] 4.2: Actions: requestPermission, checkPermission, registerToken
+  - [x] 4.3: Persist permissionStatus to AsyncStorage
+  - [x] 4.4: Write store tests
 
-- [ ] Task 5: Create `NotificationPermissionScreen` (AC: #1, #2, #3)
-  - [ ] 5.1: Pre-permission UI — value proposition, social proof, explanation
-  - [ ] 5.2: "Enable Notifications" primary button → triggers OS permission dialog
-  - [ ] 5.3: "Maybe Later" secondary link → skips with warning
-  - [ ] 5.4: Success state → confirmation with checkmark
-  - [ ] 5.5: Write component tests
+- [x] Task 5: Create `NotificationPermissionScreen` (AC: #1, #2, #3)
+  - [x] 5.1: Pre-permission UI — value proposition, social proof, explanation
+  - [x] 5.2: "Enable Notifications" primary button → triggers OS permission dialog
+  - [x] 5.3: "Maybe Later" secondary link → skips with warning
+  - [x] 5.4: Success state → confirmation with checkmark
+  - [x] 5.5: Write component tests
 
-- [ ] Task 6: Create `NotificationStatusBanner` component (AC: #3)
-  - [ ] 6.1: Persistent banner for disabled notification state — red/amber background
-  - [ ] 6.2: "Turn On" CTA button → opens device settings
-  - [ ] 6.3: Render in HomeScreen when notifications are disabled
-  - [ ] 6.4: Write component tests
+- [x] Task 6: Create `NotificationStatusBanner` component (AC: #3)
+  - [x] 6.1: Persistent banner for disabled notification state — red/amber background
+  - [x] 6.2: "Turn On" CTA button → opens device settings
+  - [x] 6.3: Render in HomeScreen when notifications are disabled
+  - [x] 6.4: Write component tests
 
-- [ ] Task 7: Integration and testing (AC: all)
-  - [ ] 7.1: Wire NotificationPermissionScreen into navigation (after registration or from settings)
-  - [ ] 7.2: Add permission check on app foreground (AppState listener)
-  - [ ] 7.3: `npx tsc --noEmit` — zero errors
-  - [ ] 7.4: `npx eslint src/features/notifications/` — zero errors
-  - [ ] 7.5: Full test suite green (baseline: 259+ tests)
+- [x] Task 7: Integration and testing (AC: all)
+  - [x] 7.1: Wire NotificationPermissionScreen into navigation (after registration or from settings)
+  - [x] 7.2: Add permission check on app foreground (AppState listener)
+  - [x] 7.3: `npx tsc --noEmit` — zero errors
+  - [x] 7.4: `npx eslint src/features/notifications/` — zero errors
+  - [x] 7.5: Full test suite green (baseline: 259+ tests)
 
 ## Dev Notes
 
@@ -522,10 +522,52 @@ Recent commits show consistent patterns:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Service test: fixed expo-device mock (used getter pattern for isDevice toggle)
+- Service test: fixed Linking mock (used jest.spyOn instead of direct property assignment)
+
 ### Completion Notes List
 
+- Installed expo-notifications, expo-device, expo-constants via npx expo install
+- Configured app.json with expo-notifications plugin (color: #6750A4)
+- Created push_tokens Supabase migration with RLS, UNIQUE constraint, trigger, index — applied via db push
+- Built notificationService.ts with registerForPushNotifications, savePushToken, getPermissionStatus, openNotificationSettings, removePushToken (12 tests)
+- Built useNotificationStore with Zustand persist middleware (permissionStatus persisted to AsyncStorage) (14 tests)
+- Built NotificationPermissionScreen with pre-permission value proposition, enable/skip buttons, success state (13 tests)
+- Built NotificationStatusBanner with red (#EF4444) banner, "Turn On" CTA, conditional rendering (7 tests)
+- Integrated NotificationPermissionScreen into SettingsStack navigation
+- Added AppState foreground permission re-check in RootNavigator
+- Integrated NotificationStatusBanner at top of HomeScreen
+- Updated notifications feature index.ts with all exports
+- All Epic 3 retro action items applied: accessibilityLabels, no non-null assertions, PaperProvider in tests
+- TSC: zero errors, ESLint: zero errors
+- Full test suite: 305 tests passing (46 new, up from 259 baseline), 21 suites, zero failures
+
 ### File List
+
+**New files:**
+- `src/features/notifications/services/notificationService.ts`
+- `src/features/notifications/services/notificationService.test.ts`
+- `src/features/notifications/screens/NotificationPermissionScreen.tsx`
+- `src/features/notifications/screens/NotificationPermissionScreen.test.tsx`
+- `src/features/notifications/components/NotificationStatusBanner.tsx`
+- `src/features/notifications/components/NotificationStatusBanner.test.tsx`
+- `src/shared/stores/useNotificationStore.ts`
+- `src/shared/stores/useNotificationStore.test.ts`
+- `supabase/migrations/20260315000000_create_push_tokens.sql`
+
+**Modified files:**
+- `package.json` (added expo-notifications, expo-device, expo-constants dependencies)
+- `package-lock.json` (dependency lock updates)
+- `app.json` (added expo-notifications plugin config)
+- `src/features/notifications/index.ts` (replaced placeholder with feature exports)
+- `src/app/navigation/SettingsStack.tsx` (added Notifications screen route)
+- `src/app/navigation/index.tsx` (added foreground permission check)
+- `src/features/dashboard/screens/HomeScreen.tsx` (integrated NotificationStatusBanner)
+
+### Change Log
+
+- 2026-03-15: Story 4.1 implementation complete — push notification permission setup with pre-permission screen, notification service, Zustand store, status banner, Supabase migration, and navigation integration. 46 new tests added (305 total).

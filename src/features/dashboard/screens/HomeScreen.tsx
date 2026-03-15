@@ -18,6 +18,7 @@ import { SpendingHero } from '../components/SpendingHero';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { SavingsIndicator } from '../components/SavingsIndicator';
 import { UpcomingRenewals } from '../components/UpcomingRenewals';
+import { NotificationStatusBanner } from '@features/notifications/components/NotificationStatusBanner';
 
 export function HomeScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
@@ -33,6 +34,7 @@ export function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <NotificationStatusBanner />
       <SpendingHero
         amount={monthlyTotal}
         currency="€"

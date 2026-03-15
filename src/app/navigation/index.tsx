@@ -10,6 +10,7 @@ import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
 import { BiometricPromptScreen } from '@features/auth/screens/BiometricPromptScreen';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { useNotificationStore } from '@shared/stores/useNotificationStore';
 import { parseSupabaseDeepLink } from '@shared/services/deepLinking';
 import { setSessionFromTokens } from '@features/auth/services/authService';
 import { supabase } from '@shared/services/supabase';
@@ -106,6 +107,8 @@ export function RootNavigator() {
             );
           }
         }
+        // Re-check notification permission when returning from device settings
+        useNotificationStore.getState().checkPermission();
       }
 
       appStateRef.current = nextAppState;

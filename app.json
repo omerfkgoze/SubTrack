@@ -31,6 +31,20 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#6750A4"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a2910967-7c4c-40b2-8632-772d177ea086"
+      }
+    },
+    "owner": "brave.blandness619"
   }
 }

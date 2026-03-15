@@ -13,10 +13,16 @@ import {
   Divider,
   useTheme,
 } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { useNotificationStore } from '@shared/stores/useNotificationStore';
 
 export function SettingsScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const permissionStatus = useNotificationStore((s) => s.permissionStatus);
   const user = useAuthStore((s) => s.user);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
@@ -141,6 +147,20 @@ export function SettingsScreen() {
               {error.message}
             </HelperText>
           )}
+        </List.Section>
+
+        <List.Section>
+          <List.Subheader>Notifications</List.Subheader>
+          <List.Item
+            title="Notification Settings"
+            description={permissionStatus === 'granted' ? 'Enabled' : 'Disabled'}
+            left={(props) => <List.Icon {...props} icon="bell-outline" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('Notifications')}
+            style={styles.listItem}
+            accessibilityLabel="Notification Settings"
+            accessibilityRole="button"
+          />
         </List.Section>
 
         <List.Section>
