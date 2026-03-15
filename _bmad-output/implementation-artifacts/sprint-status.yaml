@@ -75,7 +75,7 @@ development_status:
   epic-4: in-progress
   4-1-push-notification-permission-setup: done
   4-2-renewal-reminder-scheduling: done
-  4-3-customizable-reminder-timing: backlog
+  4-3-customizable-reminder-timing: ready-for-dev
   4-4-trial-expiry-notifications: backlog
   4-5-per-subscription-notification-control: backlog
   4-6-notification-history-health-indicator: backlog
