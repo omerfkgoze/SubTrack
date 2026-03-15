@@ -1,6 +1,6 @@
 # Story 4.2: Renewal Reminder Scheduling
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -724,14 +724,15 @@ Claude Opus 4.6
 - Created `calculate-reminders` Edge Function with Expo Push API integration, deduplication check, retry logic (3 attempts, exponential backoff 1s/2s/4s), notification logging
 - Created pg_cron migration with daily schedule at 9:00 AM UTC, vault-sourced credentials, pg_net HTTP POST
 - Created `reminderService.ts` with 4 CRUD functions (getReminderSettings, createDefaultReminder, updateReminder, deleteReminder)
-- Created 13 unit tests for reminderService covering all functions, success/error/null paths
+- Created 10 unit tests for reminderService covering all functions, success/error/null paths
 - Updated `delete-account` Edge Function with push_tokens, reminder_settings, notification_log cleanup (defense-in-depth)
 - Updated notifications feature exports with reminderService functions and ReminderSetting type
-- TSC: zero errors, ESLint: zero errors, Test suite: 318 tests passing (13 new, 0 regressions)
+- TSC: zero errors, ESLint: zero errors, Test suite: 318 tests passing (10 new, 0 regressions)
 
 ### Change Log
 
 - 2026-03-15: Story 4.2 implementation complete — server-side notification pipeline with reminder settings, notification logging, Edge Function, pg_cron scheduling, and client-side reminder service
+- 2026-03-15: Code review — fixed 3 issues: (H1) dedup check now only skips status='sent', upsert allows retry of failed notifications; (M1) Expo receipt ID now captured from API response; (M2) retry logic now distinguishes transient (5xx) vs permanent (4xx) failures; (M3) corrected test count from 13 to 10
 
 ### File List
 

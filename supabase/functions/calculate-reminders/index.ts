@@ -39,15 +39,15 @@ Deno.serve(async (req: Request) => {
     let sent = 0, skipped = 0, failed = 0
 
     for (const candidate of (candidates ?? []) as ReminderCandidate[]) {
-      // 2. Check deduplication — skip if already sent
+      // 2. Check deduplication — skip only if already successfully sent
       const { data: existing } = await supabase
         .from('notification_log')
-        .select('id')
+        .select('id, status')
         .eq('subscription_id', candidate.subscription_id)
         .eq('renewal_date', candidate.renewal_date)
         .maybeSingle()
 
-      if (existing) { skipped++; continue }
+      if (existing?.status === 'sent') { skipped++; continue }
 
       // 3. Get user push tokens
       const { data: tokens } = await supabase
@@ -69,7 +69,9 @@ Deno.serve(async (req: Request) => {
       let success = false
       let lastError = ''
 
-      // Retry logic: up to 3 attempts with exponential backoff (1s, 2s, 4s)
+      // Retry logic: up to 3 attempts with exponential backoff for transient failures only
+      let expoReceiptId: string | null = null
+
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const headers: Record<string, string> = {
@@ -88,24 +90,41 @@ Deno.serve(async (req: Request) => {
 
           if (res.ok) {
             success = true
+            // Capture Expo receipt ID from first ticket
+            const tickets = result?.data ?? result
+            if (Array.isArray(tickets) && tickets.length > 0 && tickets[0].id) {
+              expoReceiptId = tickets[0].id
+            }
             break
           }
+
           lastError = JSON.stringify(result)
+
+          // Only retry on transient failures (5xx); permanent errors (4xx) fail immediately
+          if (res.status >= 400 && res.status < 500) {
+            break
+          }
         } catch (err) {
           lastError = String(err)
         }
         // Exponential backoff: 1s, 2s, 4s
-        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)))
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)))
+        }
       }
 
-      // 5. Log result to notification_log
-      await supabase.from('notification_log').insert({
-        user_id: candidate.user_id,
-        subscription_id: candidate.subscription_id,
-        renewal_date: candidate.renewal_date,
-        status: success ? 'sent' : 'failed',
-        error_message: success ? null : lastError,
-      })
+      // 5. Log result to notification_log (upsert to allow retry of previously failed notifications)
+      await supabase.from('notification_log').upsert(
+        {
+          user_id: candidate.user_id,
+          subscription_id: candidate.subscription_id,
+          renewal_date: candidate.renewal_date,
+          status: success ? 'sent' : 'failed',
+          expo_receipt_id: expoReceiptId,
+          error_message: success ? null : lastError,
+        },
+        { onConflict: 'subscription_id,renewal_date' }
+      )
 
       if (success) sent++
       else failed++
