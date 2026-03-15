@@ -28,12 +28,12 @@ export function SubscriptionCard({ subscription, onPress }: SubscriptionCardProp
       mode="elevated"
       elevation={1}
       onPress={onPress}
-      style={[styles.card, isInactive && styles.inactiveCard]}
+      style={styles.card}
       {...(onPress ? { accessibilityRole: 'button' as const } : {})}
       accessibilityLabel={`${subscription.name}, ${subscription.price} euros per ${subscription.billing_cycle}${trialInfo.status !== 'none' ? `, ${trialInfo.text}` : ''}${isInactive ? ', cancelled' : ''}, ${categoryConfig.label}, ${isInactive ? 'Cancelled' : renewalInfo.text}`}
       {...(onPress ? { accessibilityHint: 'Swipe left for options' } : {})}
     >
-      <View style={styles.cardContent}>
+      <View style={[styles.cardContent, isInactive && styles.inactiveContent]}>
         <View
           style={[
             styles.categoryStripe,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     overflow: 'hidden',
   },
-  inactiveCard: {
+  inactiveContent: {
     opacity: 0.5,
   },
   cardContent: {
