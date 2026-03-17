@@ -5,6 +5,8 @@
   "scripts": {
     "start": "npx expo start --tunnel",
     "start:clear": "npx expo start --tunnel -c",
+    "start:local": "bash scripts/start-local.sh",
+    "start:local:clear": "bash scripts/start-local.sh -c",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
