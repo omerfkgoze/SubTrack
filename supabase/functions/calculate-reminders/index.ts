@@ -25,6 +25,8 @@ interface TrialExpiryCandidate {
   days_until_expiry: number
 }
 
+// NOTE: This function is duplicated in src/features/notifications/services/trialExpiryNotifications.test.ts
+// If you change the logic here, update the test copy as well.
 function formatTrialNotification(candidate: TrialExpiryCandidate) {
   const { subscription_name, price, currency, days_until_expiry } = candidate
 

@@ -1,6 +1,6 @@
 # Story 4.4: Trial Expiry Notifications
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -367,6 +367,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-17: Story 4.4 implementation complete — trial expiry notifications added to notification pipeline
+- 2026-03-17: Code review complete — 3 medium issues fixed: tautological tests replaced with behavioral tests, missing "renewal+trial coexistence" test added, sync warning comment added to copied formatTrialNotification function
 
 ### File List
 
