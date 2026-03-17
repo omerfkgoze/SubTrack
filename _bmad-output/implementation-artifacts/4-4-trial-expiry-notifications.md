@@ -1,6 +1,6 @@
 # Story 4.4: Trial Expiry Notifications
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -50,33 +50,33 @@ so that I can cancel before being charged for a service I don't want.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create database migration for trial notification support (AC: #1, #2, #3, #5)
-  - [ ] 1.1: Create new RPC function `get_trial_expiry_candidates(check_date DATE)` that returns trial subscriptions needing notifications
-  - [ ] 1.2: Add `notification_type` column to `notification_log` table (TEXT, default 'renewal', CHECK IN ('renewal', 'trial_expiry'))
-  - [ ] 1.3: Drop and recreate the unique constraint on `notification_log` to include `notification_type` (allows both a renewal and trial notification for same subscription)
-  - [ ] 1.4: Write the RPC query to find trials where `trial_expiry_date - check_date` is IN (0, 1, 3) and `is_active = true` and `is_trial = true`
+- [x] Task 1: Create database migration for trial notification support (AC: #1, #2, #3, #5)
+  - [x] 1.1: Create new RPC function `get_trial_expiry_candidates(check_date DATE)` that returns trial subscriptions needing notifications
+  - [x] 1.2: Add `notification_type` column to `notification_log` table (TEXT, default 'renewal', CHECK IN ('renewal', 'trial_expiry'))
+  - [x] 1.3: Drop and recreate the unique constraint on `notification_log` to include `notification_type` (allows both a renewal and trial notification for same subscription)
+  - [x] 1.4: Write the RPC query to find trials where `trial_expiry_date - check_date` is IN (0, 1, 3) and `is_active = true` and `is_trial = true`
 
-- [ ] Task 2: Update Edge Function `calculate-reminders` to handle trial expiry (AC: #1, #2, #3, #4, #5, #6)
-  - [ ] 2.1: Add `TrialExpiryCandidate` interface with `trial_expiry_date` and `days_until_expiry` fields
-  - [ ] 2.2: After processing renewal candidates, call `get_trial_expiry_candidates(today)` RPC
-  - [ ] 2.3: Format trial-specific notification messages based on days until expiry (3 days, 1 day, today)
-  - [ ] 2.4: Log trial notifications to `notification_log` with `notification_type = 'trial_expiry'`
-  - [ ] 2.5: Deduplication check must include `notification_type` in the lookup
-  - [ ] 2.6: Update summary to include trial notification counts
+- [x] Task 2: Update Edge Function `calculate-reminders` to handle trial expiry (AC: #1, #2, #3, #4, #5, #6)
+  - [x] 2.1: Add `TrialExpiryCandidate` interface with `trial_expiry_date` and `days_until_expiry` fields
+  - [x] 2.2: After processing renewal candidates, call `get_trial_expiry_candidates(today)` RPC
+  - [x] 2.3: Format trial-specific notification messages based on days until expiry (3 days, 1 day, today)
+  - [x] 2.4: Log trial notifications to `notification_log` with `notification_type = 'trial_expiry'`
+  - [x] 2.5: Deduplication check must include `notification_type` in the lookup
+  - [x] 2.6: Update summary to include trial notification counts
 
-- [ ] Task 3: Write tests for the Edge Function trial expiry logic (AC: all)
-  - [ ] 3.1: Test: trial subscription 3 days before expiry sends correct notification
-  - [ ] 3.2: Test: trial subscription 1 day before expiry sends "Tomorrow" notification
-  - [ ] 3.3: Test: trial subscription expiring today sends "last day" notification
-  - [ ] 3.4: Test: expired trial (past date) sends no notification
-  - [ ] 3.5: Test: cancelled trial sends no notification
-  - [ ] 3.6: Test: trial with `is_enabled = false` sends no notification
-  - [ ] 3.7: Test: deduplication prevents double-sending trial notifications
+- [x] Task 3: Write tests for the Edge Function trial expiry logic (AC: all)
+  - [x] 3.1: Test: trial subscription 3 days before expiry sends correct notification
+  - [x] 3.2: Test: trial subscription 1 day before expiry sends "Tomorrow" notification
+  - [x] 3.3: Test: trial subscription expiring today sends "last day" notification
+  - [x] 3.4: Test: expired trial (past date) sends no notification
+  - [x] 3.5: Test: cancelled trial sends no notification
+  - [x] 3.6: Test: trial with `is_enabled = false` sends no notification
+  - [x] 3.7: Test: deduplication prevents double-sending trial notifications
 
-- [ ] Task 4: Verify and validate (AC: all)
-  - [ ] 4.1: `npx tsc --noEmit` — zero errors
-  - [ ] 4.2: `npx eslint src/features/notifications/` — zero errors
-  - [ ] 4.3: Full test suite green (baseline: 330+ tests from Story 4.3)
+- [x] Task 4: Verify and validate (AC: all)
+  - [x] 4.1: `npx tsc --noEmit` — zero errors
+  - [x] 4.2: `npx eslint src/features/notifications/` — zero errors
+  - [x] 4.3: Full test suite green (baseline: 330+ tests from Story 4.3)
 
 ## Dev Notes
 
@@ -349,10 +349,27 @@ Test scenarios:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Created migration `20260317000000_add_trial_expiry_notifications.sql` with `get_trial_expiry_candidates` RPC, `notification_type` column, and updated unique constraint
+- Updated `calculate-reminders` Edge Function to process trial expiry candidates after renewal candidates, with separate deduplication, formatting, and logging
+- Extracted `sendPushNotification` helper to avoid code duplication between renewal and trial processing
+- Added `formatTrialNotification` for urgency-based messaging: 🚨 for same-day, ⚠️ for 1/3 days
+- Updated renewal deduplication to include `notification_type = 'renewal'` for correctness with new constraint
+- Updated summary response to include renewals/trials/totals breakdown
+- 15 new tests covering all ACs: message formatting, filtering logic, deduplication, and log entries
+- All 349 tests pass, zero TSC errors, zero ESLint errors
+
+### Change Log
+
+- 2026-03-17: Story 4.4 implementation complete — trial expiry notifications added to notification pipeline
+
 ### File List
+
+- `supabase/migrations/20260317000000_add_trial_expiry_notifications.sql` (NEW)
+- `supabase/functions/calculate-reminders/index.ts` (MODIFIED)
+- `src/features/notifications/services/trialExpiryNotifications.test.ts` (NEW)
