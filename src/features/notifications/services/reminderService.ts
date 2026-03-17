@@ -25,6 +25,7 @@ export async function getReminderSettings(
 export async function createDefaultReminder(
   userId: string,
   subscriptionId: string,
+  remindDaysBefore: number = 3,
 ): Promise<ReminderSetting> {
   const { data, error } = await supabase
     .from('reminder_settings')
@@ -32,7 +33,7 @@ export async function createDefaultReminder(
       {
         user_id: userId,
         subscription_id: subscriptionId,
-        remind_days_before: 3,
+        remind_days_before: remindDaysBefore,
         is_enabled: true,
       },
       { onConflict: 'user_id,subscription_id' },

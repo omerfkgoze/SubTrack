@@ -1,15 +1,17 @@
-import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
   Divider,
   Icon,
   IconButton,
+  SegmentedButtons,
   Snackbar,
   Text,
   useTheme,
 } from 'react-native-paper';
 import { format, parseISO } from 'date-fns';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SubscriptionsStackScreenProps } from '@app/navigation/types';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import type { BillingCycle } from '@features/subscriptions/types';
@@ -21,6 +23,18 @@ import {
 } from '@features/subscriptions/utils/subscriptionUtils';
 import { DeleteConfirmationDialog } from '@features/subscriptions/components/DeleteConfirmationDialog';
 import { TrialBadge } from '@features/subscriptions/components/TrialBadge';
+import {
+  getReminderSettings,
+  createDefaultReminder,
+  updateReminder,
+} from '@features/notifications';
+import type { ReminderSetting } from '@features/notifications';
+
+const REMINDER_TIMING_OPTIONS = [
+  { value: '1', label: '1 day' },
+  { value: '3', label: '3 days' },
+  { value: '7', label: '7 days' },
+];
 
 type Props = SubscriptionsStackScreenProps<'SubscriptionDetail'>;
 
@@ -44,6 +58,66 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
 
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [snackbar, setSnackbar] = useState<{ message: string } | null>(null);
+  const [reminderSetting, setReminderSetting] = useState<ReminderSetting | null>(null);
+  const [reminderTiming, setReminderTiming] = useState<string>('3');
+  const [reminderLoading, setReminderLoading] = useState(true);
+
+  useEffect(() => {
+    if (!subscription || subscription.is_active === false) {
+      setReminderLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const setting = await getReminderSettings(subscriptionId);
+        if (cancelled) return;
+        setReminderSetting(setting);
+        if (setting) {
+          setReminderTiming(String(setting.remind_days_before));
+        } else {
+          const stored = await AsyncStorage.getItem('@subtrack:default_remind_days');
+          if (!cancelled) {
+            setReminderTiming(stored ?? '3');
+          }
+        }
+      } catch {
+        // Non-blocking — default timing will be used
+      } finally {
+        if (!cancelled) {
+          setReminderLoading(false);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [subscription, subscriptionId]);
+
+  const handleTimingChange = useCallback(async (value: string) => {
+    if (!subscription) return;
+    const previousTiming = reminderTiming;
+    setReminderTiming(value);
+
+    try {
+      if (reminderSetting) {
+        const updated = await updateReminder(reminderSetting.id, {
+          remind_days_before: parseInt(value, 10),
+        });
+        setReminderSetting(updated);
+      } else {
+        const { data: userData } = await (await import('@shared/services/supabase')).supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        if (userId) {
+          const created = await createDefaultReminder(userId, subscriptionId, parseInt(value, 10));
+          setReminderSetting(created);
+        }
+      }
+      setSnackbar({ message: `Reminder set to ${value} day${value === '1' ? '' : 's'} before renewal` });
+    } catch {
+      setReminderTiming(previousTiming);
+      setSnackbar({ message: 'Failed to update reminder timing. Please try again.' });
+    }
+  }, [subscription, subscriptionId, reminderSetting, reminderTiming]);
 
   const handleEdit = useCallback(() => {
     navigation.navigate('EditSubscription', { subscriptionId });
@@ -186,6 +260,42 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
             label="Created"
             value={format(parseISO(subscription.created_at), 'MMMM d, yyyy')}
           />
+        )}
+
+        {/* Reminders Section — only for active subscriptions */}
+        {!isInactive && (
+          <>
+            <Text
+              variant="labelLarge"
+              style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant, marginTop: 24 }]}
+            >
+              REMINDERS
+            </Text>
+            <Divider style={styles.divider} />
+            {reminderLoading ? (
+              <View style={styles.reminderLoading}>
+                <ActivityIndicator size="small" />
+              </View>
+            ) : (
+              <View style={styles.reminderSection}>
+                <Text
+                  variant="bodyMedium"
+                  style={{ color: theme.colors.onSurface, marginBottom: 12 }}
+                >
+                  Remind me before renewal
+                </Text>
+                <View accessibilityLabel="Reminder timing options" accessibilityRole="radiogroup">
+                  <SegmentedButtons
+                    value={reminderTiming}
+                    onValueChange={handleTimingChange}
+                    buttons={REMINDER_TIMING_OPTIONS}
+                    density="small"
+                    style={styles.segmentedButtons}
+                  />
+                </View>
+              </View>
+            )}
+          </>
         )}
 
         {/* Trial Section */}
@@ -377,6 +487,16 @@ const styles = StyleSheet.create({
   },
   notesText: {
     paddingVertical: 8,
+  },
+  reminderSection: {
+    paddingVertical: 8,
+  },
+  reminderLoading: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  segmentedButtons: {
+    alignSelf: 'stretch',
   },
   actionsContainer: {
     marginTop: 32,

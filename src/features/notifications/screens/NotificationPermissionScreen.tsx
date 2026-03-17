@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Button, Icon, useTheme } from 'react-native-paper';
+import { Text, Button, Icon, SegmentedButtons, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
+
+const STORAGE_KEY = '@subtrack:default_remind_days';
+
+const REMINDER_TIMING_OPTIONS = [
+  { value: '1', label: '1 day' },
+  { value: '3', label: '3 days' },
+  { value: '7', label: '7 days' },
+];
 
 export function NotificationPermissionScreen() {
   const theme = useTheme();
@@ -11,6 +20,23 @@ export function NotificationPermissionScreen() {
   const isLoading = useNotificationStore((s) => s.isLoading);
   const error = useNotificationStore((s) => s.error);
   const requestPermission = useNotificationStore((s) => s.requestPermission);
+
+  const [defaultTiming, setDefaultTiming] = useState('3');
+
+  useEffect(() => {
+    if (permissionStatus === 'granted') {
+      AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
+        if (stored) {
+          setDefaultTiming(stored);
+        }
+      });
+    }
+  }, [permissionStatus]);
+
+  const handleTimingChange = useCallback(async (value: string) => {
+    setDefaultTiming(value);
+    await AsyncStorage.setItem(STORAGE_KEY, value);
+  }, []);
 
   const handleEnable = async () => {
     await requestPermission();
@@ -34,6 +60,23 @@ export function NotificationPermissionScreen() {
           >
             {"We'll remind you before each renewal so you stay in control."}
           </Text>
+
+          <Text
+            variant="labelLarge"
+            style={[styles.timingTitle, { color: theme.colors.onSurfaceVariant }]}
+          >
+            Default Reminder Timing
+          </Text>
+          <View accessibilityLabel="Default reminder timing options" accessibilityRole="radiogroup">
+            <SegmentedButtons
+              value={defaultTiming}
+              onValueChange={handleTimingChange}
+              buttons={REMINDER_TIMING_OPTIONS}
+              density="small"
+              style={styles.segmentedButtons}
+            />
+          </View>
+
           <Button
             mode="contained"
             onPress={() => navigation.goBack()}
@@ -134,5 +177,13 @@ const styles = StyleSheet.create({
   skipButton: {
     marginTop: 16,
     minHeight: 44,
+  },
+  timingTitle: {
+    marginTop: 32,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  segmentedButtons: {
+    alignSelf: 'stretch',
   },
 });

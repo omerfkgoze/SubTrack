@@ -10,6 +10,19 @@ jest.mock('@features/subscriptions/services/subscriptionService', () => ({
   deleteSubscription: jest.fn(),
 }));
 
+jest.mock('@features/notifications', () => ({
+  createDefaultReminder: jest.fn().mockResolvedValue({}),
+  getReminderSettings: jest.fn(),
+  updateReminder: jest.fn(),
+  deleteReminder: jest.fn(),
+}));
+
+jest.mock('@shared/stores/useNotificationStore', () => ({
+  useNotificationStore: {
+    getState: jest.fn().mockReturnValue({ permissionStatus: 'undetermined' }),
+  },
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );

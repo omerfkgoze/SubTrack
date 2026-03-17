@@ -8,6 +8,8 @@ import {
   deleteSubscription,
   getSubscriptions,
 } from '@features/subscriptions/services/subscriptionService';
+import { createDefaultReminder } from '@features/notifications';
+import { useNotificationStore } from '@shared/stores/useNotificationStore';
 
 interface SubscriptionState {
   subscriptions: Subscription[];
@@ -67,6 +69,19 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
           subscriptions: [...state.subscriptions, newSubscription],
           isSubmitting: false,
         }));
+
+        // Auto-create reminder setting with global default timing
+        try {
+          const permissionStatus = useNotificationStore.getState().permissionStatus;
+          if (permissionStatus === 'granted') {
+            const stored = await AsyncStorage.getItem('@subtrack:default_remind_days');
+            const remindDaysBefore = stored ? parseInt(stored, 10) : 3;
+            await createDefaultReminder(newSubscription.user_id, newSubscription.id, remindDaysBefore);
+          }
+        } catch {
+          // Non-blocking — reminder creation failure should not block subscription creation
+        }
+
         return true;
       },
 

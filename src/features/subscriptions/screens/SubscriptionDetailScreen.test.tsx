@@ -11,9 +11,18 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 
 jest.mock('@shared/services/supabase', () => ({
   supabase: {
-    auth: { getUser: jest.fn() },
+    auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }) },
     from: jest.fn(),
   },
+}));
+
+const mockGetReminderSettings = jest.fn().mockResolvedValue(null);
+const mockCreateDefaultReminder = jest.fn();
+const mockUpdateReminder = jest.fn();
+jest.mock('@features/notifications', () => ({
+  getReminderSettings: (...args: unknown[]) => mockGetReminderSettings(...args),
+  createDefaultReminder: (...args: unknown[]) => mockCreateDefaultReminder(...args),
+  updateReminder: (...args: unknown[]) => mockUpdateReminder(...args),
 }));
 
 jest.mock('react-native-paper-dates', () => ({
@@ -244,6 +253,109 @@ describe('SubscriptionDetailScreen', () => {
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledWith('sub-1');
       expect(mockGoBack).toHaveBeenCalled();
+    });
+  });
+
+  describe('reminders section', () => {
+    it('renders REMINDERS section for active subscription', async () => {
+      mockGetReminderSettings.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 3,
+        is_enabled: true,
+      });
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByText('REMINDERS')).toBeTruthy();
+      });
+      expect(screen.getByText('Remind me before renewal')).toBeTruthy();
+      expect(screen.getByText('1 day')).toBeTruthy();
+      expect(screen.getByText('3 days')).toBeTruthy();
+      expect(screen.getByText('7 days')).toBeTruthy();
+    });
+
+    it('hides REMINDERS section for cancelled subscription', async () => {
+      renderWithProvider('sub-cancelled');
+
+      await waitFor(() => {
+        expect(screen.queryByText('REMINDERS')).toBeNull();
+      });
+    });
+
+    it('shows correct timing from reminder settings', async () => {
+      mockGetReminderSettings.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 7,
+        is_enabled: true,
+      });
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(mockGetReminderSettings).toHaveBeenCalledWith('sub-1');
+      });
+    });
+
+    it('calls updateReminder on timing change when setting exists', async () => {
+      const existingSetting = {
+        id: 'rem-1',
+        remind_days_before: 3,
+        is_enabled: true,
+      };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockResolvedValue({
+        ...existingSetting,
+        remind_days_before: 1,
+      });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByText('1 day')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('1 day'));
+
+      await waitFor(() => {
+        expect(mockUpdateReminder).toHaveBeenCalledWith('rem-1', { remind_days_before: 1 });
+      });
+    });
+
+    it('shows snackbar after successful timing change', async () => {
+      mockGetReminderSettings.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 3,
+        is_enabled: true,
+      });
+      mockUpdateReminder.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 7,
+        is_enabled: true,
+      });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByText('7 days')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('7 days'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Reminder set to 7 days before renewal')).toBeTruthy();
+      });
+    });
+
+    it('has accessibility wrapper for timing options', async () => {
+      mockGetReminderSettings.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 3,
+        is_enabled: true,
+      });
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Reminder timing options')).toBeTruthy();
+      });
     });
   });
 });

@@ -107,6 +107,36 @@ describe('reminderService', () => {
       expect(result).toEqual(mockSetting);
     });
 
+    it('uses custom remindDaysBefore when provided', async () => {
+      const supabase = getSupabaseMock();
+      const mockSetting = {
+        id: 'rem-1',
+        user_id: 'user-1',
+        subscription_id: 'sub-1',
+        remind_days_before: 7,
+        is_enabled: true,
+        created_at: '2026-03-15T00:00:00Z',
+        updated_at: '2026-03-15T00:00:00Z',
+      };
+      const mockSingle = jest.fn().mockResolvedValue({ data: mockSetting, error: null });
+      const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+      const mockUpsert = jest.fn().mockReturnValue({ select: mockSelect });
+      supabase.from.mockReturnValue({ upsert: mockUpsert });
+
+      const result = await createDefaultReminder('user-1', 'sub-1', 7);
+
+      expect(mockUpsert).toHaveBeenCalledWith(
+        {
+          user_id: 'user-1',
+          subscription_id: 'sub-1',
+          remind_days_before: 7,
+          is_enabled: true,
+        },
+        { onConflict: 'user_id,subscription_id' },
+      );
+      expect(result).toEqual(mockSetting);
+    });
+
     it('throws when Supabase returns an error', async () => {
       const supabase = getSupabaseMock();
       const dbError = { code: 'DB_ERROR', message: 'Upsert failed' };
