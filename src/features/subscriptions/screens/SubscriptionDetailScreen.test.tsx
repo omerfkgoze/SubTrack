@@ -357,5 +357,28 @@ describe('SubscriptionDetailScreen', () => {
         expect(screen.getByLabelText('Reminder timing options')).toBeTruthy();
       });
     });
+
+    it('calls createDefaultReminder with subscription.user_id when no existing setting', async () => {
+      mockGetReminderSettings.mockResolvedValue(null);
+      mockCreateDefaultReminder.mockResolvedValue({
+        id: 'rem-new',
+        user_id: 'user-1',
+        subscription_id: 'sub-1',
+        remind_days_before: 7,
+        is_enabled: true,
+      });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByText('7 days')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('7 days'));
+
+      await waitFor(() => {
+        expect(mockCreateDefaultReminder).toHaveBeenCalledWith('user-1', 'sub-1', 7);
+      });
+    });
   });
 });

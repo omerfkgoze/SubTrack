@@ -1,6 +1,6 @@
 # Story 4.3: Customizable Reminder Timing
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -340,6 +340,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-15: Story 4.3 implementation complete — customizable reminder timing UI (global default + per-subscription override)
+- 2026-03-17: Code review fixes — replaced dynamic supabase import in SubscriptionDetailScreen with subscription.user_id; added 4 missing tests (addSubscription × 3, createDefaultReminder else-branch × 1)
 
 ### File List
 

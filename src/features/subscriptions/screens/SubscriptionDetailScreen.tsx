@@ -105,12 +105,8 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         });
         setReminderSetting(updated);
       } else {
-        const { data: userData } = await (await import('@shared/services/supabase')).supabase.auth.getUser();
-        const userId = userData?.user?.id;
-        if (userId) {
-          const created = await createDefaultReminder(userId, subscriptionId, parseInt(value, 10));
-          setReminderSetting(created);
-        }
+        const created = await createDefaultReminder(subscription.user_id, subscriptionId, parseInt(value, 10));
+        setReminderSetting(created);
       }
       setSnackbar({ message: `Reminder set to ${value} day${value === '1' ? '' : 's'} before renewal` });
     } catch {

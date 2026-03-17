@@ -1,6 +1,7 @@
 import { act } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSubscriptionStore } from './useSubscriptionStore';
-import type { Subscription } from '@features/subscriptions/types';
+import type { Subscription, CreateSubscriptionDTO } from '@features/subscriptions/types';
 
 // Mock services
 jest.mock('@features/subscriptions/services/subscriptionService', () => ({
@@ -390,5 +391,67 @@ describe('useSubscriptionStore - toggleSubscriptionStatus', () => {
     expect(mockCreateService).toHaveBeenCalledWith(
       expect.objectContaining({ is_active: false }),
     );
+  });
+});
+
+describe('useSubscriptionStore - addSubscription', () => {
+  const mockNotificationStore = jest.requireMock('@shared/stores/useNotificationStore').useNotificationStore;
+  const mockCreateReminderFn = jest.requireMock('@features/notifications').createDefaultReminder;
+
+  const dto: CreateSubscriptionDTO = {
+    name: mockSubscription.name,
+    price: mockSubscription.price,
+    billing_cycle: 'monthly',
+    renewal_date: mockSubscription.renewal_date,
+    is_trial: false,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockNotificationStore.getState.mockReturnValue({ permissionStatus: 'undetermined' });
+    useSubscriptionStore.setState({
+      subscriptions: [],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+    });
+  });
+
+  it('calls createDefaultReminder with global default when notifications are granted', async () => {
+    mockNotificationStore.getState.mockReturnValue({ permissionStatus: 'granted' });
+    mockCreateService.mockResolvedValue({ data: mockSubscription, error: null });
+    mockCreateReminderFn.mockResolvedValue({});
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('7');
+
+    await act(async () => {
+      await useSubscriptionStore.getState().addSubscription(dto);
+    });
+
+    expect(mockCreateReminderFn).toHaveBeenCalledWith(mockSubscription.user_id, mockSubscription.id, 7);
+  });
+
+  it('uses default 3 days when no global default stored in AsyncStorage', async () => {
+    mockNotificationStore.getState.mockReturnValue({ permissionStatus: 'granted' });
+    mockCreateService.mockResolvedValue({ data: mockSubscription, error: null });
+    mockCreateReminderFn.mockResolvedValue({});
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+
+    await act(async () => {
+      await useSubscriptionStore.getState().addSubscription(dto);
+    });
+
+    expect(mockCreateReminderFn).toHaveBeenCalledWith(mockSubscription.user_id, mockSubscription.id, 3);
+  });
+
+  it('skips createDefaultReminder when notifications are not granted', async () => {
+    mockNotificationStore.getState.mockReturnValue({ permissionStatus: 'undetermined' });
+    mockCreateService.mockResolvedValue({ data: mockSubscription, error: null });
+
+    await act(async () => {
+      await useSubscriptionStore.getState().addSubscription(dto);
+    });
+
+    expect(mockCreateReminderFn).not.toHaveBeenCalled();
   });
 });
