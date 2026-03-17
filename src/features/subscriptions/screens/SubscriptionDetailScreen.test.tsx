@@ -381,4 +381,156 @@ describe('SubscriptionDetailScreen', () => {
       });
     });
   });
+
+  describe('notification toggle', () => {
+    it('renders toggle ON when is_enabled = true in reminder_settings', async () => {
+      mockGetReminderSettings.mockResolvedValue({
+        id: 'rem-1',
+        remind_days_before: 3,
+        is_enabled: true,
+      });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        const toggle = screen.getByLabelText('Notifications enabled for this subscription');
+        expect(toggle).toBeTruthy();
+        expect(toggle.props.value).toBe(true);
+      });
+    });
+
+    it('renders toggle ON by default when no reminder_settings exist', async () => {
+      mockGetReminderSettings.mockResolvedValue(null);
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        const toggle = screen.getByLabelText('Notifications enabled for this subscription');
+        expect(toggle).toBeTruthy();
+        expect(toggle.props.value).toBe(true);
+      });
+    });
+
+    it('toggling OFF calls updateReminder with is_enabled: false when setting exists', async () => {
+      const existingSetting = { id: 'rem-1', remind_days_before: 3, is_enabled: true };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockResolvedValue({ ...existingSetting, is_enabled: false });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications enabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications enabled for this subscription'), 'valueChange', false);
+
+      await waitFor(() => {
+        expect(mockUpdateReminder).toHaveBeenCalledWith('rem-1', { is_enabled: false });
+      });
+    });
+
+    it('toggling ON calls updateReminder with is_enabled: true when setting exists', async () => {
+      const existingSetting = { id: 'rem-1', remind_days_before: 3, is_enabled: false };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockResolvedValue({ ...existingSetting, is_enabled: true });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications disabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications disabled for this subscription'), 'valueChange', true);
+
+      await waitFor(() => {
+        expect(mockUpdateReminder).toHaveBeenCalledWith('rem-1', { is_enabled: true });
+      });
+    });
+
+    it('shows snackbar "Notifications disabled for Netflix" when toggled OFF', async () => {
+      const existingSetting = { id: 'rem-1', remind_days_before: 3, is_enabled: true };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockResolvedValue({ ...existingSetting, is_enabled: false });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications enabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications enabled for this subscription'), 'valueChange', false);
+
+      await waitFor(() => {
+        expect(screen.getByText('Notifications disabled for Netflix')).toBeTruthy();
+      });
+    });
+
+    it('shows snackbar "Notifications enabled for Netflix" when toggled ON', async () => {
+      const existingSetting = { id: 'rem-1', remind_days_before: 3, is_enabled: false };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockResolvedValue({ ...existingSetting, is_enabled: true });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications disabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications disabled for this subscription'), 'valueChange', true);
+
+      await waitFor(() => {
+        expect(screen.getByText('Notifications enabled for Netflix')).toBeTruthy();
+      });
+    });
+
+    it('reverts toggle on API failure (optimistic rollback)', async () => {
+      const existingSetting = { id: 'rem-1', remind_days_before: 3, is_enabled: true };
+      mockGetReminderSettings.mockResolvedValue(existingSetting);
+      mockUpdateReminder.mockRejectedValue(new Error('Network error'));
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications enabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications enabled for this subscription'), 'valueChange', false);
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to update notification setting. Please try again.')).toBeTruthy();
+      });
+
+      // After rollback, toggle should be back to ON
+      expect(screen.getByLabelText('Notifications enabled for this subscription')).toBeTruthy();
+    });
+
+    it('when no reminder_settings, toggling OFF creates then updates with is_enabled: false', async () => {
+      mockGetReminderSettings.mockResolvedValue(null);
+      const createdSetting = { id: 'rem-new', remind_days_before: 3, is_enabled: true };
+      mockCreateDefaultReminder.mockResolvedValue(createdSetting);
+      mockUpdateReminder.mockResolvedValue({ ...createdSetting, is_enabled: false });
+
+      renderWithProvider('sub-1');
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Notifications enabled for this subscription')).toBeTruthy();
+      });
+
+      fireEvent(screen.getByLabelText('Notifications enabled for this subscription'), 'valueChange', false);
+
+      await waitFor(() => {
+        expect(mockCreateDefaultReminder).toHaveBeenCalledWith('user-1', 'sub-1');
+        expect(mockUpdateReminder).toHaveBeenCalledWith('rem-new', { is_enabled: false });
+      });
+    });
+
+    it('REMINDERS section hidden for inactive (cancelled) subscriptions', async () => {
+      renderWithProvider('sub-cancelled');
+
+      await waitFor(() => {
+        expect(screen.queryByText('REMINDERS')).toBeNull();
+        expect(screen.queryByLabelText(/Notifications/)).toBeNull();
+      });
+    });
+  });
 });

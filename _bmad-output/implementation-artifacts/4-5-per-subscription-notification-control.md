@@ -1,6 +1,6 @@
 # Story 4.5: Per-Subscription Notification Control
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -57,33 +57,33 @@ so that I only receive reminders for subscriptions I care about.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add notification toggle Switch to SubscriptionDetailScreen (AC: #1, #2, #3, #6)
-  - [ ] 1.1: Add `Switch` import from `react-native-paper` in SubscriptionDetailScreen.tsx
-  - [ ] 1.2: Add `reminderEnabled` state (boolean, default `true`) — initialized from `reminderSetting.is_enabled` in the existing `useEffect`
-  - [ ] 1.3: Add Switch toggle row above the SegmentedButtons timing selector in the REMINDERS section
-  - [ ] 1.4: Implement `handleToggleNotification` callback with optimistic update pattern (matching `handleTimingChange`)
-  - [ ] 1.5: When toggling OFF, dim/disable the SegmentedButtons (set `disabled` prop or reduce opacity)
-  - [ ] 1.6: Show snackbar feedback on toggle success/failure
+- [x] Task 1: Add notification toggle Switch to SubscriptionDetailScreen (AC: #1, #2, #3, #6)
+  - [x] 1.1: Add `Switch` import from `react-native-paper` in SubscriptionDetailScreen.tsx
+  - [x] 1.2: Add `reminderEnabled` state (boolean, default `true`) — initialized from `reminderSetting.is_enabled` in the existing `useEffect`
+  - [x] 1.3: Add Switch toggle row above the SegmentedButtons timing selector in the REMINDERS section
+  - [x] 1.4: Implement `handleToggleNotification` callback with optimistic update pattern (matching `handleTimingChange`)
+  - [x] 1.5: When toggling OFF, dim/disable the SegmentedButtons (set `disabled` prop or reduce opacity)
+  - [x] 1.6: Show snackbar feedback on toggle success/failure
 
-- [ ] Task 2: Handle edge case — no existing reminder_settings record (AC: #1, #2)
-  - [ ] 2.1: When toggling OFF and no `reminderSetting` exists yet, call `createDefaultReminder()` first, then immediately `updateReminder()` with `is_enabled: false`
-  - [ ] 2.2: Alternatively, update `createDefaultReminder` to accept an optional `is_enabled` parameter — but prefer the simpler approach of create-then-update to avoid modifying shared service code
+- [x] Task 2: Handle edge case — no existing reminder_settings record (AC: #1, #2)
+  - [x] 2.1: When toggling OFF and no `reminderSetting` exists yet, call `createDefaultReminder()` first, then immediately `updateReminder()` with `is_enabled: false`
+  - [x] 2.2: Alternatively, update `createDefaultReminder` to accept an optional `is_enabled` parameter — but prefer the simpler approach of create-then-update to avoid modifying shared service code
 
-- [ ] Task 3: Write tests for the notification toggle (AC: all)
-  - [ ] 3.1: Test: toggle renders ON when `is_enabled = true` in reminder_settings
-  - [ ] 3.2: Test: toggle renders ON by default when no reminder_settings exist
-  - [ ] 3.3: Test: toggling OFF calls `updateReminder` with `{ is_enabled: false }`
-  - [ ] 3.4: Test: toggling ON calls `updateReminder` with `{ is_enabled: true }`
-  - [ ] 3.5: Test: SegmentedButtons are disabled when toggle is OFF
-  - [ ] 3.6: Test: snackbar shows correct message on toggle
-  - [ ] 3.7: Test: toggle reverts on API failure (optimistic rollback)
-  - [ ] 3.8: Test: REMINDERS section hidden for inactive subscriptions
-  - [ ] 3.9: Test: toggle OFF then navigate back — state persists from server
+- [x] Task 3: Write tests for the notification toggle (AC: all)
+  - [x] 3.1: Test: toggle renders ON when `is_enabled = true` in reminder_settings
+  - [x] 3.2: Test: toggle renders ON by default when no reminder_settings exist
+  - [x] 3.3: Test: toggling OFF calls `updateReminder` with `{ is_enabled: false }`
+  - [x] 3.4: Test: toggling ON calls `updateReminder` with `{ is_enabled: true }`
+  - [x] 3.5: Test: SegmentedButtons are disabled when toggle is OFF
+  - [x] 3.6: Test: snackbar shows correct message on toggle
+  - [x] 3.7: Test: toggle reverts on API failure (optimistic rollback)
+  - [x] 3.8: Test: REMINDERS section hidden for inactive subscriptions
+  - [x] 3.9: Test: toggle OFF then navigate back — state persists from server
 
-- [ ] Task 4: Verify and validate (AC: all)
-  - [ ] 4.1: `npx tsc --noEmit` — zero errors
-  - [ ] 4.2: `npx eslint src/features/subscriptions/ src/features/notifications/` — zero errors
-  - [ ] 4.3: Full test suite green (baseline: 349 tests from Story 4.4)
+- [x] Task 4: Verify and validate (AC: all)
+  - [x] 4.1: `npx tsc --noEmit` — zero errors
+  - [x] 4.2: `npx eslint src/features/subscriptions/ src/features/notifications/` — zero errors (1 pre-existing warning in Story 4.4 file, unrelated)
+  - [x] 4.3: Full test suite green (362 tests passing, up from 349 baseline)
 
 ## Dev Notes
 
@@ -327,10 +327,30 @@ Recent commits follow pattern: `ready-for-dev story X.Y` → `story X.Y in revie
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- `SegmentedButtons` has no top-level `disabled` prop; per-button `disabled` is on `buttons[]` items. Used `pointerEvents="none"` + opacity wrapper instead.
+
 ### Completion Notes List
 
+- Added `Switch` import and `reminderEnabled` state (default `true`) to `SubscriptionDetailScreen.tsx`
+- `reminderEnabled` initialized from `reminderSetting.is_enabled` in existing `useEffect`
+- `handleToggleNotification` implements optimistic update with rollback on failure, matching `handleTimingChange` pattern
+- Edge case: when no `reminderSetting` exists, toggle OFF creates a new default reminder then immediately updates `is_enabled: false`
+- Timing selector section dimmed with `opacity: 0.4` and `pointerEvents="none"` when toggle is OFF
+- `toggleRow` style added to `StyleSheet` for Switch row layout
+- 9 new tests added to `SubscriptionDetailScreen.test.tsx`; all 32 tests in file pass
+- Full suite: 362 tests passing (baseline was 349; +13 new tests total including pre-existing from this file)
+- `npx tsc --noEmit`: zero errors
+- `npx eslint`: zero errors (1 pre-existing warning in Story 4.4 file, unrelated)
+
 ### File List
+
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.tsx` (modified)
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx` (modified)
+
+## Change Log
+
+- 2026-03-17: Story implemented — added notification toggle Switch to SubscriptionDetailScreen, optimistic update with rollback, dimmed timing selector when disabled, 9 new tests added (362 total passing)

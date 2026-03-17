@@ -7,6 +7,7 @@ import {
   IconButton,
   SegmentedButtons,
   Snackbar,
+  Switch,
   Text,
   useTheme,
 } from 'react-native-paper';
@@ -60,6 +61,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const [snackbar, setSnackbar] = useState<{ message: string } | null>(null);
   const [reminderSetting, setReminderSetting] = useState<ReminderSetting | null>(null);
   const [reminderTiming, setReminderTiming] = useState<string>('3');
+  const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderLoading, setReminderLoading] = useState(true);
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         setReminderSetting(setting);
         if (setting) {
           setReminderTiming(String(setting.remind_days_before));
+          setReminderEnabled(setting.is_enabled);
         } else {
           const stored = await AsyncStorage.getItem('@subtrack:default_remind_days');
           if (!cancelled) {
@@ -114,6 +117,31 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
       setSnackbar({ message: 'Failed to update reminder timing. Please try again.' });
     }
   }, [subscription, subscriptionId, reminderSetting, reminderTiming]);
+
+  const handleToggleNotification = useCallback(async (newValue: boolean) => {
+    if (!subscription) return;
+    const previousValue = reminderEnabled;
+    setReminderEnabled(newValue);
+
+    try {
+      if (reminderSetting) {
+        const updated = await updateReminder(reminderSetting.id, { is_enabled: newValue });
+        setReminderSetting(updated);
+      } else {
+        const created = await createDefaultReminder(subscription.user_id, subscriptionId);
+        const updated = await updateReminder(created.id, { is_enabled: newValue });
+        setReminderSetting(updated);
+      }
+      setSnackbar({
+        message: newValue
+          ? `Notifications enabled for ${subscription.name}`
+          : `Notifications disabled for ${subscription.name}`,
+      });
+    } catch {
+      setReminderEnabled(previousValue);
+      setSnackbar({ message: 'Failed to update notification setting. Please try again.' });
+    }
+  }, [subscription, subscriptionId, reminderSetting, reminderEnabled]);
 
   const handleEdit = useCallback(() => {
     navigation.navigate('EditSubscription', { subscriptionId });
@@ -274,20 +302,33 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
               </View>
             ) : (
               <View style={styles.reminderSection}>
-                <Text
-                  variant="bodyMedium"
-                  style={{ color: theme.colors.onSurface, marginBottom: 12 }}
-                >
-                  Remind me before renewal
-                </Text>
-                <View accessibilityLabel="Reminder timing options" accessibilityRole="radiogroup">
-                  <SegmentedButtons
-                    value={reminderTiming}
-                    onValueChange={handleTimingChange}
-                    buttons={REMINDER_TIMING_OPTIONS}
-                    density="small"
-                    style={styles.segmentedButtons}
+                <View style={styles.toggleRow}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    Notifications
+                  </Text>
+                  <Switch
+                    value={reminderEnabled}
+                    onValueChange={handleToggleNotification}
+                    accessibilityLabel={`Notifications ${reminderEnabled ? 'enabled' : 'disabled'} for this subscription`}
+                    accessibilityRole="switch"
                   />
+                </View>
+                <View style={[!reminderEnabled && { opacity: 0.4 }]} pointerEvents={reminderEnabled ? 'auto' : 'none'}>
+                  <Text
+                    variant="bodyMedium"
+                    style={{ color: theme.colors.onSurface, marginBottom: 12 }}
+                  >
+                    Remind me before renewal
+                  </Text>
+                  <View accessibilityLabel="Reminder timing options" accessibilityRole="radiogroup">
+                    <SegmentedButtons
+                      value={reminderTiming}
+                      onValueChange={handleTimingChange}
+                      buttons={REMINDER_TIMING_OPTIONS}
+                      density="small"
+                      style={styles.segmentedButtons}
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -486,6 +527,12 @@ const styles = StyleSheet.create({
   },
   reminderSection: {
     paddingVertical: 8,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   reminderLoading: {
     paddingVertical: 16,
