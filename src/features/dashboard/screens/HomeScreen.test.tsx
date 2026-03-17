@@ -43,6 +43,12 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
 }));
 
+jest.mock('@features/notifications/services/notificationHistoryService', () => ({
+  getDeliveryCount: jest.fn().mockResolvedValue(0),
+  hasPartialNotifications: jest.fn().mockResolvedValue(false),
+  getNotificationHistory: jest.fn().mockResolvedValue([]),
+}));
+
 function renderWithProvider() {
   return render(
     <PaperProvider theme={theme}>
@@ -248,6 +254,22 @@ describe('HomeScreen', () => {
       useNotificationStore.setState({ permissionStatus: 'undetermined' });
       renderWithProvider();
       expect(screen.queryByText(/Notifications are off/)).toBeNull();
+    });
+  });
+
+  describe('NotificationStatusBadge integration (AC5)', () => {
+    it('shows badge when notifications are enabled', () => {
+      useNotificationStore.setState({ permissionStatus: 'granted' });
+      renderWithProvider();
+      // badge renders when not denied
+      expect(screen.getByLabelText(/Notification status:/)).toBeTruthy();
+    });
+
+    it('does not show badge when notifications are denied (banner shown instead)', () => {
+      useNotificationStore.setState({ permissionStatus: 'denied' });
+      renderWithProvider();
+      // banner shows but badge is hidden
+      expect(screen.queryByLabelText(/Notification status:/)).toBeNull();
     });
   });
 });

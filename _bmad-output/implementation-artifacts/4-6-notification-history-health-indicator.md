@@ -1,6 +1,6 @@
 # Story 4.6: Notification History & Health Indicator
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,53 +61,53 @@ so that I can trust the app is watching out for me.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create NotificationHistoryScreen (AC: #1, #2, #8)
-  - [ ] 1.1: Create `src/features/notifications/screens/NotificationHistoryScreen.tsx`
-  - [ ] 1.2: Create `getNotificationHistory(userId)` service function in `src/features/notifications/services/notificationHistoryService.ts`
-  - [ ] 1.3: Query `notification_log` joined with `subscriptions` to get subscription name, ordered by `sent_at DESC`
-  - [ ] 1.4: Implement FlatList with `List.Item` from react-native-paper for each notification entry
-  - [ ] 1.5: Show notification type icon (bell for renewal, clock for trial_expiry)
-  - [ ] 1.6: Show delivery status as colored Chip (green=sent, red=failed, amber=retrying)
-  - [ ] 1.7: Implement empty state with icon and message
-  - [ ] 1.8: Implement pull-to-refresh via FlatList `onRefresh`/`refreshing` props
+- [x] Task 1: Create NotificationHistoryScreen (AC: #1, #2, #8)
+  - [x] 1.1: Create `src/features/notifications/screens/NotificationHistoryScreen.tsx`
+  - [x] 1.2: Create `getNotificationHistory(userId)` service function in `src/features/notifications/services/notificationHistoryService.ts`
+  - [x] 1.3: Query `notification_log` joined with `subscriptions` to get subscription name, ordered by `sent_at DESC`
+  - [x] 1.4: Implement FlatList with `List.Item` from react-native-paper for each notification entry
+  - [x] 1.5: Show notification type icon (bell for renewal, clock for trial_expiry)
+  - [x] 1.6: Show delivery status as colored Chip (green=sent, red=failed, amber=retrying)
+  - [x] 1.7: Implement empty state with icon and message
+  - [x] 1.8: Implement pull-to-refresh via FlatList `onRefresh`/`refreshing` props
 
-- [ ] Task 2: Create NotificationStatusBadge component (AC: #4, #5, #6)
-  - [ ] 2.1: Create `src/features/notifications/components/NotificationStatusBadge.tsx`
-  - [ ] 2.2: Implement `variant='header'` (compact, for HomeScreen app bar area) and `variant='banner'` (wider, for settings)
-  - [ ] 2.3: Implement three states: enabled (green #10B981), disabled (red #EF4444), partial (amber #F59E0B)
-  - [ ] 2.4: Create `getDeliveryCount(userId)` service function — `SELECT COUNT(*) FROM notification_log WHERE user_id = ? AND status = 'sent'`
-  - [ ] 2.5: Create `getPartialNotificationStatus(userId)` — check if any `reminder_settings` have `is_enabled = false`
-  - [ ] 2.6: Show delivery count text when available (e.g., "12 reminders delivered")
+- [x] Task 2: Create NotificationStatusBadge component (AC: #4, #5, #6)
+  - [x] 2.1: Create `src/features/notifications/components/NotificationStatusBadge.tsx`
+  - [x] 2.2: Implement `variant='header'` (compact, for HomeScreen app bar area) and `variant='banner'` (wider, for settings)
+  - [x] 2.3: Implement three states: enabled (green #10B981), disabled (red #EF4444), partial (amber #F59E0B)
+  - [x] 2.4: Create `getDeliveryCount(userId)` service function — `SELECT COUNT(*) FROM notification_log WHERE user_id = ? AND status = 'sent'`
+  - [x] 2.5: Create `getPartialNotificationStatus(userId)` — check if any `reminder_settings` have `is_enabled = false`
+  - [x] 2.6: Show delivery count text when available (e.g., "12 reminders delivered")
 
-- [ ] Task 3: Add NotificationHistoryScreen to Settings navigation (AC: #7)
-  - [ ] 3.1: Add `NotificationHistory` to `SettingsStackParamList` in `src/app/navigation/types.ts`
-  - [ ] 3.2: Add `Stack.Screen` for `NotificationHistory` in `src/app/navigation/SettingsStack.tsx`
-  - [ ] 3.3: Add "Notification History" `List.Item` in SettingsScreen Notifications section (below existing Notifications row)
+- [x] Task 3: Add NotificationHistoryScreen to Settings navigation (AC: #7)
+  - [x] 3.1: Add `NotificationHistory` to `SettingsStackParamList` in `src/app/navigation/types.ts`
+  - [x] 3.2: Add `Stack.Screen` for `NotificationHistory` in `src/app/navigation/SettingsStack.tsx`
+  - [x] 3.3: Add "Notification History" `List.Item` in SettingsScreen Notifications section (below existing Notifications row)
 
-- [ ] Task 4: Integrate NotificationStatusBadge into HomeScreen and Settings (AC: #4, #5)
-  - [ ] 4.1: Add `NotificationStatusBadge` to HomeScreen — show when notifications are enabled (complement existing `NotificationStatusBanner` which shows when disabled)
-  - [ ] 4.2: Update SettingsScreen Notifications row to show green/amber/red status indicator using badge component
-  - [ ] 4.3: Ensure `NotificationStatusBanner` (disabled state) and `NotificationStatusBadge` (enabled/partial state) don't both show simultaneously
+- [x] Task 4: Integrate NotificationStatusBadge into HomeScreen and Settings (AC: #4, #5)
+  - [x] 4.1: Add `NotificationStatusBadge` to HomeScreen — show when notifications are enabled (complement existing `NotificationStatusBanner` which shows when disabled)
+  - [x] 4.2: Update SettingsScreen Notifications row to show green/amber/red status indicator using badge component
+  - [x] 4.3: Ensure `NotificationStatusBanner` (disabled state) and `NotificationStatusBadge` (enabled/partial state) don't both show simultaneously
 
-- [ ] Task 5: Create RLS policy for notification_log SELECT (AC: #1)
-  - [ ] 5.1: Create migration to add RLS SELECT policy for authenticated users on `notification_log` — users can read their own logs
-  - [ ] 5.2: Verify the existing RLS policies — current policy allows SELECT for own records (confirm this is already in place from Story 4.2 migration)
+- [x] Task 5: Create RLS policy for notification_log SELECT (AC: #1)
+  - [x] 5.1: Create migration to add RLS SELECT policy for authenticated users on `notification_log` — users can read their own logs
+  - [x] 5.2: Verify the existing RLS policies — current policy allows SELECT for own records (confirmed in Story 4.2 migration `20260315100000_create_reminder_settings.sql`)
 
-- [ ] Task 6: Write tests (AC: all)
-  - [ ] 6.1: Test NotificationHistoryScreen — renders list of notifications with correct data
-  - [ ] 6.2: Test NotificationHistoryScreen — renders empty state when no records
-  - [ ] 6.3: Test NotificationHistoryScreen — pull-to-refresh triggers data reload
-  - [ ] 6.4: Test NotificationStatusBadge — shows green state when enabled, no partial
-  - [ ] 6.5: Test NotificationStatusBadge — shows amber state when partial (some subscriptions disabled)
-  - [ ] 6.6: Test NotificationStatusBadge — shows red state when disabled
-  - [ ] 6.7: Test NotificationStatusBadge — shows delivery count when available
-  - [ ] 6.8: Test navigation from Settings → Notification History
-  - [ ] 6.9: Test HomeScreen shows badge when notifications enabled, banner when disabled
+- [x] Task 6: Write tests (AC: all)
+  - [x] 6.1: Test NotificationHistoryScreen — renders list of notifications with correct data
+  - [x] 6.2: Test NotificationHistoryScreen — renders empty state when no records
+  - [x] 6.3: Test NotificationHistoryScreen — pull-to-refresh triggers data reload
+  - [x] 6.4: Test NotificationStatusBadge — shows green state when enabled, no partial
+  - [x] 6.5: Test NotificationStatusBadge — shows amber state when partial (some subscriptions disabled)
+  - [x] 6.6: Test NotificationStatusBadge — shows red state when disabled
+  - [x] 6.7: Test NotificationStatusBadge — shows delivery count when available
+  - [x] 6.8: Test navigation from Settings → Notification History
+  - [x] 6.9: Test HomeScreen shows badge when notifications enabled, banner when disabled
 
-- [ ] Task 7: Verify and validate (AC: all)
-  - [ ] 7.1: `npx tsc --noEmit` — zero errors
-  - [ ] 7.2: `npx eslint src/features/notifications/ src/features/settings/ src/features/dashboard/` — zero errors
-  - [ ] 7.3: Full test suite green (baseline: 362 tests from Story 4.5)
+- [x] Task 7: Verify and validate (AC: all)
+  - [x] 7.1: `npx tsc --noEmit` — zero errors
+  - [x] 7.2: `npx eslint src/features/notifications/ src/features/settings/ src/features/dashboard/` — zero errors (7 pre-existing `any` warnings in test files)
+  - [x] 7.3: Full test suite green (402 tests, +40 from baseline 362)
 
 ## Dev Notes
 
@@ -422,10 +422,40 @@ Check the migration file `20260315100000_create_reminder_settings.sql` for exist
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- `notification_log` has no FK to `subscriptions.id` → used separate query (two-step lookup) instead of join syntax
+- RLS SELECT policy for `notification_log` was already in place from Story 4.2 (`20260315100000_create_reminder_settings.sql`) — Task 5 verified only
+- `getDeliveryCount`/`hasPartialNotifications` use Supabase `{ count: 'exact', head: true }` option; chain ends at final `.eq()` resolving `{ count, error }` (no `.head()` method call)
+
 ### Completion Notes List
 
+- Implemented `notificationHistoryService.ts` with `getNotificationHistory` (two-step query: logs + subscription names), `getDeliveryCount`, and `hasPartialNotifications`
+- Created `NotificationHistoryScreen.tsx` with FlatList, status chips (green/red/amber), type icons, empty state, pull-to-refresh, and embedded `NotificationStatusBadge` (banner variant) at top
+- Created `NotificationStatusBadge.tsx` with three states (enabled/partial/disabled), two variants (header/banner), delivery count display, and lazy stats loading
+- Added `NotificationHistory` route to `SettingsStackParamList`, `SettingsStack.tsx`, and `SettingsScreen.tsx` (with History list item + badge on Notifications row)
+- Updated `HomeScreen.tsx`: shows `NotificationStatusBadge` when permission is not denied; existing `NotificationStatusBanner` shows only when denied — no simultaneous display
+- Exported all new components/services from `notifications/index.ts`
+- 402 tests passing (+40 new; baseline was 362 from Story 4.5); TypeScript zero errors; ESLint zero errors
+
 ### File List
+
+- `src/features/notifications/services/notificationHistoryService.ts` (created)
+- `src/features/notifications/services/notificationHistoryService.test.ts` (created)
+- `src/features/notifications/screens/NotificationHistoryScreen.tsx` (created)
+- `src/features/notifications/screens/NotificationHistoryScreen.test.tsx` (created)
+- `src/features/notifications/components/NotificationStatusBadge.tsx` (created)
+- `src/features/notifications/components/NotificationStatusBadge.test.tsx` (created)
+- `src/features/notifications/index.ts` (modified)
+- `src/app/navigation/types.ts` (modified)
+- `src/app/navigation/SettingsStack.tsx` (modified)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified)
+- `src/features/settings/screens/SettingsScreen.test.tsx` (created)
+- `src/features/dashboard/screens/HomeScreen.tsx` (modified)
+- `src/features/dashboard/screens/HomeScreen.test.tsx` (modified)
+
+### Change Log
+
+- 2026-03-18: Implemented Story 4.6 — Notification History Screen, NotificationStatusBadge component, Settings navigation, HomeScreen badge integration; 40 new tests added (402 total)

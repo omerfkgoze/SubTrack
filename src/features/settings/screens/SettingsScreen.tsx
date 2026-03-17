@@ -17,12 +17,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
-import { useNotificationStore } from '@shared/stores/useNotificationStore';
+import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
 
 export function SettingsScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-  const permissionStatus = useNotificationStore((s) => s.permissionStatus);
   const user = useAuthStore((s) => s.user);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
@@ -153,12 +152,22 @@ export function SettingsScreen() {
           <List.Subheader>Notifications</List.Subheader>
           <List.Item
             title="Notification Settings"
-            description={permissionStatus === 'granted' ? 'Enabled' : 'Disabled'}
+            description={() => <NotificationStatusBadge variant="header" />}
             left={(props) => <List.Icon {...props} icon="bell-outline" />}
             right={(props) => <List.Icon {...props} icon="chevron-right" />}
             onPress={() => navigation.navigate('Notifications')}
             style={styles.listItem}
             accessibilityLabel="Notification Settings"
+            accessibilityRole="button"
+          />
+          <List.Item
+            title="Notification History"
+            description="View past reminders"
+            left={(props) => <List.Icon {...props} icon="history" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('NotificationHistory')}
+            style={styles.listItem}
+            accessibilityLabel="Notification History"
             accessibilityRole="button"
           />
         </List.Section>

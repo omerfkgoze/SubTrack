@@ -15,6 +15,7 @@ export type AuthStackParamList = {
 export type SettingsStackParamList = {
   SettingsHome: undefined;
   Notifications: undefined;
+  NotificationHistory: undefined;
   Premium: undefined;
   DataExport: undefined;
   Account: undefined;

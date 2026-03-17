@@ -19,10 +19,13 @@ import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { SavingsIndicator } from '../components/SavingsIndicator';
 import { UpcomingRenewals } from '../components/UpcomingRenewals';
 import { NotificationStatusBanner } from '@features/notifications/components/NotificationStatusBanner';
+import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
+import { useNotificationStore } from '@shared/stores/useNotificationStore';
 
 export function HomeScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
+  const permissionStatus = useNotificationStore((s) => s.permissionStatus);
   const monthlyTotal = calculateTotalMonthlyCost(subscriptions);
   const categoryBreakdown = calculateCategoryBreakdown(subscriptions);
   const activeCount = calculateActiveCount(subscriptions);
@@ -35,6 +38,7 @@ export function HomeScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <NotificationStatusBanner />
+      {permissionStatus !== 'denied' && <NotificationStatusBadge variant="header" />}
       <SpendingHero
         amount={monthlyTotal}
         currency="€"
