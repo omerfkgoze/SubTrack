@@ -255,6 +255,20 @@ export function SettingsScreen() {
         </List.Section>
 
         <List.Section>
+          <List.Subheader>Data</List.Subheader>
+          <List.Item
+            title="Data Export"
+            description="Export your subscriptions as JSON or CSV"
+            left={(props) => <List.Icon {...props} icon="database-export" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('DataExport')}
+            style={styles.listItem}
+            accessibilityLabel="Data Export"
+            accessibilityRole="button"
+          />
+        </List.Section>
+
+        <List.Section>
           <List.Subheader>Account</List.Subheader>
           <List.Item
             title={user?.email ?? ''}

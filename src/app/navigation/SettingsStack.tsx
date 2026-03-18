@@ -4,6 +4,7 @@ import type { SettingsStackParamList } from './types';
 import { SettingsScreen } from '@features/settings/screens/SettingsScreen';
 import { NotificationPermissionScreen } from '@features/notifications/screens/NotificationPermissionScreen';
 import { NotificationHistoryScreen } from '@features/notifications/screens/NotificationHistoryScreen';
+import { DataExportScreen } from '@features/settings/screens/DataExportScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -24,6 +25,11 @@ export function SettingsStack() {
         name="NotificationHistory"
         component={NotificationHistoryScreen}
         options={{ title: 'Notification History' }}
+      />
+      <Stack.Screen
+        name="DataExport"
+        component={DataExportScreen}
+        options={{ title: 'Data Export' }}
       />
     </Stack.Navigator>
   );

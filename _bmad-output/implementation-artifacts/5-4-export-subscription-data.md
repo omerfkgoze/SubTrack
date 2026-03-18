@@ -1,6 +1,6 @@
 # Story 5.4: Export Subscription Data
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,53 +37,53 @@ So that I have a backup or can use the data elsewhere.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install required dependencies (AC: #2, #3)
-  - [ ] 1.1: Install `expo-file-system` (`npx expo install expo-file-system`) — required for writing temp file before sharing
-  - [ ] 1.2: Install `expo-sharing` (`npx expo install expo-sharing`) — required for native share sheet with file
+- [x] Task 1: Install required dependencies (AC: #2, #3)
+  - [x] 1.1: Install `expo-file-system` (`npx expo install expo-file-system`) — required for writing temp file before sharing
+  - [x] 1.2: Install `expo-sharing` (`npx expo install expo-sharing`) — required for native share sheet with file
 
-- [ ] Task 2: Create `exportService.ts` in `src/features/settings/services/` (AC: #2, #3, #4)
-  - [ ] 2.1: Create `src/features/settings/services/exportService.ts`
-  - [ ] 2.2: Implement `exportToJSON(subscriptions: Subscription[]): Promise<void>` — serializes to JSON, writes temp file via `FileSystem.writeAsStringAsync`, shares via `Sharing.shareAsync`
-  - [ ] 2.3: Implement `exportToCSV(subscriptions: Subscription[]): Promise<void>` — serializes to CSV with headers, writes temp file, shares via `Sharing.shareAsync`
-  - [ ] 2.4: CSV headers must be: `name,price,currency,billing_cycle,renewal_date,category,is_active,is_trial,trial_expiry_date,notes`
-  - [ ] 2.5: JSON fields to include: `name`, `price`, `currency`, `billing_cycle`, `renewal_date`, `category`, `is_active`, `is_trial`, `trial_expiry_date`, `notes` (exclude internal fields: `id`, `user_id`, `created_at`, `updated_at`, `calendar_event_id`)
-  - [ ] 2.6: Filename format: `subtrack-export-YYYY-MM-DD.json` / `subtrack-export-YYYY-MM-DD.csv` (use current date)
-  - [ ] 2.7: Write temp file to `FileSystem.cacheDirectory + filename`
-  - [ ] 2.8: CSV values with commas or special characters must be quoted
+- [x] Task 2: Create `exportService.ts` in `src/features/settings/services/` (AC: #2, #3, #4)
+  - [x] 2.1: Create `src/features/settings/services/exportService.ts`
+  - [x] 2.2: Implement `exportToJSON(subscriptions: Subscription[]): Promise<void>` — serializes to JSON, writes temp file via `FileSystem.writeAsStringAsync`, shares via `Sharing.shareAsync`
+  - [x] 2.3: Implement `exportToCSV(subscriptions: Subscription[]): Promise<void>` — serializes to CSV with headers, writes temp file, shares via `Sharing.shareAsync`
+  - [x] 2.4: CSV headers must be: `name,price,currency,billing_cycle,renewal_date,category,is_active,is_trial,trial_expiry_date,notes`
+  - [x] 2.5: JSON fields to include: `name`, `price`, `currency`, `billing_cycle`, `renewal_date`, `category`, `is_active`, `is_trial`, `trial_expiry_date`, `notes` (exclude internal fields: `id`, `user_id`, `created_at`, `updated_at`, `calendar_event_id`)
+  - [x] 2.6: Filename format: `subtrack-export-YYYY-MM-DD.json` / `subtrack-export-YYYY-MM-DD.csv` (use current date)
+  - [x] 2.7: Write temp file to `FileSystem.cacheDirectory + filename`
+  - [x] 2.8: CSV values with commas or special characters must be quoted
 
-- [ ] Task 3: Create `DataExportScreen.tsx` in `src/features/settings/screens/` (AC: #1, #2, #3, #4)
-  - [ ] 3.1: Create `src/features/settings/screens/DataExportScreen.tsx`
-  - [ ] 3.2: Use `useSubscriptionStore` to get `subscriptions` and `fetchSubscriptions` — call `fetchSubscriptions` in `useEffect` if subscriptions not loaded
-  - [ ] 3.3: Render two option cards/radio: "JSON" and "CSV" with descriptions
-  - [ ] 3.4: Render "Export" button (primary, contained) — disabled when no subscriptions or while exporting
-  - [ ] 3.5: Render empty state message when `subscriptions.length === 0`: "No data to export. Add subscriptions first."
-  - [ ] 3.6: Show loading indicator (`isExporting` state) during export to prevent double-tap
-  - [ ] 3.7: On success: show Snackbar "Export complete" (3s auto-dismiss)
-  - [ ] 3.8: On error: show Snackbar "Export failed. Please try again." (5s, error color)
-  - [ ] 3.9: Use `useTheme()` from `react-native-paper` for consistent styling
+- [x] Task 3: Create `DataExportScreen.tsx` in `src/features/settings/screens/` (AC: #1, #2, #3, #4)
+  - [x] 3.1: Create `src/features/settings/screens/DataExportScreen.tsx`
+  - [x] 3.2: Use `useSubscriptionStore` to get `subscriptions` and `fetchSubscriptions` — call `fetchSubscriptions` in `useEffect` if subscriptions not loaded
+  - [x] 3.3: Render two option cards/radio: "JSON" and "CSV" with descriptions
+  - [x] 3.4: Render "Export" button (primary, contained) — disabled when no subscriptions or while exporting
+  - [x] 3.5: Render empty state message when `subscriptions.length === 0`: "No data to export. Add subscriptions first."
+  - [x] 3.6: Show loading indicator (`isExporting` state) during export to prevent double-tap
+  - [x] 3.7: On success: show Snackbar "Export complete" (3s auto-dismiss)
+  - [x] 3.8: On error: show Snackbar "Export failed. Please try again." (5s, error color)
+  - [x] 3.9: Use `useTheme()` from `react-native-paper` for consistent styling
 
-- [ ] Task 4: Register `DataExportScreen` in `SettingsStack` and add navigation entry in `SettingsScreen` (AC: #1)
-  - [ ] 4.1: In `src/app/navigation/SettingsStack.tsx`, import `DataExportScreen` from `@features/settings/screens/DataExportScreen` and add `<Stack.Screen name="DataExport" component={DataExportScreen} options={{ title: 'Data Export' }} />`
-  - [ ] 4.2: In `src/features/settings/screens/SettingsScreen.tsx`, add a `List.Item` for "Data Export" with appropriate icon (`database-export` or `export`) and `onPress={() => navigation.navigate('DataExport')}` — place it in the Data/Account section (between Calendar and Account items)
+- [x] Task 4: Register `DataExportScreen` in `SettingsStack` and add navigation entry in `SettingsScreen` (AC: #1)
+  - [x] 4.1: In `src/app/navigation/SettingsStack.tsx`, import `DataExportScreen` from `@features/settings/screens/DataExportScreen` and add `<Stack.Screen name="DataExport" component={DataExportScreen} options={{ title: 'Data Export' }} />`
+  - [x] 4.2: In `src/features/settings/screens/SettingsScreen.tsx`, add a `List.Item` for "Data Export" with appropriate icon (`database-export` or `export`) and `onPress={() => navigation.navigate('DataExport')}` — place it in the Data/Account section (between Calendar and Account items)
 
-- [ ] Task 5: Write tests (AC: all)
-  - [ ] 5.1: `src/features/settings/services/exportService.test.ts` — test `exportToJSON`: calls `FileSystem.writeAsStringAsync` with correct JSON content and correct filename pattern
-  - [ ] 5.2: `src/features/settings/services/exportService.test.ts` — test `exportToJSON`: JSON output includes all required fields and excludes internal fields
-  - [ ] 5.3: `src/features/settings/services/exportService.test.ts` — test `exportToCSV`: CSV output has correct headers and correct row values
-  - [ ] 5.4: `src/features/settings/services/exportService.test.ts` — test `exportToCSV`: values with commas are properly quoted
-  - [ ] 5.5: `src/features/settings/services/exportService.test.ts` — test both functions: call `Sharing.shareAsync` after writing file
-  - [ ] 5.6: `src/features/settings/screens/DataExportScreen.test.tsx` — renders format selection (JSON/CSV options visible)
-  - [ ] 5.7: `src/features/settings/screens/DataExportScreen.test.tsx` — empty state: shows message when no subscriptions, Export button disabled
-  - [ ] 5.8: `src/features/settings/screens/DataExportScreen.test.tsx` — JSON selected: tapping Export calls `exportToJSON`
-  - [ ] 5.9: `src/features/settings/screens/DataExportScreen.test.tsx` — CSV selected: tapping Export calls `exportToCSV`
-  - [ ] 5.10: `src/features/settings/screens/DataExportScreen.test.tsx` — shows loading state during export (button disabled while `isExporting`)
-  - [ ] 5.11: `src/features/settings/screens/DataExportScreen.test.tsx` — on export error: shows error snackbar
-  - [ ] 5.12: `src/features/settings/screens/DataExportScreen.test.tsx` — on export success: shows success snackbar
+- [x] Task 5: Write tests (AC: all)
+  - [x] 5.1: `src/features/settings/services/exportService.test.ts` — test `exportToJSON`: calls `FileSystem.writeAsStringAsync` with correct JSON content and correct filename pattern
+  - [x] 5.2: `src/features/settings/services/exportService.test.ts` — test `exportToJSON`: JSON output includes all required fields and excludes internal fields
+  - [x] 5.3: `src/features/settings/services/exportService.test.ts` — test `exportToCSV`: CSV output has correct headers and correct row values
+  - [x] 5.4: `src/features/settings/services/exportService.test.ts` — test `exportToCSV`: values with commas are properly quoted
+  - [x] 5.5: `src/features/settings/services/exportService.test.ts` — test both functions: call `Sharing.shareAsync` after writing file
+  - [x] 5.6: `src/features/settings/screens/DataExportScreen.test.tsx` — renders format selection (JSON/CSV options visible)
+  - [x] 5.7: `src/features/settings/screens/DataExportScreen.test.tsx` — empty state: shows message when no subscriptions, Export button disabled
+  - [x] 5.8: `src/features/settings/screens/DataExportScreen.test.tsx` — JSON selected: tapping Export calls `exportToJSON`
+  - [x] 5.9: `src/features/settings/screens/DataExportScreen.test.tsx` — CSV selected: tapping Export calls `exportToCSV`
+  - [x] 5.10: `src/features/settings/screens/DataExportScreen.test.tsx` — shows loading state during export (button disabled while `isExporting`)
+  - [x] 5.11: `src/features/settings/screens/DataExportScreen.test.tsx` — on export error: shows error snackbar
+  - [x] 5.12: `src/features/settings/screens/DataExportScreen.test.tsx` — on export success: shows success snackbar
 
-- [ ] Task 6: Validate (AC: all)
-  - [ ] 6.1: `npx tsc --noEmit` — zero errors
-  - [ ] 6.2: ESLint clean on changed files
-  - [ ] 6.3: Full test suite passes (current baseline: 492 passing)
+- [x] Task 6: Validate (AC: all)
+  - [x] 6.1: `npx tsc --noEmit` — zero errors
+  - [x] 6.2: ESLint clean on changed files
+  - [x] 6.3: Full test suite passes (current baseline: 492 passing)
 
 ## Dev Notes
 
@@ -341,6 +341,27 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+- expo-file-system v19 changed its API; legacy functions (`cacheDirectory`, `writeAsStringAsync`, `EncodingType`) must be imported from `expo-file-system/legacy` instead of the main export.
+
 ### Completion Notes List
 
+- Installed expo-file-system (~19.0.21) and expo-sharing (~14.0.8) via `npx expo install`.
+- Created `exportService.ts` using `expo-file-system/legacy` import for legacy API compatibility with the v19 package.
+- Created `DataExportScreen.tsx` with RadioButton format selector, export button with loading state, empty state message, and Snackbar feedback.
+- Registered `DataExport` screen in `SettingsStack.tsx`; added "Data Export" `List.Item` in a new "Data" section in `SettingsScreen.tsx` between Calendar and Account sections.
+- All 14 new tests pass; full suite 506/506 passing. TypeScript and ESLint clean.
+
 ### File List
+
+- `package.json` (modified — added expo-file-system, expo-sharing)
+- `package-lock.json` (modified — lockfile updated)
+- `src/features/settings/services/exportService.ts` (created)
+- `src/features/settings/services/exportService.test.ts` (created)
+- `src/features/settings/screens/DataExportScreen.tsx` (created)
+- `src/features/settings/screens/DataExportScreen.test.tsx` (created)
+- `src/app/navigation/SettingsStack.tsx` (modified — added DataExportScreen registration)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified — added Data Export List.Item)
+
+## Change Log
+
+- 2026-03-18: Story 5.4 implemented — added JSON/CSV export feature with native share sheet, DataExportScreen, exportService, navigation registration, and full test suite (14 new tests; total 506 passing).
