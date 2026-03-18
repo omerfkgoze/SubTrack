@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-18
+last_updated: 2026-03-18T00:00:00
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -84,7 +84,7 @@ development_status:
 
   # Epic 5: Calendar Integration & Data Management
   epic-5: in-progress
-  5-1-add-subscription-renewals-to-device-calendar: ready-for-dev
+  5-1-add-subscription-renewals-to-device-calendar: review
   5-2-calendar-selection: backlog
   5-3-calendar-event-cleanup-on-subscription-delete: backlog
   5-4-export-subscription-data: backlog

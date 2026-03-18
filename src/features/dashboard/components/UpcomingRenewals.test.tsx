@@ -32,6 +32,7 @@ const baseSubscription: Subscription = {
   user_id: 'user-1',
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
+  calendar_event_id: null,
 };
 
 const makeRenewal = (overrides: Partial<UpcomingRenewal> = {}): UpcomingRenewal => ({

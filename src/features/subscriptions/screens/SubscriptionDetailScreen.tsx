@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
+  Dialog,
   Divider,
   Icon,
   IconButton,
+  Portal,
   SegmentedButtons,
   Snackbar,
   Switch,
@@ -30,6 +32,10 @@ import {
   updateReminder,
 } from '@features/notifications';
 import type { ReminderSetting } from '@features/notifications';
+import {
+  requestCalendarAccess,
+  addSubscriptionToCalendar,
+} from '@features/subscriptions/services/calendarService';
 
 const REMINDER_TIMING_OPTIONS = [
   { value: '1', label: '1 day' },
@@ -58,11 +64,13 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const isSubmitting = useSubscriptionStore((s) => s.isSubmitting);
 
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ message: string } | null>(null);
+  const [snackbar, setSnackbar] = useState<{ message: string; action?: { label: string; onPress: () => void } } | null>(null);
   const [reminderSetting, setReminderSetting] = useState<ReminderSetting | null>(null);
   const [reminderTiming, setReminderTiming] = useState<string>('3');
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderLoading, setReminderLoading] = useState(true);
+  const [calendarPermissionDialog, setCalendarPermissionDialog] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
 
   useEffect(() => {
     if (!subscription || subscription.is_active === false) {
@@ -142,6 +150,43 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
       setSnackbar({ message: 'Failed to update notification setting. Please try again.' });
     }
   }, [subscription, subscriptionId, reminderSetting, reminderEnabled]);
+
+  const updateSubscriptionInStore = useSubscriptionStore((s) => s.fetchSubscriptions);
+
+  const handleAddToCalendar = useCallback(() => {
+    setCalendarPermissionDialog(true);
+  }, []);
+
+  const handleCalendarPermissionConfirm = useCallback(async () => {
+    if (!subscription) return;
+    setCalendarPermissionDialog(false);
+    setCalendarLoading(true);
+
+    try {
+      const { granted, canAskAgain } = await requestCalendarAccess();
+
+      if (!granted) {
+        if (!canAskAgain) {
+          setSnackbar({
+            message: 'Calendar access is needed to add renewal dates. You can enable it in Settings.',
+            action: { label: 'Open Settings', onPress: () => Linking.openSettings() },
+          });
+        } else {
+          setSnackbar({ message: 'Calendar access is needed to add renewal dates. You can enable it in Settings.' });
+        }
+        setCalendarLoading(false);
+        return;
+      }
+
+      await addSubscriptionToCalendar(subscription);
+      await updateSubscriptionInStore();
+      setSnackbar({ message: 'Added to calendar' });
+    } catch {
+      setSnackbar({ message: 'Failed to add to calendar. Please try again.' });
+    } finally {
+      setCalendarLoading(false);
+    }
+  }, [subscription, updateSubscriptionInStore]);
 
   const handleEdit = useCallback(() => {
     navigation.navigate('EditSubscription', { subscriptionId });
@@ -383,6 +428,20 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
+          {!isInactive && (
+            <Button
+              mode="outlined"
+              onPress={handleAddToCalendar}
+              icon="calendar-plus"
+              style={styles.actionButton}
+              contentStyle={styles.actionButtonContent}
+              disabled={isSubmitting || calendarLoading}
+              loading={calendarLoading}
+              accessibilityLabel={subscription.calendar_event_id ? 'Update Calendar Event' : 'Add to Calendar'}
+            >
+              {subscription.calendar_event_id ? 'Update Calendar Event' : 'Add to Calendar'}
+            </Button>
+          )}
           <Button
             mode="outlined"
             onPress={handleEdit}
@@ -423,10 +482,26 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         onDismiss={() => setDeleteDialogVisible(false)}
       />
 
+      <Portal>
+        <Dialog visible={calendarPermissionDialog} onDismiss={() => setCalendarPermissionDialog(false)}>
+          <Dialog.Title>Add to Your Calendar</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              SubTrack can add subscription renewal dates to your calendar so you never miss a payment.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setCalendarPermissionDialog(false)}>Not Now</Button>
+            <Button onPress={handleCalendarPermissionConfirm}>Allow</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
       <Snackbar
         visible={!!snackbar}
         onDismiss={() => setSnackbar(null)}
         duration={3000}
+        action={snackbar?.action}
       >
         {snackbar?.message ?? ''}
       </Snackbar>

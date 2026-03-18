@@ -17,6 +17,12 @@ export {
   getSubscriptionCount,
 } from './services/subscriptionService';
 export {
+  requestCalendarAccess,
+  getDefaultCalendarId,
+  mapBillingCycleToRecurrence,
+  addSubscriptionToCalendar,
+} from './services/calendarService';
+export {
   formatPrice,
   formatBillingCycleShort,
   calculateMonthlyEquivalent,

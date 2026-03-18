@@ -37,6 +37,7 @@ export type Database = {
       subscriptions: {
         Row: {
           billing_cycle: string
+          calendar_event_id: string | null
           category: string | null
           created_at: string | null
           currency: string | null
@@ -53,6 +54,7 @@ export type Database = {
         }
         Insert: {
           billing_cycle: string
+          calendar_event_id?: string | null
           category?: string | null
           created_at?: string | null
           currency?: string | null
@@ -69,6 +71,7 @@ export type Database = {
         }
         Update: {
           billing_cycle?: string
+          calendar_event_id?: string | null
           category?: string | null
           created_at?: string | null
           currency?: string | null

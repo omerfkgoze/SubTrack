@@ -49,6 +49,7 @@ const mockSubscription: Subscription = {
   is_active: true,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
+  calendar_event_id: null,
 };
 
 const mockSubscription2: Subscription = {
@@ -284,6 +285,7 @@ describe('useSubscriptionStore - toggleSubscriptionStatus', () => {
     is_active: true,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
+    calendar_event_id: null,
   };
 
   beforeEach(() => {

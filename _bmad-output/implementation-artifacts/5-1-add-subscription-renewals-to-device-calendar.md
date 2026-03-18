@@ -1,6 +1,6 @@
 # Story 5.1: Add Subscription Renewals to Device Calendar
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -65,48 +65,48 @@ so that I see them alongside my other events and never miss a payment.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install `expo-calendar` and configure (AC: #2)
-  - [ ] 1.1: Run `npx expo install expo-calendar`
-  - [ ] 1.2: Add `expo-calendar` config plugin to `app.json` with permission description
-  - [ ] 1.3: Add iOS 17+ permission strings to `app.json` infoPlist (`NSCalendarsFullAccessUsageDescription`)
+- [x] Task 1: Install `expo-calendar` and configure (AC: #2)
+  - [x] 1.1: Run `npx expo install expo-calendar`
+  - [x] 1.2: Add `expo-calendar` config plugin to `app.json` with permission description
+  - [x] 1.3: Add iOS 17+ permission strings to `app.json` infoPlist (`NSCalendarsFullAccessUsageDescription`)
 
-- [ ] Task 2: Create database migration for `calendar_event_id` (AC: #7)
-  - [ ] 2.1: Create migration `supabase/migrations/YYYYMMDDHHMMSS_add_calendar_event_id.sql`
-  - [ ] 2.2: Add `calendar_event_id TEXT` column to `subscriptions` table (nullable, default null)
-  - [ ] 2.3: No RLS changes needed — existing RLS on subscriptions table covers this column
+- [x] Task 2: Create database migration for `calendar_event_id` (AC: #7)
+  - [x] 2.1: Create migration `supabase/migrations/YYYYMMDDHHMMSS_add_calendar_event_id.sql`
+  - [x] 2.2: Add `calendar_event_id TEXT` column to `subscriptions` table (nullable, default null)
+  - [x] 2.3: No RLS changes needed — existing RLS on subscriptions table covers this column
 
-- [ ] Task 3: Create calendar service (AC: #2, #3, #4, #5, #7)
-  - [ ] 3.1: Create `src/features/subscriptions/services/calendarService.ts`
-  - [ ] 3.2: Implement `requestCalendarAccess()` — returns `{ granted: boolean; canAskAgain: boolean }`
-  - [ ] 3.3: Implement `getDefaultCalendarId()` — returns the default writable calendar ID (platform-aware)
-  - [ ] 3.4: Implement `addSubscriptionToCalendar(subscription: Subscription, calendarId?: string)` — creates recurring event, returns event ID
-  - [ ] 3.5: Implement `mapBillingCycleToRecurrence(billingCycle: BillingCycle)` — maps billing cycle to `Calendar.Frequency` + interval
-  - [ ] 3.6: Update `calendar_event_id` in Supabase after successful event creation
+- [x] Task 3: Create calendar service (AC: #2, #3, #4, #5, #7)
+  - [x] 3.1: Create `src/features/subscriptions/services/calendarService.ts`
+  - [x] 3.2: Implement `requestCalendarAccess()` — returns `{ granted: boolean; canAskAgain: boolean }`
+  - [x] 3.3: Implement `getDefaultCalendarId()` — returns the default writable calendar ID (platform-aware)
+  - [x] 3.4: Implement `addSubscriptionToCalendar(subscription: Subscription, calendarId?: string)` — creates recurring event, returns event ID
+  - [x] 3.5: Implement `mapBillingCycleToRecurrence(billingCycle: BillingCycle)` — maps billing cycle to `Calendar.Frequency` + interval
+  - [x] 3.6: Update `calendar_event_id` in Supabase after successful event creation
 
-- [ ] Task 4: Add "Add to Calendar" button to SubscriptionDetailScreen (AC: #1, #6, #8)
-  - [ ] 4.1: Add "Add to Calendar" / "Update Calendar Event" button in the action buttons section
-  - [ ] 4.2: Implement pre-permission dialog (Dialog from react-native-paper) shown before OS prompt
-  - [ ] 4.3: Handle permission denied state — show Snackbar with "Open Settings" action if `canAskAgain === false`
-  - [ ] 4.4: Show success Snackbar on event creation
-  - [ ] 4.5: Disable button + show loading spinner during event creation
+- [x] Task 4: Add "Add to Calendar" button to SubscriptionDetailScreen (AC: #1, #6, #8)
+  - [x] 4.1: Add "Add to Calendar" / "Update Calendar Event" button in the action buttons section
+  - [x] 4.2: Implement pre-permission dialog (Dialog from react-native-paper) shown before OS prompt
+  - [x] 4.3: Handle permission denied state — show Snackbar with "Open Settings" action if `canAskAgain === false`
+  - [x] 4.4: Show success Snackbar on event creation
+  - [x] 4.5: Disable button + show loading spinner during event creation
 
-- [ ] Task 5: Update subscription types (AC: #7)
-  - [ ] 5.1: Regenerate Supabase types after migration OR manually verify `calendar_event_id` appears in `Subscription` type
-  - [ ] 5.2: If types are manual, add `calendar_event_id: string | null` to the Subscription type
+- [x] Task 5: Update subscription types (AC: #7)
+  - [x] 5.1: Regenerate Supabase types after migration OR manually verify `calendar_event_id` appears in `Subscription` type
+  - [x] 5.2: If types are manual, add `calendar_event_id: string | null` to the Subscription type
 
-- [ ] Task 6: Write tests (AC: all)
-  - [ ] 6.1: Test `calendarService.ts` — `requestCalendarAccess` returns correct states
-  - [ ] 6.2: Test `calendarService.ts` — `addSubscriptionToCalendar` creates event with correct recurrence for each billing cycle
-  - [ ] 6.3: Test `calendarService.ts` — `mapBillingCycleToRecurrence` returns correct frequency/interval for all 4 cycles
-  - [ ] 6.4: Test SubscriptionDetailScreen — shows "Add to Calendar" when no `calendar_event_id`
-  - [ ] 6.5: Test SubscriptionDetailScreen — shows "Update Calendar Event" when `calendar_event_id` exists
-  - [ ] 6.6: Test SubscriptionDetailScreen — permission denied shows graceful message
-  - [ ] 6.7: Test SubscriptionDetailScreen — success shows Snackbar
+- [x] Task 6: Write tests (AC: all)
+  - [x] 6.1: Test `calendarService.ts` — `requestCalendarAccess` returns correct states
+  - [x] 6.2: Test `calendarService.ts` — `addSubscriptionToCalendar` creates event with correct recurrence for each billing cycle
+  - [x] 6.3: Test `calendarService.ts` — `mapBillingCycleToRecurrence` returns correct frequency/interval for all 4 cycles
+  - [x] 6.4: Test SubscriptionDetailScreen — shows "Add to Calendar" when no `calendar_event_id`
+  - [x] 6.5: Test SubscriptionDetailScreen — shows "Update Calendar Event" when `calendar_event_id` exists
+  - [x] 6.6: Test SubscriptionDetailScreen — permission denied shows graceful message
+  - [x] 6.7: Test SubscriptionDetailScreen — success shows Snackbar
 
-- [ ] Task 7: Verify and validate (AC: all)
-  - [ ] 7.1: `npx tsc --noEmit` — zero errors
-  - [ ] 7.2: ESLint clean on changed files
-  - [ ] 7.3: Full test suite passes (baseline: 408 tests from Story 4.6)
+- [x] Task 7: Verify and validate (AC: all)
+  - [x] 7.1: `npx tsc --noEmit` — zero errors
+  - [x] 7.2: ESLint clean on changed files
+  - [x] 7.3: Full test suite passes (baseline: 408 tests from Story 4.6) — now 435 tests passing
 
 ## Dev Notes
 
@@ -386,10 +386,41 @@ jest.mock('expo-calendar', () => ({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- TypeScript compilation: zero errors after adding `calendar_event_id` to database types and all test mocks
+- ESLint: clean (0 errors, 0 warnings on changed files)
+- Test suite: 435 tests passing (27 new tests added, baseline was 408)
+
 ### Completion Notes List
 
+- Installed `expo-calendar` (SDK 54 compatible) and configured app.json with config plugin + iOS 17+ permission strings
+- Created `supabase/migrations/20260318000000_add_calendar_event_id.sql` — adds nullable TEXT column to subscriptions table
+- Created `calendarService.ts` with 4 exported functions: `requestCalendarAccess`, `getDefaultCalendarId`, `mapBillingCycleToRecurrence`, `addSubscriptionToCalendar`
+- Added "Add to Calendar" / "Update Calendar Event" button to SubscriptionDetailScreen with pre-permission dialog, loading state, and permission denied handling
+- Updated `database.types.ts` to include `calendar_event_id` in Row, Insert, and Update types
+- Added 20 unit tests for calendarService covering all billing cycles, permission states, Supabase persistence, error handling
+- Added 7 integration tests for SubscriptionDetailScreen calendar UI (button visibility, dialog, permission denied, success snackbar)
+- Updated `calendar_event_id: null` in 8 existing test mock objects across 7 files to fix TypeScript compatibility
+
 ### File List
+
+- `app.json` — modified (added expo-calendar plugin + iOS permission strings)
+- `package.json` — modified (expo-calendar dependency added by npx expo install)
+- `package-lock.json` — modified (lockfile updated)
+- `supabase/migrations/20260318000000_add_calendar_event_id.sql` — new
+- `src/features/subscriptions/services/calendarService.ts` — new
+- `src/features/subscriptions/services/calendarService.test.ts` — new
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.tsx` — modified
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx` — modified
+- `src/features/subscriptions/index.ts` — modified (added calendarService exports)
+- `src/shared/types/database.types.ts` — modified (added calendar_event_id)
+- `src/features/dashboard/components/UpcomingRenewals.test.tsx` — modified (added calendar_event_id to mock)
+- `src/features/dashboard/screens/HomeScreen.test.tsx` — modified (added calendar_event_id to mock)
+- `src/features/subscriptions/components/SubscriptionCard.test.tsx` — modified (added calendar_event_id to mock)
+- `src/features/subscriptions/components/SwipeableSubscriptionCard.test.tsx` — modified (added calendar_event_id to mock)
+- `src/features/subscriptions/screens/EditSubscriptionScreen.test.tsx` — modified (added calendar_event_id to mock)
+- `src/features/subscriptions/utils/subscriptionUtils.test.ts` — modified (added calendar_event_id to mock)
+- `src/shared/stores/useSubscriptionStore.test.ts` — modified (added calendar_event_id to mocks)

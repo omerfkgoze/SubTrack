@@ -25,6 +25,13 @@ jest.mock('@features/notifications', () => ({
   updateReminder: (...args: unknown[]) => mockUpdateReminder(...args),
 }));
 
+const mockRequestCalendarAccess = jest.fn();
+const mockAddSubscriptionToCalendar = jest.fn();
+jest.mock('@features/subscriptions/services/calendarService', () => ({
+  requestCalendarAccess: (...args: unknown[]) => mockRequestCalendarAccess(...args),
+  addSubscriptionToCalendar: (...args: unknown[]) => mockAddSubscriptionToCalendar(...args),
+}));
+
 jest.mock('react-native-paper-dates', () => ({
   DatePickerInput: ({ label, accessibilityLabel }: { label: string; accessibilityLabel?: string }) => {
     const { View, Text } = require('react-native');
@@ -65,6 +72,7 @@ const mockSubscription: Subscription = {
   trial_expiry_date: null,
   created_at: '2026-01-10',
   updated_at: '2026-01-10',
+  calendar_event_id: null,
 };
 
 const mockTrialSubscription: Subscription = {
@@ -530,6 +538,81 @@ describe('SubscriptionDetailScreen', () => {
       await waitFor(() => {
         expect(screen.queryByText('REMINDERS')).toBeNull();
         expect(screen.queryByLabelText(/Notifications/)).toBeNull();
+      });
+    });
+  });
+
+  describe('calendar integration', () => {
+    it('shows "Add to Calendar" button when no calendar_event_id', () => {
+      renderWithProvider('sub-1');
+      expect(screen.getByText('Add to Calendar')).toBeTruthy();
+      expect(screen.getByLabelText('Add to Calendar')).toBeTruthy();
+    });
+
+    it('shows "Update Calendar Event" when calendar_event_id exists', () => {
+      useSubscriptionStore.setState({
+        subscriptions: [{ ...mockSubscription, calendar_event_id: 'event-123' }],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+      renderWithProvider('sub-1');
+      expect(screen.getByText('Update Calendar Event')).toBeTruthy();
+      expect(screen.getByLabelText('Update Calendar Event')).toBeTruthy();
+    });
+
+    it('hides calendar button for cancelled subscriptions', () => {
+      renderWithProvider('sub-cancelled');
+      expect(screen.queryByText('Add to Calendar')).toBeNull();
+    });
+
+    it('shows pre-permission dialog when Add to Calendar is pressed', () => {
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      expect(screen.getByText('Add to Your Calendar')).toBeTruthy();
+      expect(screen.getByText('SubTrack can add subscription renewal dates to your calendar so you never miss a payment.')).toBeTruthy();
+    });
+
+    it('dismisses dialog when "Not Now" is pressed', () => {
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      expect(screen.getByText('Add to Your Calendar')).toBeTruthy();
+      fireEvent.press(screen.getByText('Not Now'));
+      // Dialog should be dismissed (no longer showing dialog title)
+    });
+
+    it('shows permission denied message when calendar access is denied', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: false, canAskAgain: true });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Calendar access is needed to add renewal dates. You can enable it in Settings.')).toBeTruthy();
+      });
+    });
+
+    it('shows success snackbar after successful calendar event creation', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockAddSubscriptionToCalendar.mockResolvedValue('event-new');
+
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Added to calendar')).toBeTruthy();
       });
     });
   });

@@ -17,7 +17,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.brave.blandness619.SubTrack",
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Log in to SubTrack securely with Face ID"
+        "NSFaceIDUsageDescription": "Log in to SubTrack securely with Face ID",
+        "NSCalendarsFullAccessUsageDescription": "SubTrack needs calendar access to create and manage subscription renewal reminders.",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "SubTrack needs calendar access to add subscription renewal dates to your calendar."
       }
     },
     "android": {
@@ -37,6 +39,12 @@
         "expo-notifications",
         {
           "color": "#6750A4"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "SubTrack needs calendar access to add subscription renewal dates."
         }
       ]
     ],

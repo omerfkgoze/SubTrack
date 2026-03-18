@@ -25,6 +25,7 @@ const mockSubscription: Subscription = {
   trial_expiry_date: null,
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
+  calendar_event_id: null,
 };
 
 function renderWithProvider(ui: React.ReactElement) {
