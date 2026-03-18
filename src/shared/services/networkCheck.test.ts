@@ -33,4 +33,11 @@ describe('checkConnectivity', () => {
     const result = await checkConnectivity();
     expect(result.error).toBeNull();
   });
+
+  it('returns NETWORK_ERROR when connected to WiFi but internet not reachable', async () => {
+    mockFetch.mockResolvedValue({ isConnected: true, isInternetReachable: false });
+    const result = await checkConnectivity();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.code).toBe('NETWORK_ERROR');
+  });
 });

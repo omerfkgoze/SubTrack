@@ -57,4 +57,13 @@ describe('NetworkBanner', () => {
     fireEvent.press(screen.getByText('Retry'));
     expect(mockRefresh).toHaveBeenCalled();
   });
+
+  it('hides banner when isOnline is true (visible=false)', async () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: true });
+    const { UNSAFE_getByProps } = renderWithProvider(<NetworkBanner />);
+    await act(() => jest.runAllTimers());
+    // react-native-paper Banner renders children via height animation, not conditional render.
+    // Verify the Banner receives visible={false} when online.
+    expect(UNSAFE_getByProps({ visible: false })).toBeTruthy();
+  });
 });

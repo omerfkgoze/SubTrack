@@ -1,6 +1,6 @@
 # Story 5.5: Cloud Data Sync
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -304,3 +304,4 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-18: Story 5.5 implemented — proactive connectivity detection, global network banner, foreground refresh, pre-mutation connectivity guard, 14 new tests (520 total)
+- 2026-03-18: Code review fixes — aligned `checkConnectivity` with `useNetworkStatus` offline semantics (now also checks `isInternetReachable === false`), added missing `NetworkBanner` hidden-when-online test, added `networkCheck` WiFi-no-internet test case; 2 new tests (522 total)

@@ -3,7 +3,7 @@ import type { AppError } from '@features/subscriptions/types';
 
 export async function checkConnectivity(): Promise<{ error: AppError | null }> {
   const state = await NetInfo.fetch();
-  if (state.isConnected === false) {
+  if (state.isConnected === false || state.isInternetReachable === false) {
     return {
       error: {
         code: 'NETWORK_ERROR',
