@@ -6,6 +6,7 @@ import { NotificationPermissionScreen } from '@features/notifications/screens/No
 import { NotificationHistoryScreen } from '@features/notifications/screens/NotificationHistoryScreen';
 import { DataExportScreen } from '@features/settings/screens/DataExportScreen';
 import { MyDataScreen } from '@features/settings/screens/MyDataScreen';
+import { PaywallScreen } from '@features/premium/screens/PaywallScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -26,6 +27,11 @@ export function SettingsStack() {
         name="NotificationHistory"
         component={NotificationHistoryScreen}
         options={{ title: 'Notification History' }}
+      />
+      <Stack.Screen
+        name="Premium"
+        component={PaywallScreen}
+        options={{ title: 'Premium' }}
       />
       <Stack.Screen
         name="DataExport"

@@ -93,6 +93,7 @@ export type Database = {
           id: string
           user_id: string
           preferred_calendar_id: string | null
+          is_premium: boolean
           created_at: string
           updated_at: string
         }
@@ -100,6 +101,7 @@ export type Database = {
           id?: string
           user_id: string
           preferred_calendar_id?: string | null
+          is_premium?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -107,6 +109,7 @@ export type Database = {
           id?: string
           user_id?: string
           preferred_calendar_id?: string | null
+          is_premium?: boolean
           created_at?: string
           updated_at?: string
         }

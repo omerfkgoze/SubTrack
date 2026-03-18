@@ -20,6 +20,7 @@ import { UndoSnackbar } from '@shared/components/feedback/UndoSnackbar';
 import { CalendarCleanupDialog } from '@features/subscriptions/components/CalendarCleanupDialog';
 import { deleteCalendarEvent } from '@features/subscriptions/services/calendarService';
 import { supabase } from '@shared/services/supabase';
+import { SubscriptionCounter } from '@features/premium/components/SubscriptionCounter';
 
 const CARD_HEIGHT = 72;
 const SEPARATOR_HEIGHT = 12;
@@ -268,10 +269,13 @@ export function SubscriptionsScreen() {
         ItemSeparatorComponent={ItemSeparator}
         ListHeaderComponent={
           subscriptions.length > 0 ? (
-            <CostSummaryHeader
-              totalMonthlyCost={totalMonthlyCost}
-              subscriptionCount={activeCount}
-            />
+            <>
+              <CostSummaryHeader
+                totalMonthlyCost={totalMonthlyCost}
+                subscriptionCount={activeCount}
+              />
+              <SubscriptionCounter activeCount={activeCount} />
+            </>
           ) : null
         }
         ListEmptyComponent={

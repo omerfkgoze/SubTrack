@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -11,6 +13,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const setUser = useAuthStore((s) => s.setUser);
   const checkBiometricAvailability = useAuthStore((s) => s.checkBiometricAvailability);
   const handleSessionExpired = useAuthStore((s) => s.handleSessionExpired);
+  const checkPremiumStatus = usePremiumStore((s) => s.checkPremiumStatus);
 
   useEffect(() => {
     const {
@@ -30,17 +33,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       setSession(session);
       setUser(session?.user ?? null);
+
+      if (session) {
+        checkPremiumStatus();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [setSession, setUser, handleSessionExpired]);
+  }, [setSession, setUser, handleSessionExpired, checkPremiumStatus]);
 
   // Check biometric availability after auth state is initialized
   useEffect(() => {
     checkBiometricAvailability();
   }, [checkBiometricAvailability]);
+
+  // Refresh premium status when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && useAuthStore.getState().isAuthenticated) {
+        usePremiumStore.getState().refreshPremiumStatus();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   return <>{children}</>;
 }
