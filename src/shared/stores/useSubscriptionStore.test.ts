@@ -28,6 +28,15 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+jest.mock('@features/subscriptions/services/calendarService', () => ({
+  deleteCalendarEvent: jest.fn().mockResolvedValue(undefined),
+  addSubscriptionToCalendar: jest.fn().mockResolvedValue('new-event-id'),
+}));
+
+jest.mock('@features/settings/services/userSettingsService', () => ({
+  getUserSettings: jest.fn().mockResolvedValue(null),
+}));
+
 const {
   deleteSubscription: mockDeleteService,
   createSubscription: mockCreateService,
@@ -125,7 +134,7 @@ describe('useSubscriptionStore - delete operations', () => {
     it('clears existing pendingDelete before new delete (M1 fix)', async () => {
       // Set up a pending delete for sub-1
       useSubscriptionStore.setState({
-        pendingDelete: { subscription: mockSubscription, originalIndex: 0 },
+        pendingDelete: { subscription: mockSubscription, originalIndex: 0, calendarEventId: null },
         subscriptions: [mockSubscription2],
       });
 
@@ -189,7 +198,7 @@ describe('useSubscriptionStore - delete operations', () => {
       // Set up: sub-1 was deleted, only sub-2 remains
       useSubscriptionStore.setState({
         subscriptions: [mockSubscription2],
-        pendingDelete: { subscription: mockSubscription, originalIndex: 0 },
+        pendingDelete: { subscription: mockSubscription, originalIndex: 0, calendarEventId: null },
       });
 
       mockCreateService.mockResolvedValue({ data: { ...mockSubscription, id: 'sub-1-new' }, error: null });
@@ -208,7 +217,7 @@ describe('useSubscriptionStore - delete operations', () => {
       // Sub was at index 5 but array is now empty
       useSubscriptionStore.setState({
         subscriptions: [],
-        pendingDelete: { subscription: mockSubscription, originalIndex: 5 },
+        pendingDelete: { subscription: mockSubscription, originalIndex: 5, calendarEventId: null },
       });
 
       mockCreateService.mockResolvedValue({ data: mockSubscription, error: null });
@@ -238,7 +247,7 @@ describe('useSubscriptionStore - delete operations', () => {
 
       useSubscriptionStore.setState({
         subscriptions: [mockSubscription2],
-        pendingDelete: { subscription: mockSubscription, originalIndex: 0 },
+        pendingDelete: { subscription: mockSubscription, originalIndex: 0, calendarEventId: null },
       });
 
       mockCreateService.mockResolvedValue({
@@ -257,7 +266,7 @@ describe('useSubscriptionStore - delete operations', () => {
   describe('clearPendingDelete', () => {
     it('clears pendingDelete state', () => {
       useSubscriptionStore.setState({
-        pendingDelete: { subscription: mockSubscription, originalIndex: 0 },
+        pendingDelete: { subscription: mockSubscription, originalIndex: 0, calendarEventId: null },
       });
 
       act(() => {
@@ -381,7 +390,7 @@ describe('useSubscriptionStore - toggleSubscriptionStatus', () => {
     const cancelledSub = { ...activeSubscription, is_active: false };
     useSubscriptionStore.setState({
       subscriptions: [],
-      pendingDelete: { subscription: cancelledSub, originalIndex: 0 },
+      pendingDelete: { subscription: cancelledSub, originalIndex: 0, calendarEventId: null },
     });
 
     mockCreateService.mockResolvedValue({ data: { ...cancelledSub, id: 'sub-1-new' }, error: null });
@@ -455,5 +464,175 @@ describe('useSubscriptionStore - addSubscription', () => {
     });
 
     expect(mockCreateReminderFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSubscriptionStore - calendar cleanup on delete', () => {
+  const { deleteCalendarEvent: mockDeleteCalendarEvent, addSubscriptionToCalendar: mockAddSubscriptionToCalendar } =
+    jest.requireMock('@features/subscriptions/services/calendarService');
+  const { getUserSettings: mockGetUserSettings } =
+    jest.requireMock('@features/settings/services/userSettingsService');
+
+  const subWithCalendar: Subscription = {
+    ...mockSubscription,
+    calendar_event_id: 'cal-event-123',
+  };
+
+  const subWithoutCalendar: Subscription = {
+    ...mockSubscription,
+    calendar_event_id: null,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDeleteCalendarEvent.mockResolvedValue(undefined);
+    mockAddSubscriptionToCalendar.mockResolvedValue('new-event-id');
+    mockGetUserSettings.mockResolvedValue(null);
+  });
+
+  describe('deleteSubscription - calendar cleanup', () => {
+    it('calls deleteCalendarEvent when subscription has calendar_event_id', async () => {
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+      mockDeleteService.mockResolvedValue({ data: subWithCalendar, error: null });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().deleteSubscription('sub-1');
+      });
+
+      expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('cal-event-123');
+    });
+
+    it('does NOT call deleteCalendarEvent when subscription has no calendar_event_id', async () => {
+      useSubscriptionStore.setState({
+        subscriptions: [subWithoutCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+      mockDeleteService.mockResolvedValue({ data: subWithoutCalendar, error: null });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().deleteSubscription('sub-1');
+      });
+
+      expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
+    });
+
+    it('still deletes subscription when deleteCalendarEvent throws', async () => {
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+      mockDeleteCalendarEvent.mockRejectedValue(new Error('Calendar event not found'));
+      mockDeleteService.mockResolvedValue({ data: subWithCalendar, error: null });
+
+      let result: boolean;
+      await act(async () => {
+        result = await useSubscriptionStore.getState().deleteSubscription('sub-1');
+      });
+
+      expect(result!).toBe(true);
+      expect(useSubscriptionStore.getState().subscriptions).toHaveLength(0);
+    });
+
+    it('stores calendarEventId in pendingDelete for undo', async () => {
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+      mockDeleteService.mockResolvedValue({ data: subWithCalendar, error: null });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().deleteSubscription('sub-1');
+      });
+
+      const state = useSubscriptionStore.getState();
+      expect(state.pendingDelete?.calendarEventId).toBe('cal-event-123');
+    });
+  });
+
+  describe('undoDelete - calendar restore', () => {
+    it('restores calendar event via addSubscriptionToCalendar after undo', async () => {
+      const serverSub = { ...subWithCalendar, id: 'sub-1-new', calendar_event_id: null };
+      useSubscriptionStore.setState({
+        subscriptions: [],
+        pendingDelete: { subscription: subWithCalendar, originalIndex: 0, calendarEventId: 'cal-event-123' },
+      });
+      mockCreateService.mockResolvedValue({ data: serverSub, error: null });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().undoDelete();
+      });
+
+      expect(mockAddSubscriptionToCalendar).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'sub-1-new' }),
+        undefined,
+      );
+    });
+
+    it('uses preferred calendar when available for undo restore', async () => {
+      const serverSub = { ...subWithCalendar, id: 'sub-1-new', calendar_event_id: null };
+      useSubscriptionStore.setState({
+        subscriptions: [],
+        pendingDelete: { subscription: subWithCalendar, originalIndex: 0, calendarEventId: 'cal-event-123' },
+      });
+      mockCreateService.mockResolvedValue({ data: serverSub, error: null });
+      mockGetUserSettings.mockResolvedValue({ preferred_calendar_id: 'my-cal-id' });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().undoDelete();
+      });
+
+      expect(mockAddSubscriptionToCalendar).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'sub-1-new' }),
+        'my-cal-id',
+      );
+    });
+
+    it('subscription still restores when calendar restore fails', async () => {
+      const serverSub = { ...subWithCalendar, id: 'sub-1-new', calendar_event_id: null };
+      useSubscriptionStore.setState({
+        subscriptions: [],
+        pendingDelete: { subscription: subWithCalendar, originalIndex: 0, calendarEventId: 'cal-event-123' },
+      });
+      mockCreateService.mockResolvedValue({ data: serverSub, error: null });
+      mockAddSubscriptionToCalendar.mockRejectedValue(new Error('Calendar permission revoked'));
+
+      await act(async () => {
+        await useSubscriptionStore.getState().undoDelete();
+      });
+
+      const state = useSubscriptionStore.getState();
+      expect(state.subscriptions).toHaveLength(1);
+      expect(state.subscriptions[0].id).toBe('sub-1-new');
+    });
+
+    it('does not attempt calendar restore when no calendarEventId in pendingDelete', async () => {
+      const serverSub = { ...subWithoutCalendar, id: 'sub-1-new' };
+      useSubscriptionStore.setState({
+        subscriptions: [],
+        pendingDelete: { subscription: subWithoutCalendar, originalIndex: 0, calendarEventId: null },
+      });
+      mockCreateService.mockResolvedValue({ data: serverSub, error: null });
+
+      await act(async () => {
+        await useSubscriptionStore.getState().undoDelete();
+      });
+
+      expect(mockAddSubscriptionToCalendar).not.toHaveBeenCalled();
+    });
   });
 });

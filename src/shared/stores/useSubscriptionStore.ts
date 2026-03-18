@@ -10,13 +10,15 @@ import {
 } from '@features/subscriptions/services/subscriptionService';
 import { createDefaultReminder } from '@features/notifications';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
+import { deleteCalendarEvent, addSubscriptionToCalendar } from '@features/subscriptions/services/calendarService';
+import { getUserSettings } from '@features/settings/services/userSettingsService';
 
 interface SubscriptionState {
   subscriptions: Subscription[];
   isLoading: boolean;
   isSubmitting: boolean;
   error: AppError | null;
-  pendingDelete: { subscription: Subscription; originalIndex: number } | null;
+  pendingDelete: { subscription: Subscription; originalIndex: number; calendarEventId: string | null } | null;
 }
 
 interface SubscriptionActions {
@@ -166,14 +168,20 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         if (index === -1) return false;
 
         const subscription = currentState.subscriptions[index];
+        const calendarEventId = subscription.calendar_event_id ?? null;
 
         // Optimistic removal — instant UI feedback
         set({
           isSubmitting: true,
           subscriptions: currentState.subscriptions.filter((s) => s.id !== id),
-          pendingDelete: { subscription, originalIndex: index },
+          pendingDelete: { subscription, originalIndex: index, calendarEventId },
           error: null,
         });
+
+        // Fire-and-forget calendar event cleanup
+        if (calendarEventId) {
+          deleteCalendarEvent(calendarEventId).catch(() => {});
+        }
 
         // Background Supabase delete
         const result = await deleteSubscription(id);
@@ -205,7 +213,7 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
         const state = get();
         if (!state.pendingDelete) return;
 
-        const { subscription, originalIndex } = state.pendingDelete;
+        const { subscription, originalIndex, calendarEventId } = state.pendingDelete;
 
         // Restore locally first (instant)
         set((current) => {
@@ -243,6 +251,17 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
               s.id === subscription.id ? serverSubscription : s
             ),
           }));
+
+          // Restore calendar event if one existed before deletion
+          if (calendarEventId) {
+            try {
+              const settings = await getUserSettings(serverSubscription.user_id);
+              const preferredCalendarId = settings?.preferred_calendar_id ?? undefined;
+              await addSubscriptionToCalendar(serverSubscription, preferredCalendarId);
+            } catch {
+              // Calendar restore failure is non-blocking
+            }
+          }
         }
       },
 

@@ -45,6 +45,8 @@ import {
   clearPreferredCalendar,
 } from '@features/settings/services/userSettingsService';
 import { CalendarSelectionDialog } from '@features/subscriptions/components/CalendarSelectionDialog';
+import { CalendarCleanupDialog } from '@features/subscriptions/components/CalendarCleanupDialog';
+import { supabase } from '@shared/services/supabase';
 
 const REMINDER_TIMING_OPTIONS = [
   { value: '1', label: '1 day' },
@@ -82,6 +84,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarSelectionVisible, setCalendarSelectionVisible] = useState(false);
   const [writableCalendars, setWritableCalendars] = useState<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>([]);
+  const [calendarCleanupVisible, setCalendarCleanupVisible] = useState(false);
 
   useEffect(() => {
     if (!subscription || subscription.is_active === false) {
@@ -270,6 +273,12 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const handleToggleStatus = useCallback(async () => {
     if (!subscription) return;
     const wasActive = subscription.is_active !== false;
+
+    if (wasActive && subscription.calendar_event_id) {
+      setCalendarCleanupVisible(true);
+      return;
+    }
+
     const success = await toggleSubscriptionStatus(subscription.id);
     if (success) {
       const name = subscription.name;
@@ -280,6 +289,41 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
       setSnackbar({
         message: 'Failed to update subscription status. Please try again.',
       });
+    }
+  }, [subscription, toggleSubscriptionStatus]);
+
+  const handleCalendarCleanupRemove = useCallback(async () => {
+    if (!subscription) return;
+    setCalendarCleanupVisible(false);
+
+    // Delete calendar event and clear reference
+    try {
+      if (subscription.calendar_event_id) {
+        await deleteCalendarEvent(subscription.calendar_event_id);
+      }
+    } catch {
+      // Silently ignore — event may already be gone
+    }
+
+    await supabase
+      .from('subscriptions')
+      .update({ calendar_event_id: null })
+      .eq('id', subscription.id);
+
+    const success = await toggleSubscriptionStatus(subscription.id);
+    if (success) {
+      await updateSubscriptionInStore();
+      setSnackbar({ message: `${subscription.name} cancelled` });
+    }
+  }, [subscription, toggleSubscriptionStatus, updateSubscriptionInStore]);
+
+  const handleCalendarCleanupKeep = useCallback(async () => {
+    if (!subscription) return;
+    setCalendarCleanupVisible(false);
+
+    const success = await toggleSubscriptionStatus(subscription.id);
+    if (success) {
+      setSnackbar({ message: `${subscription.name} cancelled` });
     }
   }, [subscription, toggleSubscriptionStatus]);
 
@@ -560,6 +604,13 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      <CalendarCleanupDialog
+        visible={calendarCleanupVisible}
+        subscriptionName={subscription.name}
+        onRemove={handleCalendarCleanupRemove}
+        onKeep={handleCalendarCleanupKeep}
+      />
 
       <CalendarSelectionDialog
         visible={calendarSelectionVisible}

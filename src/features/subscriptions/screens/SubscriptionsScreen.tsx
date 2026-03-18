@@ -17,6 +17,9 @@ import { EmptySubscriptionState } from '@features/subscriptions/components/Empty
 import { SubscriptionListSkeleton } from '@features/subscriptions/components/SubscriptionListSkeleton';
 import { DeleteConfirmationDialog } from '@features/subscriptions/components/DeleteConfirmationDialog';
 import { UndoSnackbar } from '@shared/components/feedback/UndoSnackbar';
+import { CalendarCleanupDialog } from '@features/subscriptions/components/CalendarCleanupDialog';
+import { deleteCalendarEvent } from '@features/subscriptions/services/calendarService';
+import { supabase } from '@shared/services/supabase';
 
 const CARD_HEIGHT = 72;
 const SEPARATOR_HEIGHT = 12;
@@ -39,6 +42,7 @@ export function SubscriptionsScreen() {
   const [deleteDialogSubscription, setDeleteDialogSubscription] = useState<Subscription | null>(null);
   const [undoSnackbarVisible, setUndoSnackbarVisible] = useState(false);
   const [deletedSubscriptionName, setDeletedSubscriptionName] = useState('');
+  const [calendarCleanupSubscription, setCalendarCleanupSubscription] = useState<Subscription | null>(null);
   const {
     subscriptions, isLoading, error, fetchSubscriptions, clearError,
     deleteSubscription: storeDelete, undoDelete, clearPendingDelete,
@@ -117,16 +121,59 @@ export function SubscriptionsScreen() {
 
   const handleToggleStatus = useCallback(async (subscriptionId: string) => {
     const sub = subscriptions.find((s) => s.id === subscriptionId);
-    const wasActive = sub?.is_active !== false;
+    if (!sub) return;
+    const wasActive = sub.is_active !== false;
+
+    if (wasActive && sub.calendar_event_id) {
+      setCalendarCleanupSubscription(sub);
+      return;
+    }
+
     const success = await toggleSubscriptionStatus(subscriptionId);
     if (success) {
-      const name = sub?.name ?? 'Subscription';
+      const name = sub.name;
       setSnackbar({
         message: wasActive ? `${name} cancelled` : `${name} activated`,
         type: 'success',
       });
     }
   }, [toggleSubscriptionStatus, subscriptions]);
+
+  const handleCalendarCleanupRemove = useCallback(async () => {
+    if (!calendarCleanupSubscription) return;
+    const sub = calendarCleanupSubscription;
+    setCalendarCleanupSubscription(null);
+
+    try {
+      if (sub.calendar_event_id) {
+        await deleteCalendarEvent(sub.calendar_event_id);
+      }
+    } catch {
+      // Silently ignore
+    }
+
+    await supabase
+      .from('subscriptions')
+      .update({ calendar_event_id: null })
+      .eq('id', sub.id);
+
+    const success = await toggleSubscriptionStatus(sub.id);
+    if (success) {
+      await fetchSubscriptions();
+      setSnackbar({ message: `${sub.name} cancelled`, type: 'success' });
+    }
+  }, [calendarCleanupSubscription, toggleSubscriptionStatus, fetchSubscriptions]);
+
+  const handleCalendarCleanupKeep = useCallback(async () => {
+    if (!calendarCleanupSubscription) return;
+    const sub = calendarCleanupSubscription;
+    setCalendarCleanupSubscription(null);
+
+    const success = await toggleSubscriptionStatus(sub.id);
+    if (success) {
+      setSnackbar({ message: `${sub.name} cancelled`, type: 'success' });
+    }
+  }, [calendarCleanupSubscription, toggleSubscriptionStatus]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteDialogSubscription) return;
@@ -257,6 +304,12 @@ export function SubscriptionsScreen() {
         subscriptionName={deleteDialogSubscription?.name ?? ''}
         onConfirm={handleConfirmDelete}
         onDismiss={() => setDeleteDialogSubscription(null)}
+      />
+      <CalendarCleanupDialog
+        visible={!!calendarCleanupSubscription}
+        subscriptionName={calendarCleanupSubscription?.name ?? ''}
+        onRemove={handleCalendarCleanupRemove}
+        onKeep={handleCalendarCleanupKeep}
       />
       <UndoSnackbar
         visible={undoSnackbarVisible}

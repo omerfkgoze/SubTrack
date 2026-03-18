@@ -798,4 +798,112 @@ describe('SubscriptionDetailScreen', () => {
       });
     });
   });
+
+  describe('cancel subscription with calendar cleanup', () => {
+    const subWithCalendar: Subscription = {
+      ...mockSubscription,
+      calendar_event_id: 'cal-event-123',
+    };
+
+    it('shows CalendarCleanupDialog when cancelling subscription with calendar event', async () => {
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+        expect(screen.getByText('Do you want to remove calendar events for Netflix?')).toBeTruthy();
+      });
+    });
+
+    it('does not show CalendarCleanupDialog when cancelling subscription without calendar event', async () => {
+      const mockToggle = jest.fn().mockResolvedValue(true);
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        toggleSubscriptionStatus: mockToggle,
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(mockToggle).toHaveBeenCalledWith('sub-1');
+      });
+      expect(screen.queryByText('Remove Calendar Events?')).toBeNull();
+    });
+
+    it('"Remove" deletes calendar event and clears calendar_event_id', async () => {
+      const mockToggle = jest.fn().mockResolvedValue(true);
+      mockDeleteCalendarEvent.mockResolvedValue(undefined);
+
+      const mockSupabaseUpdate = jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ error: null }),
+      });
+      const { supabase: mockSupabase } = jest.requireMock('@shared/services/supabase');
+      mockSupabase.from = jest.fn().mockReturnValue({
+        update: mockSupabaseUpdate,
+      });
+
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        toggleSubscriptionStatus: mockToggle,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Remove'));
+
+      await waitFor(() => {
+        expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('cal-event-123');
+        expect(mockToggle).toHaveBeenCalledWith('sub-1');
+      });
+    });
+
+    it('"Keep" only toggles status without deleting calendar event', async () => {
+      const mockToggle = jest.fn().mockResolvedValue(true);
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        toggleSubscriptionStatus: mockToggle,
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Keep'));
+
+      await waitFor(() => {
+        expect(mockToggle).toHaveBeenCalledWith('sub-1');
+      });
+      expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
+    });
+  });
 });
