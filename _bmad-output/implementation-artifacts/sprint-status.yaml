@@ -72,14 +72,14 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4: Smart Reminders & Notifications
-  epic-4: in-progress
+  epic-4: done
   4-1-push-notification-permission-setup: done
   4-2-renewal-reminder-scheduling: done
   4-3-customizable-reminder-timing: done
   4-4-trial-expiry-notifications: done
   4-5-per-subscription-notification-control: done
   4-6-notification-history-health-indicator: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
 
   # Epic 5: Calendar Integration & Data Management
   epic-5: backlog
