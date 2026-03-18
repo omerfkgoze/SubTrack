@@ -5,6 +5,7 @@ import * as Calendar from 'expo-calendar';
 import { theme } from '@config/theme';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
 import { SettingsScreen } from './SettingsScreen';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -66,6 +67,12 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
+jest.mock('@shared/stores/usePremiumStore', () => ({
+  usePremiumStore: jest.fn(),
+}));
+
+const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePremiumStore>;
+
 function renderWithProvider() {
   return render(
     <PaperProvider theme={theme}>
@@ -85,6 +92,10 @@ beforeEach(() => {
     error: null,
   });
   useAuthStore.setState({ user: { id: 'user-1', email: 'test@example.com' } } as any);
+  mockUsePremiumStore.mockImplementation(
+    (selector: (s: { isPremium: boolean }) => unknown) =>
+      selector({ isPremium: false }) as never,
+  );
 });
 
 describe('SettingsScreen', () => {
@@ -111,6 +122,30 @@ describe('SettingsScreen', () => {
       renderWithProvider();
       fireEvent.press(screen.getByLabelText('Notification Settings'));
       expect(mockNavigate).toHaveBeenCalledWith('Notifications');
+    });
+  });
+
+  describe('Premium section (Story 6.2)', () => {
+    it('renders Premium section item for free users with crown-outline icon description', () => {
+      renderWithProvider();
+      expect(screen.getByLabelText('Premium')).toBeTruthy();
+      expect(screen.getByText('Unlock unlimited subscriptions')).toBeTruthy();
+    });
+
+    it('renders Premium section item for premium users with "Active" description', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      renderWithProvider();
+      expect(screen.getByLabelText('Premium')).toBeTruthy();
+      expect(screen.getByText('Active')).toBeTruthy();
+    });
+
+    it('navigates to Premium screen when Premium item is tapped', () => {
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Premium'));
+      expect(mockNavigate).toHaveBeenCalledWith('Premium');
     });
   });
 

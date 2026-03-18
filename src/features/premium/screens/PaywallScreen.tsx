@@ -5,32 +5,53 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
+import { PremiumStatusCard } from '@features/premium/components/PremiumStatusCard';
 
 const FREE_FEATURES = [
   'Up to 5 subscriptions',
-  'Renewal reminders',
+  'Basic renewal reminders',
   'Basic spending overview',
 ];
 
 const PREMIUM_FEATURES = [
   'Unlimited subscriptions',
+  'Advanced reminder options',
   'Calendar sync',
-  'Data export',
+  'Data export (CSV/JSON)',
   'Full analytics & insights',
 ];
 
 export function PaywallScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-  const [snackbarVisible, setSnackbarVisible] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState('');
+  const isPremium = usePremiumStore((s) => s.isPremium);
 
   const handleUpgradePress = () => {
-    setSnackbarVisible(true);
+    setSnackbarMessage('Coming soon');
   };
 
   const handleDismiss = () => {
     navigation.goBack();
   };
+
+  if (isPremium) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <PremiumStatusCard onManageError={(msg) => setSnackbarMessage(msg)} />
+        </ScrollView>
+        <Snackbar
+          visible={!!snackbarMessage}
+          onDismiss={() => setSnackbarMessage('')}
+          duration={3000}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
@@ -38,7 +59,7 @@ export function PaywallScreen() {
         <View style={styles.header}>
           <Icon source="crown" size={48} color={theme.colors.secondary} />
           <Text variant="headlineSmall" style={[styles.title, { color: theme.colors.onSurface }]}>
-            You've reached the free limit of 5 subscriptions
+            Unlock Premium
           </Text>
           <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
             Upgrade to Premium to track unlimited subscriptions and unlock all features.
@@ -125,11 +146,11 @@ export function PaywallScreen() {
       </ScrollView>
 
       <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
+        visible={!!snackbarMessage}
+        onDismiss={() => setSnackbarMessage('')}
         duration={3000}
       >
-        Coming soon
+        {snackbarMessage}
       </Snackbar>
     </SafeAreaView>
   );

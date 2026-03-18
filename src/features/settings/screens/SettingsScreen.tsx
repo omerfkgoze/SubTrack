@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
 import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
 import {
   getUserSettings,
@@ -33,6 +34,7 @@ export function SettingsScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const user = useAuthStore((s) => s.user);
+  const isPremium = usePremiumStore((s) => s.isPremium);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const biometryType = useAuthStore((s) => s.biometryType);
@@ -236,6 +238,26 @@ export function SettingsScreen() {
             onPress={() => navigation.navigate('NotificationHistory')}
             style={styles.listItem}
             accessibilityLabel="Notification History"
+            accessibilityRole="button"
+          />
+        </List.Section>
+
+        <List.Section>
+          <List.Subheader>Premium</List.Subheader>
+          <List.Item
+            title="Premium"
+            description={isPremium ? 'Active' : 'Unlock unlimited subscriptions'}
+            left={(props) => (
+              <List.Icon
+                {...props}
+                icon={isPremium ? 'crown' : 'crown-outline'}
+                color={isPremium ? theme.colors.secondary : undefined}
+              />
+            )}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('Premium')}
+            style={styles.listItem}
+            accessibilityLabel="Premium"
             accessibilityRole="button"
           />
         </List.Section>

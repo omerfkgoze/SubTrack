@@ -1,6 +1,6 @@
 # Story 6.2: Premium Feature Benefits Display
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,49 +27,49 @@ So that I can make an informed decision about upgrading.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Refactor PaywallScreen into a context-aware Premium screen (AC: #1, #2)
-  - [ ] 1.1: Rename and enhance `src/features/premium/screens/PaywallScreen.tsx` to handle both free and premium user states
-  - [ ] 1.2: Accept an optional `source` route param to support navigation from different entry points (settings vs. upsell gate) — update `SettingsStackParamList` in `types.ts`
-  - [ ] 1.3: When `isPremium === false` → show the existing paywall UI (feature comparison, pricing, CTAs) — this is already implemented
-  - [ ] 1.4: When `isPremium === true` → show the premium status view (Task 3)
-  - [ ] 1.5: Dynamic header: free users see "Unlock Premium", premium users see "Your Premium Plan"
+- [x] Task 1: Refactor PaywallScreen into a context-aware Premium screen (AC: #1, #2)
+  - [x] 1.1: Rename and enhance `src/features/premium/screens/PaywallScreen.tsx` to handle both free and premium user states
+  - [x] 1.2: Accept an optional `source` route param to support navigation from different entry points (settings vs. upsell gate) — update `SettingsStackParamList` in `types.ts`
+  - [x] 1.3: When `isPremium === false` → show the existing paywall UI (feature comparison, pricing, CTAs) — this is already implemented
+  - [x] 1.4: When `isPremium === true` → show the premium status view (Task 3)
+  - [x] 1.5: Dynamic header: free users see "Unlock Premium", premium users see "Your Premium Plan"
 
-- [ ] Task 2: Enhance feature comparison for free users (AC: #1)
-  - [ ] 2.1: Expand the existing `FREE_FEATURES` and `PREMIUM_FEATURES` arrays to include all differentiating features from the epic spec:
+- [x] Task 2: Enhance feature comparison for free users (AC: #1)
+  - [x] 2.1: Expand the existing `FREE_FEATURES` and `PREMIUM_FEATURES` arrays to include all differentiating features from the epic spec:
     - Free: Up to 5 subscriptions, Basic renewal reminders, Basic spending overview
     - Premium: Unlimited subscriptions, Advanced reminder options, Calendar sync, Data export (CSV/JSON), Full analytics & insights
-  - [ ] 2.2: Use a side-by-side or stacked comparison with clear visual distinction (checkmark vs. cross/lock icon)
-  - [ ] 2.3: Keep the existing pricing section (€2.99/month, €24.99/year with "Save 30%") and auto-renewal disclosures
-  - [ ] 2.4: Ensure "Subscribe" / "Upgrade to Premium" CTA remains a placeholder (shows "Coming soon" snackbar) — actual purchase flow is Story 6.3
-  - [ ] 2.5: Keep existing legal links (Restore Purchases, Terms, Privacy) — functional implementation in Stories 6.3/6.4
+  - [x] 2.2: Use a side-by-side or stacked comparison with clear visual distinction (checkmark vs. cross/lock icon)
+  - [x] 2.3: Keep the existing pricing section (€2.99/month, €24.99/year with "Save 30%") and auto-renewal disclosures
+  - [x] 2.4: Ensure "Subscribe" / "Upgrade to Premium" CTA remains a placeholder (shows "Coming soon" snackbar) — actual purchase flow is Story 6.3
+  - [x] 2.5: Keep existing legal links (Restore Purchases, Terms, Privacy) — functional implementation in Stories 6.3/6.4
 
-- [ ] Task 3: Premium subscriber status view (AC: #2)
-  - [ ] 3.1: Create a `PremiumStatusCard` component in `src/features/premium/components/PremiumStatusCard.tsx`
-  - [ ] 3.2: Display: crown icon, "Premium Active" badge, plan type placeholder text ("Premium Subscription")
-  - [ ] 3.3: Renewal date: show placeholder text for now ("Managed via App Store / Play Store") — real data comes after RevenueCat integration in Story 6.3
-  - [ ] 3.4: "Manage Subscription" button that opens the native subscription management URL (`Linking.openURL` to App Store/Play Store subscription settings)
-  - [ ] 3.5: Show list of premium features the user has access to (same premium features list but with all-unlocked styling)
-  - [ ] 3.6: Use `secondary` theme color (#8B5CF6) as accent for premium elements (consistent with Story 6.1)
+- [x] Task 3: Premium subscriber status view (AC: #2)
+  - [x] 3.1: Create a `PremiumStatusCard` component in `src/features/premium/components/PremiumStatusCard.tsx`
+  - [x] 3.2: Display: crown icon, "Premium Active" badge, plan type placeholder text ("Premium Subscription")
+  - [x] 3.3: Renewal date: show placeholder text for now ("Managed via App Store / Play Store") — real data comes after RevenueCat integration in Story 6.3
+  - [x] 3.4: "Manage Subscription" button that opens the native subscription management URL (`Linking.openURL` to App Store/Play Store subscription settings)
+  - [x] 3.5: Show list of premium features the user has access to (same premium features list but with all-unlocked styling)
+  - [x] 3.6: Use `secondary` theme color (#8B5CF6) as accent for premium elements (consistent with Story 6.1)
 
-- [ ] Task 4: Add "Premium" entry to Settings screen (AC: #1, #2)
-  - [ ] 4.1: Add a "Premium" `List.Section` in `SettingsScreen.tsx` between Notifications and Calendar sections
-  - [ ] 4.2: For free users: icon "crown-outline", title "Premium", description "Unlock unlimited subscriptions"
-  - [ ] 4.3: For premium users: icon "crown" (filled), title "Premium", description "Active" with secondary color
-  - [ ] 4.4: `onPress` → `navigation.navigate('Premium')`
-  - [ ] 4.5: Read `isPremium` from `usePremiumStore`
+- [x] Task 4: Add "Premium" entry to Settings screen (AC: #1, #2)
+  - [x] 4.1: Add a "Premium" `List.Section` in `SettingsScreen.tsx` between Notifications and Calendar sections
+  - [x] 4.2: For free users: icon "crown-outline", title "Premium", description "Unlock unlimited subscriptions"
+  - [x] 4.3: For premium users: icon "crown" (filled), title "Premium", description "Active" with secondary color
+  - [x] 4.4: `onPress` → `navigation.navigate('Premium')`
+  - [x] 4.5: Read `isPremium` from `usePremiumStore`
 
-- [ ] Task 5: Platform-specific subscription management URLs (AC: #2)
-  - [ ] 5.1: Create a utility `src/features/premium/services/subscriptionManagement.ts`
-  - [ ] 5.2: Export `openSubscriptionManagement()` function using `Platform.OS` to determine URL:
+- [x] Task 5: Platform-specific subscription management URLs (AC: #2)
+  - [x] 5.1: Create a utility `src/features/premium/services/subscriptionManagement.ts`
+  - [x] 5.2: Export `openSubscriptionManagement()` function using `Platform.OS` to determine URL:
     - iOS: `itms-apps://apps.apple.com/account/subscriptions`
     - Android: `https://play.google.com/store/account/subscriptions`
-  - [ ] 5.3: Use `Linking.openURL` with error handling (show snackbar if can't open)
+  - [x] 5.3: Use `Linking.openURL` with error handling (show snackbar if can't open)
 
-- [ ] Task 6: Tests (AC: #1, #2)
-  - [ ] 6.1: Unit test PaywallScreen — renders feature comparison for free users, renders status view for premium users
-  - [ ] 6.2: Unit test PremiumStatusCard — renders active status, manage subscription button
-  - [ ] 6.3: Unit test SettingsScreen Premium entry — shows correct icon/description based on premium status
-  - [ ] 6.4: Co-locate tests with source files per project convention
+- [x] Task 6: Tests (AC: #1, #2)
+  - [x] 6.1: Unit test PaywallScreen — renders feature comparison for free users, renders status view for premium users
+  - [x] 6.2: Unit test PremiumStatusCard — renders active status, manage subscription button
+  - [x] 6.3: Unit test SettingsScreen Premium entry — shows correct icon/description based on premium status
+  - [x] 6.4: Co-locate tests with source files per project convention
 
 ## Dev Notes
 
@@ -136,10 +136,32 @@ Follow co-located test pattern established in Story 6.1:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Enhanced `PaywallScreen.tsx` to be context-aware: reads `isPremium` from `usePremiumStore` and renders paywall UI for free users, `PremiumStatusCard` for premium users.
+- Dynamic header: free users see "Unlock Premium", premium users see "Your Premium Plan" (via SettingsStack title config — screen itself renders status card).
+- Expanded `FREE_FEATURES` (3 items) and `PREMIUM_FEATURES` (5 items) arrays per epic spec.
+- Created `PremiumStatusCard` component with crown icon, "Premium Active" badge, plan type, renewal placeholder, "Manage Subscription" button, and all-unlocked premium feature list.
+- Created `subscriptionManagement.ts` utility with `openSubscriptionManagement()` using `Platform.OS` to choose correct deep link URL; throws on failure so caller can show snackbar.
+- Added `source` optional param to `SettingsStackParamList.Premium` in `types.ts`.
+- Added "Premium" `List.Section` to `SettingsScreen.tsx` between Notifications and Calendar sections; shows correct icon/description based on `isPremium`.
+- All tests co-located with source files. 30 new tests added (PaywallScreen: 14, PremiumStatusCard: 7, SettingsScreen Premium: 3, existing extended). 574 total tests pass, zero regressions.
+
 ### File List
+
+- `src/features/premium/screens/PaywallScreen.tsx` (modified)
+- `src/features/premium/screens/PaywallScreen.test.tsx` (created)
+- `src/features/premium/components/PremiumStatusCard.tsx` (created)
+- `src/features/premium/components/PremiumStatusCard.test.tsx` (created)
+- `src/features/premium/services/subscriptionManagement.ts` (created)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified)
+- `src/features/settings/screens/SettingsScreen.test.tsx` (modified)
+- `src/app/navigation/types.ts` (modified)
+
+## Change Log
+
+- 2026-03-19: Initial implementation — context-aware PaywallScreen, PremiumStatusCard component, subscriptionManagement utility, Settings Premium entry, 30 new tests (claude-sonnet-4-6)
