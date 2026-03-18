@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react-native';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@config/theme';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
@@ -208,6 +208,87 @@ describe('NotificationHistoryScreen', () => {
 
       await waitFor(() => {
         expect(mocks.getNotificationHistory).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
+  describe('loading state (M1 fix)', () => {
+    it('shows loading indicator while data is being fetched', () => {
+      const mocks = getServiceMocks();
+      // Never resolve to keep loading state
+      mocks.getNotificationHistory.mockReturnValue(new Promise(() => {}));
+
+      renderWithProvider();
+
+      expect(screen.getByTestId('loading-indicator')).toBeTruthy();
+      expect(screen.queryByText(/No notifications yet/)).toBeNull();
+    });
+
+    it('hides loading indicator after data loads', async () => {
+      getServiceMocks().getNotificationHistory.mockResolvedValue(mockItems);
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-indicator')).toBeNull();
+        expect(screen.getByText('Netflix')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('error state (M2 fix)', () => {
+    it('shows error message when fetch fails', async () => {
+      getServiceMocks().getNotificationHistory.mockRejectedValue(new Error('Network error'));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText(/Something went wrong/)).toBeTruthy();
+      });
+    });
+
+    it('does not show empty state when fetch fails', async () => {
+      getServiceMocks().getNotificationHistory.mockRejectedValue(new Error('Network error'));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText(/Something went wrong/)).toBeTruthy();
+        expect(screen.queryByText(/No notifications yet/)).toBeNull();
+      });
+    });
+
+    it('shows retry button on error', async () => {
+      const mocks = getServiceMocks();
+      mocks.getNotificationHistory.mockRejectedValueOnce(new Error('fail'));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText('Retry')).toBeTruthy();
+      });
+    });
+
+    it('retries fetch when retry button pressed', async () => {
+      const mocks = getServiceMocks();
+      mocks.getNotificationHistory
+        .mockRejectedValueOnce(new Error('fail'))
+        .mockResolvedValueOnce(mockItems);
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText('Retry')).toBeTruthy();
+      });
+
+      await act(async () => {
+        fireEvent.press(screen.getByText('Retry'));
+        await Promise.resolve();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Netflix')).toBeTruthy();
+        expect(screen.queryByText(/Something went wrong/)).toBeNull();
       });
     });
   });

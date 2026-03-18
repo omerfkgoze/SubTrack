@@ -78,7 +78,7 @@ development_status:
   4-3-customizable-reminder-timing: done
   4-4-trial-expiry-notifications: done
   4-5-per-subscription-notification-control: done
-  4-6-notification-history-health-indicator: review
+  4-6-notification-history-health-indicator: done
   epic-4-retrospective: optional
 
   # Epic 5: Calendar Integration & Data Management

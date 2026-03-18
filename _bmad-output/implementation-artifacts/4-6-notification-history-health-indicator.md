@@ -1,6 +1,6 @@
 # Story 4.6: Notification History & Health Indicator
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -459,3 +459,4 @@ claude-sonnet-4-6
 ### Change Log
 
 - 2026-03-18: Implemented Story 4.6 — Notification History Screen, NotificationStatusBadge component, Settings navigation, HomeScreen badge integration; 40 new tests added (402 total)
+- 2026-03-18: Code review fixes — Added loading state (ActivityIndicator) and error state (retry prompt) to NotificationHistoryScreen; 6 new tests added (408 total)

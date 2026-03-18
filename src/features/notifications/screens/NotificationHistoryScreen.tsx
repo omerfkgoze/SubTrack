@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Chip, List, Text } from 'react-native-paper';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { Button, Chip, List, Text, useTheme } from 'react-native-paper';
 import { format } from 'date-fns';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import {
@@ -43,17 +43,23 @@ function EmptyState() {
 }
 
 export function NotificationHistoryScreen() {
+  const theme = useTheme();
   const user = useAuthStore((s) => s.user);
   const [items, setItems] = useState<NotificationHistoryItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
     try {
+      setHasError(false);
       const data = await getNotificationHistory(user.id);
       setItems(data);
     } catch {
-      // errors are non-blocking for list display
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -82,6 +88,34 @@ export function NotificationHistoryScreen() {
       />
     );
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <NotificationStatusBadge variant="banner" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} testID="loading-indicator" />
+        </View>
+      </View>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <View style={styles.container}>
+        <NotificationStatusBadge variant="banner" />
+        <View style={styles.emptyContainer}>
+          <List.Icon icon="alert-circle-outline" style={styles.emptyIcon} />
+          <Text variant="bodyLarge" style={styles.emptyText}>
+            Something went wrong loading your notifications.
+          </Text>
+          <Button mode="outlined" onPress={load} style={styles.retryButton}>
+            Retry
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -130,5 +164,13 @@ const styles = StyleSheet.create({
   },
   emptyListContent: {
     flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
   },
 });
