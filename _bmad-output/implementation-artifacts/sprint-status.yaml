@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-18 # story 5.5 ready-for-dev
+last_updated: 2026-03-18 # story 5.5 review
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -88,7 +88,7 @@ development_status:
   5-2-calendar-selection: done
   5-3-calendar-event-cleanup-on-subscription-delete: done
   5-4-export-subscription-data: done
-  5-5-cloud-data-sync: ready-for-dev
+  5-5-cloud-data-sync: review
   5-6-personal-data-management-gdpr: backlog
   epic-5-retrospective: optional
 

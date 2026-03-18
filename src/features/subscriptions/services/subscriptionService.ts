@@ -1,4 +1,5 @@
 import { supabase } from '@shared/services/supabase';
+import { checkConnectivity } from '@shared/services/networkCheck';
 import type {
   CreateSubscriptionDTO,
   SubscriptionResult,
@@ -9,6 +10,11 @@ export async function createSubscription(
   dto: CreateSubscriptionDTO,
 ): Promise<SubscriptionResult> {
   try {
+    const connectivity = await checkConnectivity();
+    if (connectivity.error) {
+      return { data: null, error: connectivity.error };
+    }
+
     const {
       data: { user },
       error: userError,
@@ -68,6 +74,11 @@ export async function updateSubscription(
   dto: Partial<CreateSubscriptionDTO>,
 ): Promise<SubscriptionResult> {
   try {
+    const connectivity = await checkConnectivity();
+    if (connectivity.error) {
+      return { data: null, error: connectivity.error };
+    }
+
     const {
       data: { user },
       error: userError,
@@ -155,6 +166,11 @@ export async function getSubscriptions(): Promise<SubscriptionListResult> {
 
 export async function deleteSubscription(id: string): Promise<SubscriptionResult> {
   try {
+    const connectivity = await checkConnectivity();
+    if (connectivity.error) {
+      return { data: null, error: connectivity.error };
+    }
+
     const {
       data: { user },
       error: userError,

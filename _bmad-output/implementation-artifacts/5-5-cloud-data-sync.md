@@ -1,6 +1,6 @@
 # Story 5.5: Cloud Data Sync
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -36,57 +36,57 @@ So that my data is safe and accessible if I change devices.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install `@react-native-community/netinfo` for connectivity detection (AC: #3)
-  - [ ] 1.1: Run `npx expo install @react-native-community/netinfo`
-  - [ ] 1.2: Verify TypeScript types are available (bundled with the package)
+- [x] Task 1: Install `@react-native-community/netinfo` for connectivity detection (AC: #3)
+  - [x] 1.1: Run `npx expo install @react-native-community/netinfo`
+  - [x] 1.2: Verify TypeScript types are available (bundled with the package)
 
-- [ ] Task 2: Create `useNetworkStatus` hook in `src/shared/hooks/` (AC: #3)
-  - [ ] 2.1: Create `src/shared/hooks/useNetworkStatus.ts`
-  - [ ] 2.2: Implement hook using `NetInfo.useNetInfo()` — returns `{ isConnected: boolean | null, isInternetReachable: boolean | null }`
-  - [ ] 2.3: Export a simple `isOnline` boolean derived from `isConnected && isInternetReachable !== false` (treat `null` as connected to avoid false negatives during initial check)
+- [x] Task 2: Create `useNetworkStatus` hook in `src/shared/hooks/` (AC: #3)
+  - [x] 2.1: Create `src/shared/hooks/useNetworkStatus.ts`
+  - [x] 2.2: Implement hook using `NetInfo.useNetInfo()` — returns `{ isConnected: boolean | null, isInternetReachable: boolean | null }`
+  - [x] 2.3: Export a simple `isOnline` boolean derived from `isConnected && isInternetReachable !== false` (treat `null` as connected to avoid false negatives during initial check)
 
-- [ ] Task 3: Create `NetworkBanner` component in `src/shared/components/feedback/` (AC: #3)
-  - [ ] 3.1: Create `src/shared/components/feedback/NetworkBanner.tsx`
-  - [ ] 3.2: Render a dismissible banner (react-native-paper `Banner`) at the top of the screen when `isOnline === false`
-  - [ ] 3.3: Banner text: "No internet connection" with action button "Retry" that calls `NetInfo.refresh()`
-  - [ ] 3.4: Use `theme.colors.error` for background accent / `theme.colors.errorContainer` for background
-  - [ ] 3.5: Banner auto-dismisses when connectivity is restored (`isOnline` becomes `true`)
+- [x] Task 3: Create `NetworkBanner` component in `src/shared/components/feedback/` (AC: #3)
+  - [x] 3.1: Create `src/shared/components/feedback/NetworkBanner.tsx`
+  - [x] 3.2: Render a dismissible banner (react-native-paper `Banner`) at the top of the screen when `isOnline === false`
+  - [x] 3.3: Banner text: "No internet connection" with action button "Retry" that calls `NetInfo.refresh()`
+  - [x] 3.4: Use `theme.colors.error` for background accent / `theme.colors.errorContainer` for background
+  - [x] 3.5: Banner auto-dismisses when connectivity is restored (`isOnline` becomes `true`)
 
-- [ ] Task 4: Integrate `NetworkBanner` into app layout (AC: #3)
-  - [ ] 4.1: Add `NetworkBanner` in `src/app/App.tsx` (or the root layout provider) so it appears globally above all screens
-  - [ ] 4.2: Place it inside `SafeAreaView` but above the navigation container so it overlays on all screens
+- [x] Task 4: Integrate `NetworkBanner` into app layout (AC: #3)
+  - [x] 4.1: Add `NetworkBanner` in `src/app/App.tsx` (or the root layout provider) so it appears globally above all screens
+  - [x] 4.2: Place it inside `SafeAreaView` but above the navigation container so it overlays on all screens
 
-- [ ] Task 5: Add foreground refresh to subscription store (AC: #1, #2)
-  - [ ] 5.1: In `src/app/navigation/index.tsx`, the existing `AppState` listener already handles background→foreground transitions for auth — extend it to also call `useSubscriptionStore.getState().fetchSubscriptions()` when app comes to foreground AND session is valid
-  - [ ] 5.2: This ensures data is refreshed from Supabase each time user returns to the app (cross-device edits become visible)
+- [x] Task 5: Add foreground refresh to subscription store (AC: #1, #2)
+  - [x] 5.1: In `src/app/navigation/index.tsx`, the existing `AppState` listener already handles background→foreground transitions for auth — extend it to also call `useSubscriptionStore.getState().fetchSubscriptions()` when app comes to foreground AND session is valid
+  - [x] 5.2: This ensures data is refreshed from Supabase each time user returns to the app (cross-device edits become visible)
 
-- [ ] Task 6: Ensure comprehensive data load on login (AC: #2)
-  - [ ] 6.1: Verify that after successful login, `fetchSubscriptions()` is called (already happens via screen `useEffect` hooks)
-  - [ ] 6.2: Verify that user settings (preferred calendar, notification preferences) are loaded on login — check `useNotificationStore` and `useSettingsStore` (if exists) or the screens that call `getUserSettings`
-  - [ ] 6.3: If any data is NOT fetched on login, add the missing fetch call to the appropriate screen or navigation listener — no new store needed, just ensure existing fetches are triggered
+- [x] Task 6: Ensure comprehensive data load on login (AC: #2)
+  - [x] 6.1: Verify that after successful login, `fetchSubscriptions()` is called (already happens via screen `useEffect` hooks)
+  - [x] 6.2: Verify that user settings (preferred calendar, notification preferences) are loaded on login — check `useNotificationStore` and `useSettingsStore` (if exists) or the screens that call `getUserSettings`
+  - [x] 6.3: If any data is NOT fetched on login, add the missing fetch call to the appropriate screen or navigation listener — no new store needed, just ensure existing fetches are triggered
 
-- [ ] Task 7: Add pre-mutation connectivity check to `subscriptionService.ts` (AC: #3)
-  - [ ] 7.1: Create `src/shared/services/networkCheck.ts` with a single function: `checkConnectivity(): Promise<void>` that calls `NetInfo.fetch()` and throws a typed error if `!isConnected`
-  - [ ] 7.2: In `subscriptionService.ts`, call `checkConnectivity()` at the start of `createSubscription`, `updateSubscription`, `deleteSubscription` — before any Supabase call
-  - [ ] 7.3: If connectivity check fails, return `{ data: null, error: { code: 'NETWORK_ERROR', message: 'No internet connection. Please check your connection and try again.' } }` immediately without hitting Supabase
-  - [ ] 7.4: Keep the existing `TypeError` catch as a fallback for edge cases where connectivity check passes but request still fails
+- [x] Task 7: Add pre-mutation connectivity check to `subscriptionService.ts` (AC: #3)
+  - [x] 7.1: Create `src/shared/services/networkCheck.ts` with a single function: `checkConnectivity(): Promise<void>` that calls `NetInfo.fetch()` and throws a typed error if `!isConnected`
+  - [x] 7.2: In `subscriptionService.ts`, call `checkConnectivity()` at the start of `createSubscription`, `updateSubscription`, `deleteSubscription` — before any Supabase call
+  - [x] 7.3: If connectivity check fails, return `{ data: null, error: { code: 'NETWORK_ERROR', message: 'No internet connection. Please check your connection and try again.' } }` immediately without hitting Supabase
+  - [x] 7.4: Keep the existing `TypeError` catch as a fallback for edge cases where connectivity check passes but request still fails
 
-- [ ] Task 8: Verify last-write-wins conflict resolution (AC: #4)
-  - [ ] 8.1: Supabase RLS + standard `UPDATE ... WHERE id = X AND user_id = Y` already implements last-write-wins (no versioning or optimistic locking in schema)
-  - [ ] 8.2: The `updated_at` column with `DEFAULT now()` on the server ensures the latest write's timestamp is recorded
-  - [ ] 8.3: No code changes needed — document in Dev Notes that last-write-wins is the default Supabase behavior and is sufficient for MVP
+- [x] Task 8: Verify last-write-wins conflict resolution (AC: #4)
+  - [x] 8.1: Supabase RLS + standard `UPDATE ... WHERE id = X AND user_id = Y` already implements last-write-wins (no versioning or optimistic locking in schema)
+  - [x] 8.2: The `updated_at` column with `DEFAULT now()` on the server ensures the latest write's timestamp is recorded
+  - [x] 8.3: No code changes needed — document in Dev Notes that last-write-wins is the default Supabase behavior and is sufficient for MVP
 
-- [ ] Task 9: Write tests (AC: all)
-  - [ ] 9.1: `src/shared/hooks/useNetworkStatus.test.ts` — mock `@react-native-community/netinfo`, test `isOnline` returns `true` when connected, `false` when disconnected, `true` when `isInternetReachable` is `null` (initial state)
-  - [ ] 9.2: `src/shared/components/feedback/NetworkBanner.test.tsx` — renders banner text when `isOnline` is `false`, hides when `true`, retry button calls `NetInfo.refresh()`
-  - [ ] 9.3: `src/shared/services/networkCheck.test.ts` — `checkConnectivity` resolves when connected, rejects/returns error when disconnected
-  - [ ] 9.4: `src/features/subscriptions/services/subscriptionService.test.ts` — update existing tests: verify `createSubscription` returns `NETWORK_ERROR` immediately when `checkConnectivity` fails (without calling Supabase)
-  - [ ] 9.5: Wrap `NetworkBanner` tests in `PaperProvider` (required for react-native-paper components)
+- [x] Task 9: Write tests (AC: all)
+  - [x] 9.1: `src/shared/hooks/useNetworkStatus.test.ts` — mock `@react-native-community/netinfo`, test `isOnline` returns `true` when connected, `false` when disconnected, `true` when `isInternetReachable` is `null` (initial state)
+  - [x] 9.2: `src/shared/components/feedback/NetworkBanner.test.tsx` — renders banner text when `isOnline` is `false`, hides when `true`, retry button calls `NetInfo.refresh()`
+  - [x] 9.3: `src/shared/services/networkCheck.test.ts` — `checkConnectivity` resolves when connected, rejects/returns error when disconnected
+  - [x] 9.4: `src/features/subscriptions/services/subscriptionService.test.ts` — update existing tests: verify `createSubscription` returns `NETWORK_ERROR` immediately when `checkConnectivity` fails (without calling Supabase)
+  - [x] 9.5: Wrap `NetworkBanner` tests in `PaperProvider` (required for react-native-paper components)
 
-- [ ] Task 10: Validate (AC: all)
-  - [ ] 10.1: `npx tsc --noEmit` — zero errors
-  - [ ] 10.2: ESLint clean on changed files
-  - [ ] 10.3: Full test suite passes (current baseline: 506 passing)
+- [x] Task 10: Validate (AC: all)
+  - [x] 10.1: `npx tsc --noEmit` — zero errors
+  - [x] 10.2: ESLint clean on changed files
+  - [x] 10.3: Full test suite passes (current baseline: 506 passing)
 
 ## Dev Notes
 
@@ -263,10 +263,44 @@ jest.mock('@react-native-community/netinfo', () => ({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Fixed `checkConnectivity` to use `=== false` instead of `!state.isConnected` to treat `null` (initial state) as connected
+- Fixed test mocks for `@react-native-community/netinfo` — requires `__esModule: true` + `default` object for default import compatibility
+- Used `jest.useFakeTimers()` + `jest.runAllTimers()` in NetworkBanner tests to handle react-native-paper Banner animations
+
 ### Completion Notes List
 
+- Installed `@react-native-community/netinfo` via `npx expo install` (SDK 54 compatible)
+- Created `useNetworkStatus` hook — reactive connectivity state with null-safe `isOnline` boolean
+- Created `NetworkBanner` component — global offline banner with retry using react-native-paper `Banner`
+- Created `networkCheck` service — imperative pre-mutation connectivity guard
+- Integrated `NetworkBanner` in `App.tsx` above `RootNavigator` for global visibility
+- Added foreground refresh in `navigation/index.tsx` — calls `fetchSubscriptions()` on background→active transition
+- Added `checkConnectivity()` guard to `createSubscription`, `updateSubscription`, `deleteSubscription` in `subscriptionService.ts`
+- Verified Task 6 (login data load) — existing screen `useEffect` hooks already fetch subscriptions and settings on mount
+- Verified Task 8 (last-write-wins) — Supabase default behavior, no code changes needed
+- Test suite: 520 passing (14 new tests added, 0 regressions)
+- All ACs satisfied: AC1 (real-time sync already existed + foreground refresh), AC2 (cross-device via Supabase + foreground refresh), AC3 (network banner + pre-mutation guard), AC4 (last-write-wins verified)
+
 ### File List
+
+- `src/shared/hooks/useNetworkStatus.ts` (new)
+- `src/shared/hooks/useNetworkStatus.test.ts` (new)
+- `src/shared/components/feedback/NetworkBanner.tsx` (new)
+- `src/shared/components/feedback/NetworkBanner.test.tsx` (new)
+- `src/shared/components/feedback/index.ts` (modified — added NetworkBanner export)
+- `src/shared/services/networkCheck.ts` (new)
+- `src/shared/services/networkCheck.test.ts` (new)
+- `src/app/App.tsx` (modified — added NetworkBanner)
+- `src/app/navigation/index.tsx` (modified — added foreground refresh)
+- `src/features/subscriptions/services/subscriptionService.ts` (modified — added connectivity checks)
+- `src/features/subscriptions/services/subscriptionService.test.ts` (modified — added connectivity test cases)
+- `package.json` (modified — added @react-native-community/netinfo)
+- `package-lock.json` (modified — lockfile update)
+
+### Change Log
+
+- 2026-03-18: Story 5.5 implemented — proactive connectivity detection, global network banner, foreground refresh, pre-mutation connectivity guard, 14 new tests (520 total)

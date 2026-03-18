@@ -11,6 +11,7 @@ import { MainTabs } from './MainTabs';
 import { BiometricPromptScreen } from '@features/auth/screens/BiometricPromptScreen';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
+import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { parseSupabaseDeepLink } from '@shared/services/deepLinking';
 import { setSessionFromTokens } from '@features/auth/services/authService';
 import { supabase } from '@shared/services/supabase';
@@ -109,6 +110,11 @@ export function RootNavigator() {
         }
         // Re-check notification permission when returning from device settings
         useNotificationStore.getState().checkPermission();
+        // Refresh subscriptions from Supabase for cross-device sync
+        const authState = useAuthStore.getState();
+        if (authState.isAuthenticated) {
+          useSubscriptionStore.getState().fetchSubscriptions();
+        }
       }
 
       appStateRef.current = nextAppState;
