@@ -5,6 +5,7 @@ import { SettingsScreen } from '@features/settings/screens/SettingsScreen';
 import { NotificationPermissionScreen } from '@features/notifications/screens/NotificationPermissionScreen';
 import { NotificationHistoryScreen } from '@features/notifications/screens/NotificationHistoryScreen';
 import { DataExportScreen } from '@features/settings/screens/DataExportScreen';
+import { MyDataScreen } from '@features/settings/screens/MyDataScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -30,6 +31,11 @@ export function SettingsStack() {
         name="DataExport"
         component={DataExportScreen}
         options={{ title: 'Data Export' }}
+      />
+      <Stack.Screen
+        name="MyData"
+        component={MyDataScreen}
+        options={{ title: 'My Data' }}
       />
     </Stack.Navigator>
   );

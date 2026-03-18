@@ -18,6 +18,7 @@ export type SettingsStackParamList = {
   NotificationHistory: undefined;
   Premium: undefined;
   DataExport: undefined;
+  MyData: undefined;
   Account: undefined;
 };
 

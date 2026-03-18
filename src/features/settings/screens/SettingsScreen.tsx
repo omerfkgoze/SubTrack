@@ -266,6 +266,16 @@ export function SettingsScreen() {
             accessibilityLabel="Data Export"
             accessibilityRole="button"
           />
+          <List.Item
+            title="My Data"
+            description="View and download your personal data"
+            left={(props) => <List.Icon {...props} icon="shield-account" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('MyData')}
+            style={styles.listItem}
+            accessibilityLabel="My Data"
+            accessibilityRole="button"
+          />
         </List.Section>
 
         <List.Section>

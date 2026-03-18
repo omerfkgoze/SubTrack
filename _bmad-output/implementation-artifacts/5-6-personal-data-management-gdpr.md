@@ -1,6 +1,6 @@
 # Story 5.6: Personal Data Management (GDPR)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -34,34 +34,34 @@ So that I have transparency and control over my information per GDPR requirement
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `MyDataScreen` component (AC: #1, #2)
-  - [ ] 1.1: Create `src/features/settings/screens/MyDataScreen.tsx`
-  - [ ] 1.2: Implement data summary section showing: email, account creation date (`user.created_at`), subscription count, storage location ("Supabase Cloud (EU)")
-  - [ ] 1.3: Implement "View My Data" expandable section with detailed breakdown: profile data, full subscriptions list, notification settings (from `useNotificationStore`), calendar preferences (from `getUserSettings`)
-  - [ ] 1.4: Implement "Download My Data" button triggering comprehensive JSON export
-  - [ ] 1.5: Add loading state while fetching user data
+- [x] Task 1: Create `MyDataScreen` component (AC: #1, #2)
+  - [x] 1.1: Create `src/features/settings/screens/MyDataScreen.tsx`
+  - [x] 1.2: Implement data summary section showing: email, account creation date (`user.created_at`), subscription count, storage location ("Supabase Cloud (EU)")
+  - [x] 1.3: Implement "View My Data" expandable section with detailed breakdown: profile data, full subscriptions list, notification settings (from `useNotificationStore`), calendar preferences (from `getUserSettings`)
+  - [x] 1.4: Implement "Download My Data" button triggering comprehensive JSON export
+  - [x] 1.5: Add loading state while fetching user data
 
-- [ ] Task 2: Create `personalDataService.ts` for GDPR data export (AC: #3)
-  - [ ] 2.1: Create `src/features/settings/services/personalDataService.ts`
-  - [ ] 2.2: Implement `exportPersonalData(userId, email, createdAt, subscriptions, notificationSettings, calendarPreferences)` — builds comprehensive JSON with all user data categories
-  - [ ] 2.3: Reuse the `expo-file-system/legacy` + `expo-sharing` pattern from `exportService.ts`
-  - [ ] 2.4: File naming: `subtrack-my-data-YYYY-MM-DD.json`
-  - [ ] 2.5: Add `checkConnectivity()` guard before data fetching (reuse from `networkCheck.ts`)
+- [x] Task 2: Create `personalDataService.ts` for GDPR data export (AC: #3)
+  - [x] 2.1: Create `src/features/settings/services/personalDataService.ts`
+  - [x] 2.2: Implement `exportPersonalData(userId, email, createdAt, subscriptions, notificationSettings, calendarPreferences)` — builds comprehensive JSON with all user data categories
+  - [x] 2.3: Reuse the `expo-file-system/legacy` + `expo-sharing` pattern from `exportService.ts`
+  - [x] 2.4: File naming: `subtrack-my-data-YYYY-MM-DD.json`
+  - [x] 2.5: Add `checkConnectivity()` guard before data fetching (reuse from `networkCheck.ts`)
 
-- [ ] Task 3: Register `MyData` route in navigation (AC: #1)
-  - [ ] 3.1: Add `MyData: undefined` to `SettingsStackParamList` in `src/app/navigation/types.ts`
-  - [ ] 3.2: Add `MyDataScreen` to `SettingsStack.tsx` with title "My Data"
-  - [ ] 3.3: Add "My Data" list item in `SettingsScreen.tsx` under the existing "Data" section (below "Data Export")
+- [x] Task 3: Register `MyData` route in navigation (AC: #1)
+  - [x] 3.1: Add `MyData: undefined` to `SettingsStackParamList` in `src/app/navigation/types.ts`
+  - [x] 3.2: Add `MyDataScreen` to `SettingsStack.tsx` with title "My Data"
+  - [x] 3.3: Add "My Data" list item in `SettingsScreen.tsx` under the existing "Data" section (below "Data Export")
 
-- [ ] Task 4: Write tests (AC: all)
-  - [ ] 4.1: `src/features/settings/screens/MyDataScreen.test.tsx` — renders summary (email, creation date, sub count, storage location), renders detailed view on "View My Data" tap, triggers download on "Download My Data" tap, shows loading state
-  - [ ] 4.2: `src/features/settings/services/personalDataService.test.ts` — generates correct JSON structure with all data categories, writes file and calls Sharing.shareAsync, handles connectivity failure
-  - [ ] 4.3: Wrap all component tests in `PaperProvider` (MANDATORY)
+- [x] Task 4: Write tests (AC: all)
+  - [x] 4.1: `src/features/settings/screens/MyDataScreen.test.tsx` — renders summary (email, creation date, sub count, storage location), renders detailed view on "View My Data" tap, triggers download on "Download My Data" tap, shows loading state
+  - [x] 4.2: `src/features/settings/services/personalDataService.test.ts` — generates correct JSON structure with all data categories, writes file and calls Sharing.shareAsync, handles connectivity failure
+  - [x] 4.3: Wrap all component tests in `PaperProvider` (MANDATORY)
 
-- [ ] Task 5: Validate (AC: all)
-  - [ ] 5.1: `npx tsc --noEmit` — zero errors
-  - [ ] 5.2: ESLint clean on changed files
-  - [ ] 5.3: Full test suite passes (current baseline: 522 passing)
+- [x] Task 5: Validate (AC: all)
+  - [x] 5.1: `npx tsc --noEmit` — zero errors
+  - [x] 5.2: ESLint clean on changed files
+  - [x] 5.3: Full test suite passes (current baseline: 522 passing)
 
 ## Dev Notes
 
@@ -178,10 +178,29 @@ In `SettingsScreen.tsx`, add below the existing "Data Export" `List.Item` (line 
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Implemented `MyDataScreen` with data summary (AC1), expandable detailed view via `List.Accordion` (AC2), "Download My Data" button (AC3), and loading state.
+- Implemented `personalDataService.ts` with `exportPersonalData()` — full GDPR JSON export including ALL subscription fields (not the filtered `EXPORT_FIELDS` from `exportService.ts`), plus profile, notification settings, and calendar preferences. Reused `expo-file-system/legacy` + `expo-sharing` pattern. `checkConnectivity()` guard applied before data fetch.
+- Registered `MyData` route in `SettingsStackParamList`, `SettingsStack.tsx`, and added "My Data" item to `SettingsScreen.tsx` Data section below "Data Export".
+- AC4 (account deletion) already satisfied by auth flow — `MyDataScreen` is only accessible to authenticated users.
+- 8 component tests + 4 service tests = 12 new tests. Full suite: 534 passing (baseline was 522). TypeScript and ESLint clean.
+- `findByText` / `findByLabelText` used in component tests (with 5s timeout) to reliably wait for async loading state resolution.
+
 ### File List
+
+- `src/features/settings/screens/MyDataScreen.tsx` (new)
+- `src/features/settings/screens/MyDataScreen.test.tsx` (new)
+- `src/features/settings/services/personalDataService.ts` (new)
+- `src/features/settings/services/personalDataService.test.ts` (new)
+- `src/app/navigation/types.ts` (modified — added `MyData: undefined`)
+- `src/app/navigation/SettingsStack.tsx` (modified — added `MyDataScreen` screen)
+- `src/features/settings/screens/SettingsScreen.tsx` (modified — added "My Data" list item)
+
+### Change Log
+
+- 2026-03-18: Implemented Story 5.6 — Personal Data Management (GDPR). Added `MyDataScreen`, `personalDataService`, navigation route, and SettingsScreen entry. 12 new tests (534 total).
