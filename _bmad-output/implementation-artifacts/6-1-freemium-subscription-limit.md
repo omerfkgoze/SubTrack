@@ -1,6 +1,6 @@
 # Story 6.1: Freemium Subscription Limit
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -104,6 +104,7 @@ So that I can decide when premium is worth it for me.
 ### Architecture Decision: Hybrid Enforcement (Client + Server)
 
 Per `docs/epic-6-prep-freemium-enforcement-architecture.md`:
+
 - **Client-side** handles UX gating (paywall prompt, disabled UI) — this story
 - **Supabase RLS** INSERT policy for server-side enforcement — deferred to Story 6.3 when RevenueCat webhook populates entitlement data
 - Client-side check runs BEFORE navigation to add flow — no failed network request, no error state
@@ -117,6 +118,7 @@ Count only **active** subscriptions toward the limit (exclude cancelled subscrip
 ### IAP Library: RevenueCat (react-native-purchases)
 
 Per `docs/epic-6-prep-revenuecat-vs-storekit-decision.md`:
+
 - Do NOT use `react-native-iap` or direct StoreKit/Google Play Billing
 - Use `react-native-purchases` (RevenueCat SDK)
 - However, the actual RevenueCat SDK installation and purchase flow is **NOT in scope for Story 6.1** — that is Story 6.3
@@ -126,6 +128,7 @@ Per `docs/epic-6-prep-revenuecat-vs-storekit-decision.md`:
 ### Premium State Source of Truth
 
 For Story 6.1 (before RevenueCat integration):
+
 1. Add `is_premium BOOLEAN DEFAULT false` to `user_settings` table
 2. `usePremiumStore` reads from Supabase `user_settings.is_premium`
 3. Cached locally in AsyncStorage via Zustand persist
@@ -134,6 +137,7 @@ For Story 6.1 (before RevenueCat integration):
 ### Paywall Compliance Requirements
 
 Per `docs/epic-6-prep-iap-guideline-review.md`, the paywall screen MUST include:
+
 - Feature comparison (free vs premium)
 - Pricing with auto-renewal disclosure: "Billed monthly. Auto-renews. Cancel anytime."
 - Restore Purchases link (can be non-functional placeholder until Story 6.4)
@@ -142,17 +146,17 @@ Per `docs/epic-6-prep-iap-guideline-review.md`, the paywall screen MUST include:
 
 ### Existing Code to Reuse / Integrate With
 
-| Component | Location | Integration Point |
-|---|---|---|
-| Subscription list & count | `src/shared/stores/useSubscriptionStore.ts` | Read `subscriptions` array for active count |
-| Add subscription trigger | `src/app/navigation/MainTabs.tsx` | FAB button that opens add screen — gate here |
-| Add subscription screen | `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` | Alternative gate point |
-| Auth session | `src/shared/stores/useAuthStore.ts` | Get `user.id` for Supabase queries |
-| User settings service | `src/features/settings/services/userSettingsService.ts` | Extend with `is_premium` queries |
-| Theme colors | `src/config/theme.ts` | `secondary: '#8B5CF6'` for premium accent |
-| Navigation types | `src/app/navigation/types.ts` | Add PaywallScreen route |
-| Settings stack | `src/app/navigation/SettingsStack.tsx` | Add Premium/Paywall route |
-| Empty premium feature dirs | `src/features/premium/` | Scaffolded with .gitkeep — populate with components/screens/services |
+| Component                  | Location                                                       | Integration Point                                                    |
+| -------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Subscription list & count  | `src/shared/stores/useSubscriptionStore.ts`                    | Read `subscriptions` array for active count                          |
+| Add subscription trigger   | `src/app/navigation/MainTabs.tsx`                              | FAB button that opens add screen — gate here                         |
+| Add subscription screen    | `src/features/subscriptions/screens/AddSubscriptionScreen.tsx` | Alternative gate point                                               |
+| Auth session               | `src/shared/stores/useAuthStore.ts`                            | Get `user.id` for Supabase queries                                   |
+| User settings service      | `src/features/settings/services/userSettingsService.ts`        | Extend with `is_premium` queries                                     |
+| Theme colors               | `src/config/theme.ts`                                          | `secondary: '#8B5CF6'` for premium accent                            |
+| Navigation types           | `src/app/navigation/types.ts`                                  | Add PaywallScreen route                                              |
+| Settings stack             | `src/app/navigation/SettingsStack.tsx`                         | Add Premium/Paywall route                                            |
+| Empty premium feature dirs | `src/features/premium/`                                        | Scaffolded with .gitkeep — populate with components/screens/services |
 
 ### Zustand Store Pattern
 

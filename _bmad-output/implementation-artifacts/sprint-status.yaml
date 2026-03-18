@@ -94,7 +94,7 @@ development_status:
 
   # Epic 6: Premium & Monetization
   epic-6: in-progress
-  6-1-freemium-subscription-limit: review
+  6-1-freemium-subscription-limit: done
   6-2-premium-feature-benefits-display: backlog
   6-3-in-app-purchase-flow: backlog
   6-4-restore-previous-purchases: backlog
