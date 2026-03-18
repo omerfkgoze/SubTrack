@@ -905,5 +905,64 @@ describe('SubscriptionDetailScreen', () => {
       });
       expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
     });
+
+    it('"Remove" shows error snackbar when toggleSubscriptionStatus fails', async () => {
+      const mockToggle = jest.fn().mockResolvedValue(false);
+      mockDeleteCalendarEvent.mockResolvedValue(undefined);
+
+      const mockSupabaseUpdate = jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ error: null }),
+      });
+      const { supabase: mockSupabase } = jest.requireMock('@shared/services/supabase');
+      mockSupabase.from = jest.fn().mockReturnValue({ update: mockSupabaseUpdate });
+
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        toggleSubscriptionStatus: mockToggle,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Remove'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to update subscription status. Please try again.')).toBeTruthy();
+      });
+    });
+
+    it('"Keep" shows error snackbar when toggleSubscriptionStatus fails', async () => {
+      const mockToggle = jest.fn().mockResolvedValue(false);
+      useSubscriptionStore.setState({
+        subscriptions: [subWithCalendar],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        toggleSubscriptionStatus: mockToggle,
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Cancel Subscription'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByText('Keep'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to update subscription status. Please try again.')).toBeTruthy();
+      });
+    });
   });
 });

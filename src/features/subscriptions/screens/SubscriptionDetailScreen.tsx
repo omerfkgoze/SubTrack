@@ -314,6 +314,8 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
     if (success) {
       await updateSubscriptionInStore();
       setSnackbar({ message: `${subscription.name} cancelled` });
+    } else {
+      setSnackbar({ message: 'Failed to update subscription status. Please try again.' });
     }
   }, [subscription, toggleSubscriptionStatus, updateSubscriptionInStore]);
 
@@ -324,6 +326,8 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
     const success = await toggleSubscriptionStatus(subscription.id);
     if (success) {
       setSnackbar({ message: `${subscription.name} cancelled` });
+    } else {
+      setSnackbar({ message: 'Failed to update subscription status. Please try again.' });
     }
   }, [subscription, toggleSubscriptionStatus]);
 

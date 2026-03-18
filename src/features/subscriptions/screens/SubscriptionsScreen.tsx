@@ -161,6 +161,8 @@ export function SubscriptionsScreen() {
     if (success) {
       await fetchSubscriptions();
       setSnackbar({ message: `${sub.name} cancelled`, type: 'success' });
+    } else {
+      setSnackbar({ message: 'Failed to update subscription status. Please try again.', type: 'error' });
     }
   }, [calendarCleanupSubscription, toggleSubscriptionStatus, fetchSubscriptions]);
 
@@ -172,6 +174,8 @@ export function SubscriptionsScreen() {
     const success = await toggleSubscriptionStatus(sub.id);
     if (success) {
       setSnackbar({ message: `${sub.name} cancelled`, type: 'success' });
+    } else {
+      setSnackbar({ message: 'Failed to update subscription status. Please try again.', type: 'error' });
     }
   }, [calendarCleanupSubscription, toggleSubscriptionStatus]);
 

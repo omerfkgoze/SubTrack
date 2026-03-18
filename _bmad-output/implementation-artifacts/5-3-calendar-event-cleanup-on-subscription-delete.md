@@ -1,6 +1,6 @@
 # Story 5.3: Calendar Event Cleanup on Subscription Delete
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -341,9 +341,11 @@ Claude Opus 4.6
 - src/features/subscriptions/screens/SubscriptionDetailScreen.tsx
 - src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx
 - src/features/subscriptions/screens/SubscriptionsScreen.tsx
+- src/features/subscriptions/screens/SubscriptionsScreen.test.tsx
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - _bmad-output/implementation-artifacts/5-3-calendar-event-cleanup-on-subscription-delete.md
 
 ### Change Log
 
 - **2026-03-18:** Implemented Story 5.3 — Calendar event cleanup on subscription delete. Added calendar event deletion on subscription delete (fire-and-forget), calendar event restore on undo, cancel-with-calendar prompt dialog, and comprehensive test coverage (23 new tests, 488 total passing).
+- **2026-03-18:** Code review fixes — Added missing error feedback (else branch with snackbar) when `toggleSubscriptionStatus` fails in `handleCalendarCleanupRemove` and `handleCalendarCleanupKeep` on both SubscriptionDetailScreen and SubscriptionsScreen. Added 4 new tests covering these failure cases (492 total passing).

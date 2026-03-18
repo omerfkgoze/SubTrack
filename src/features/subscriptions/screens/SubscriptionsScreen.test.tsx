@@ -188,6 +188,68 @@ describe('SubscriptionsScreen - calendar cleanup on cancel', () => {
     expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
   });
 
+  it('"Remove" on CalendarCleanupDialog shows error snackbar when toggle fails', async () => {
+    const mockToggle = jest.fn().mockResolvedValue(false);
+    const mockFetch = jest.fn().mockResolvedValue(undefined);
+    mockDeleteCalendarEvent.mockResolvedValue(undefined);
+
+    const { supabase: mockSupabase } = jest.requireMock('@shared/services/supabase');
+    mockSupabase.from = jest.fn().mockReturnValue({
+      update: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) }),
+    });
+
+    useSubscriptionStore.setState({
+      subscriptions: [subWithCalendar],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+      toggleSubscriptionStatus: mockToggle,
+      fetchSubscriptions: mockFetch,
+    });
+
+    renderScreen();
+
+    fireEvent.press(screen.getByLabelText('Toggle status for Spotify'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('Remove'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to update subscription status. Please try again.')).toBeTruthy();
+    });
+  });
+
+  it('"Keep" on CalendarCleanupDialog shows error snackbar when toggle fails', async () => {
+    const mockToggle = jest.fn().mockResolvedValue(false);
+    useSubscriptionStore.setState({
+      subscriptions: [subWithCalendar],
+      isLoading: false,
+      isSubmitting: false,
+      error: null,
+      pendingDelete: null,
+      toggleSubscriptionStatus: mockToggle,
+      fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+    });
+
+    renderScreen();
+
+    fireEvent.press(screen.getByLabelText('Toggle status for Spotify'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Remove Calendar Events?')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('Keep'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to update subscription status. Please try again.')).toBeTruthy();
+    });
+  });
+
   it('swipe-delete with calendar event calls deleteCalendarEvent via store', async () => {
     const mockStoreDelete = jest.fn().mockResolvedValue(true);
     useSubscriptionStore.setState({
