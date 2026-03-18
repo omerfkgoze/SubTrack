@@ -26,7 +26,7 @@ interface NotificationActions {
   clearError: () => void;
 }
 
-type NotificationStore = NotificationState & NotificationActions;
+export type NotificationStore = NotificationState & NotificationActions;
 
 export const useNotificationStore = create<NotificationStore>()(
   persist(

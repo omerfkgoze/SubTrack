@@ -19,3 +19,8 @@ export const theme: MD3Theme = {
     onTertiaryContainer: '#003822',
   },
 };
+
+export const opacityValues = {
+  muted: 0.6,
+  mutedLarge: 0.7,
+} as const;

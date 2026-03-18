@@ -59,7 +59,7 @@ interface AuthActions {
   clearSessionExpiredMessage: () => void;
 }
 
-type AuthStore = AuthState & AuthActions;
+export type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(

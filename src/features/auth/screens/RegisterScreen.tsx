@@ -9,6 +9,7 @@ import { registerSchema } from '../types/schemas';
 import type { RegisterFormData } from '../types';
 import type { AuthStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { opacityValues } from '@config/theme';
 import { PasswordRequirements } from '../components/PasswordRequirements';
 
 type RegisterNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -212,7 +213,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.6,
+    opacity: opacityValues.muted,
     marginBottom: 24,
   },
   authError: {

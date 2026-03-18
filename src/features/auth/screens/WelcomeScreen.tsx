@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import type { AuthStackScreenProps } from '@app/navigation/types';
+import { opacityValues } from '@config/theme';
 
 export function WelcomeScreen({ navigation }: AuthStackScreenProps<'Welcome'>) {
   return (
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginBottom: 32,
-    opacity: 0.7,
+    opacity: opacityValues.mutedLarge,
   },
   button: {
     width: '100%',

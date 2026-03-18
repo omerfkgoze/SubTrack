@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
+import type { ReactTestInstance } from 'react-test-renderer';
 import { PaperProvider } from 'react-native-paper';
 import { SubscriptionCard } from './SubscriptionCard';
 import type { Subscription } from '@features/subscriptions/types';
@@ -108,8 +109,7 @@ describe('SubscriptionCard', () => {
     const inactiveSub = { ...mockSubscription, is_active: false };
     const { toJSON } = renderWithProvider(<SubscriptionCard subscription={inactiveSub} />);
     const json = toJSON();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper for tree traversal
-    const findOpacity = (node: any): boolean => {
+    const findOpacity = (node: ReactTestInstance | null): boolean => {
       if (!node) return false;
       if (node.props?.style) {
         const styleArr = Array.isArray(node.props.style) ? node.props.style : [node.props.style];
@@ -118,8 +118,7 @@ describe('SubscriptionCard', () => {
         }
       }
       if (node.children) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper
-        return node.children.some((child: any) => typeof child === 'object' && findOpacity(child));
+        return node.children.some((child: ReactTestInstance | string) => typeof child === 'object' && findOpacity(child));
       }
       return false;
     };
@@ -208,16 +207,14 @@ describe('SubscriptionCard', () => {
       // line-through should NOT be in the styles for active
       // We check that the cancelled-specific style object is not applied
       const parsed = toJSON();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findLineThroughOnPrice = (node: any): boolean => {
+      const findLineThroughOnPrice = (node: ReactTestInstance | null): boolean => {
         if (!node) return false;
         if (node.type === 'Text' && node.children?.includes('€17.99/mo')) {
           const styleArr = Array.isArray(node.props?.style) ? node.props.style : [node.props?.style];
           return styleArr.some((s: Record<string, unknown>) => s && s.textDecorationLine === 'line-through');
         }
         if (node.children) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return node.children.some((child: any) => typeof child === 'object' && findLineThroughOnPrice(child));
+          return node.children.some((child: ReactTestInstance | string) => typeof child === 'object' && findLineThroughOnPrice(child));
         }
         return false;
       };

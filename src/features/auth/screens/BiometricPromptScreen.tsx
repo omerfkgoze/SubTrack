@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, useTheme } from 'react-native-paper';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { opacityValues } from '@config/theme';
 
 interface BiometricPromptScreenProps {
   onSuccess: () => void;
@@ -48,10 +49,7 @@ export function BiometricPromptScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text
-        variant="headlineMedium"
-        style={[styles.title, { color: theme.colors.primary }]}
-      >
+      <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
         SubTrack
       </Text>
 
@@ -63,7 +61,13 @@ export function BiometricPromptScreen({
 
       {showActions && (
         <View style={styles.errorContainer}>
-          <Text variant="bodyLarge" style={[styles.errorText, { color: error ? theme.colors.error : theme.colors.onSurface }]}>
+          <Text
+            variant="bodyLarge"
+            style={[
+              styles.errorText,
+              { color: error ? theme.colors.error : theme.colors.onSurface },
+            ]}
+          >
             {isSessionExpired
               ? 'Session expired. Please log in with your password.'
               : error?.message || 'Biometric authentication failed'}
@@ -113,7 +117,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     textAlign: 'center',
-    opacity: 0.6,
+    opacity: opacityValues.muted,
     marginTop: 16,
   },
   errorContainer: {

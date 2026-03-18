@@ -9,6 +9,7 @@ import { loginSchema } from '../types/schemas';
 import type { LoginFormData } from '../types';
 import type { AuthStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { opacityValues } from '@config/theme';
 
 type LoginNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.6,
+    opacity: opacityValues.muted,
     marginBottom: 24,
   },
   authError: {

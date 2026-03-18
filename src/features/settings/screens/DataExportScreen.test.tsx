@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@config/theme';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
+import type { SubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import type { Subscription } from '@features/subscriptions/types';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -66,12 +67,11 @@ const renderWithProvider = (ui: React.ReactElement) =>
   render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
 
 function setupStore(subscriptions: Subscription[]) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockUseSubscriptionStore.mockImplementation((selector: (state: any) => unknown) =>
+  mockUseSubscriptionStore.mockImplementation((selector: (state: SubscriptionStore) => unknown) =>
     selector({
       subscriptions,
       fetchSubscriptions: mockFetchSubscriptions,
-    })
+    } as unknown as SubscriptionStore)
   );
 }
 

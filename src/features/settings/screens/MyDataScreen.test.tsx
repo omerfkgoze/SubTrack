@@ -27,8 +27,11 @@ jest.mock('@features/settings/services/userSettingsService');
 jest.mock('@features/settings/services/personalDataService');
 
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
+import type { SubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import type { AuthStore } from '@shared/stores/useAuthStore';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
+import type { NotificationStore } from '@shared/stores/useNotificationStore';
 import { getUserSettings } from '@features/settings/services/userSettingsService';
 import { exportPersonalData } from '@features/settings/services/personalDataService';
 import { MyDataScreen } from './MyDataScreen';
@@ -71,17 +74,14 @@ const mockUser = {
 const mockFetchSubscriptions = jest.fn().mockResolvedValue(undefined);
 
 function setupStores(subscriptions: Subscription[] = [makeSubscription('1')]) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockUseSubscriptionStore.mockImplementation((selector: (state: any) => unknown) =>
-    selector({ subscriptions, fetchSubscriptions: mockFetchSubscriptions })
+  mockUseSubscriptionStore.mockImplementation((selector: (state: SubscriptionStore) => unknown) =>
+    selector({ subscriptions, fetchSubscriptions: mockFetchSubscriptions } as unknown as SubscriptionStore)
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockUseAuthStore.mockImplementation((selector: (state: any) => unknown) =>
-    selector({ user: mockUser })
+  mockUseAuthStore.mockImplementation((selector: (state: AuthStore) => unknown) =>
+    selector({ user: mockUser } as unknown as AuthStore)
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockUseNotificationStore.mockImplementation((selector: (state: any) => unknown) =>
-    selector({ permissionStatus: 'granted', expoPushToken: null })
+  mockUseNotificationStore.mockImplementation((selector: (state: NotificationStore) => unknown) =>
+    selector({ permissionStatus: 'granted', expoPushToken: null } as unknown as NotificationStore)
   );
 }
 

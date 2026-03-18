@@ -32,7 +32,7 @@ interface SubscriptionActions {
   clearError: () => void;
 }
 
-type SubscriptionStore = SubscriptionState & SubscriptionActions;
+export type SubscriptionStore = SubscriptionState & SubscriptionActions;
 
 export const useSubscriptionStore = create<SubscriptionStore>()(
   persist(
