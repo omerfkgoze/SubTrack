@@ -247,6 +247,7 @@ export function SettingsScreen() {
           <List.Item
             title="Premium"
             description={isPremium ? 'Active' : 'Unlock unlimited subscriptions'}
+            descriptionStyle={isPremium ? { color: theme.colors.secondary } : undefined}
             left={(props) => (
               <List.Icon
                 {...props}
