@@ -89,7 +89,7 @@ export async function getWritableCalendars(): Promise<
 
 export async function isCalendarAvailable(calendarId: string): Promise<boolean> {
   const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-  return calendars.some((cal) => cal.id === calendarId);
+  return calendars.some((cal) => cal.id === calendarId && cal.allowsModifications !== false);
 }
 
 export async function deleteCalendarEvent(eventId: string): Promise<void> {

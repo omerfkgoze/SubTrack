@@ -1,6 +1,6 @@
 # Story 5.2: Calendar Selection
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -473,6 +473,7 @@ None — clean implementation with no blockers.
 ### Change Log
 
 - 2026-03-18: Story 5.2 implementation complete — calendar selection, preference persistence, settings integration
+- 2026-03-18: Code review fixes — M1: SettingsScreen useEffect now uses `Calendar.getCalendarPermissionsAsync()` instead of `requestCalendarAccess()` to avoid unexpected OS permission prompt on settings mount; L1: `isCalendarAvailable` now checks `allowsModifications !== false`; L2: added error test for `clearPreferredCalendar`; L3: added test for stored preference name display
 
 ### File List
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
+import * as Calendar from 'expo-calendar';
 import { theme } from '@config/theme';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
 import { useAuthStore } from '@shared/stores/useAuthStore';
@@ -17,8 +18,12 @@ jest.mock('@shared/services/supabase', () => ({
   },
 }));
 
+jest.mock('expo-calendar', () => ({
+  getCalendarPermissionsAsync: jest.fn(),
+}));
+
 jest.mock('expo-notifications', () => ({
-  getPermissionsAsync: jest.fn(),
+  getCalendarPermissionsAsync: jest.fn(),
   requestPermissionsAsync: jest.fn(),
   getExpoPushTokenAsync: jest.fn(),
   setNotificationHandler: jest.fn(),
@@ -71,6 +76,8 @@ function renderWithProvider() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (Calendar.getCalendarPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'undetermined' });
+  mockGetUserSettings.mockResolvedValue(null);
   useNotificationStore.setState({
     permissionStatus: 'granted',
     expoPushToken: null,
@@ -113,6 +120,25 @@ describe('SettingsScreen', () => {
       expect(screen.getByText('Calendar')).toBeTruthy();
       expect(screen.getByText('Preferred Calendar')).toBeTruthy();
       expect(screen.getByText('Default')).toBeTruthy();
+    });
+
+    it('shows stored preferred calendar name when permission already granted', async () => {
+      (Calendar.getCalendarPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      mockGetUserSettings.mockResolvedValue({
+        id: 'settings-1',
+        user_id: 'user-1',
+        preferred_calendar_id: 'cal-1',
+      });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-2', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal')).toBeTruthy();
+      });
     });
 
     it('renders Preferred Calendar with accessibility label', () => {

@@ -86,5 +86,11 @@ describe('userSettingsService', () => {
       expect(mockUpdate).toHaveBeenCalledWith({ preferred_calendar_id: null });
       expect(mockUpdateEq).toHaveBeenCalledWith('user_id', 'user-1');
     });
+
+    it('throws when Supabase returns an error', async () => {
+      mockUpdateEq.mockResolvedValue({ error: { message: 'Update failed' } });
+
+      await expect(clearPreferredCalendar('user-1')).rejects.toEqual({ message: 'Update failed' });
+    });
   });
 });

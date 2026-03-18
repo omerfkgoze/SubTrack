@@ -22,6 +22,7 @@ import {
   getUserSettings,
   upsertPreferredCalendar,
 } from '@features/settings/services/userSettingsService';
+import * as Calendar from 'expo-calendar';
 import {
   requestCalendarAccess,
   getWritableCalendars,
@@ -72,8 +73,8 @@ export function SettingsScreen() {
         const calId = settings?.preferred_calendar_id;
         if (calId) {
           setPreferredCalendarId(calId);
-          const { granted } = await requestCalendarAccess();
-          if (granted && !cancelled) {
+          const { status } = await Calendar.getCalendarPermissionsAsync();
+          if (status === 'granted' && !cancelled) {
             const calendars = await getWritableCalendars();
             const match = calendars.find((c) => c.id === calId);
             if (!cancelled) {

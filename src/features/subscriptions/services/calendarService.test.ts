@@ -239,6 +239,15 @@ describe('calendarService', () => {
       const result = await isCalendarAvailable('cal-1');
       expect(result).toBe(false);
     });
+
+    it('returns false when calendar exists but is read-only (allowsModifications: false)', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', allowsModifications: false },
+      ]);
+
+      const result = await isCalendarAvailable('cal-1');
+      expect(result).toBe(false);
+    });
   });
 
   describe('addSubscriptionToCalendar', () => {
