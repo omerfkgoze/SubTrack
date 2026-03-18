@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-18 # epic-5 retrospective
+last_updated: 2026-03-18 # story 6-1 created
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -93,8 +93,8 @@ development_status:
   epic-5-retrospective: done
 
   # Epic 6: Premium & Monetization
-  epic-6: backlog
-  6-1-freemium-subscription-limit: backlog
+  epic-6: in-progress
+  6-1-freemium-subscription-limit: ready-for-dev
   6-2-premium-feature-benefits-display: backlog
   6-3-in-app-purchase-flow: backlog
   6-4-restore-previous-purchases: backlog
