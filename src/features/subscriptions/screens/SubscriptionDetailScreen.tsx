@@ -35,6 +35,7 @@ import type { ReminderSetting } from '@features/notifications';
 import {
   requestCalendarAccess,
   addSubscriptionToCalendar,
+  deleteCalendarEvent,
 } from '@features/subscriptions/services/calendarService';
 
 const REMINDER_TIMING_OPTIONS = [
@@ -174,8 +175,11 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         } else {
           setSnackbar({ message: 'Calendar access is needed to add renewal dates. You can enable it in Settings.' });
         }
-        setCalendarLoading(false);
         return;
+      }
+
+      if (subscription.calendar_event_id) {
+        await deleteCalendarEvent(subscription.calendar_event_id);
       }
 
       await addSubscriptionToCalendar(subscription);

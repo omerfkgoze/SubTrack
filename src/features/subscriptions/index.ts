@@ -21,6 +21,7 @@ export {
   getDefaultCalendarId,
   mapBillingCycleToRecurrence,
   addSubscriptionToCalendar,
+  deleteCalendarEvent,
 } from './services/calendarService';
 export {
   formatPrice,

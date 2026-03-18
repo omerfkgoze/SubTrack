@@ -27,9 +27,11 @@ jest.mock('@features/notifications', () => ({
 
 const mockRequestCalendarAccess = jest.fn();
 const mockAddSubscriptionToCalendar = jest.fn();
+const mockDeleteCalendarEvent = jest.fn();
 jest.mock('@features/subscriptions/services/calendarService', () => ({
   requestCalendarAccess: (...args: unknown[]) => mockRequestCalendarAccess(...args),
   addSubscriptionToCalendar: (...args: unknown[]) => mockAddSubscriptionToCalendar(...args),
+  deleteCalendarEvent: (...args: unknown[]) => mockDeleteCalendarEvent(...args),
 }));
 
 jest.mock('react-native-paper-dates', () => ({
@@ -613,6 +615,67 @@ describe('SubscriptionDetailScreen', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Added to calendar')).toBeTruthy();
+      });
+    });
+
+    it('shows "Open Settings" action when calendar access is permanently denied (canAskAgain: false)', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: false, canAskAgain: false });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Calendar access is needed to add renewal dates. You can enable it in Settings.')).toBeTruthy();
+        expect(screen.getByText('Open Settings')).toBeTruthy();
+      });
+    });
+
+    it('deletes old calendar event before creating new one when updating', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockDeleteCalendarEvent.mockResolvedValue(undefined);
+      mockAddSubscriptionToCalendar.mockResolvedValue('event-updated');
+
+      useSubscriptionStore.setState({
+        subscriptions: [{ ...mockSubscription, calendar_event_id: 'old-event-id' }],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Update Calendar Event'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('old-event-id');
+        expect(mockAddSubscriptionToCalendar).toHaveBeenCalled();
+        expect(screen.getByText('Added to calendar')).toBeTruthy();
+      });
+    });
+
+    it('does not call deleteCalendarEvent when no existing calendar event', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockAddSubscriptionToCalendar.mockResolvedValue('event-new');
+
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
+        expect(mockAddSubscriptionToCalendar).toHaveBeenCalled();
       });
     });
   });

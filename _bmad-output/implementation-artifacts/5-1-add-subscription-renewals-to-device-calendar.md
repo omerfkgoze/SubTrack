@@ -1,6 +1,6 @@
 # Story 5.1: Add Subscription Renewals to Device Calendar
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -392,13 +392,14 @@ Claude Opus 4.6
 
 - TypeScript compilation: zero errors after adding `calendar_event_id` to database types and all test mocks
 - ESLint: clean (0 errors, 0 warnings on changed files)
-- Test suite: 435 tests passing (27 new tests added, baseline was 408)
+- Test suite: 440 tests passing (32 new tests added, baseline was 408)
+- Code review fixes applied: orphaned event cleanup, update flow deletes old event, price `.toFixed(2)`, added 5 tests (weekly recurrence, permanently denied UI, update/add flow edge cases)
 
 ### Completion Notes List
 
 - Installed `expo-calendar` (SDK 54 compatible) and configured app.json with config plugin + iOS 17+ permission strings
 - Created `supabase/migrations/20260318000000_add_calendar_event_id.sql` — adds nullable TEXT column to subscriptions table
-- Created `calendarService.ts` with 4 exported functions: `requestCalendarAccess`, `getDefaultCalendarId`, `mapBillingCycleToRecurrence`, `addSubscriptionToCalendar`
+- Created `calendarService.ts` with 5 exported functions: `requestCalendarAccess`, `getDefaultCalendarId`, `mapBillingCycleToRecurrence`, `addSubscriptionToCalendar`, `deleteCalendarEvent`
 - Added "Add to Calendar" / "Update Calendar Event" button to SubscriptionDetailScreen with pre-permission dialog, loading state, and permission denied handling
 - Updated `database.types.ts` to include `calendar_event_id` in Row, Insert, and Update types
 - Added 20 unit tests for calendarService covering all billing cycles, permission states, Supabase persistence, error handling

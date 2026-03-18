@@ -192,6 +192,23 @@ describe('calendarService', () => {
       expect(result).toBe('event-123');
     });
 
+    it('creates event with weekly recurrence for weekly subscription', async () => {
+      const weeklySub = { ...mockSubscription, billing_cycle: 'weekly' };
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', allowsModifications: true },
+      ]);
+      (Calendar.createEventAsync as jest.Mock).mockResolvedValue('event-weekly');
+
+      await addSubscriptionToCalendar(weeklySub);
+
+      expect(Calendar.createEventAsync).toHaveBeenCalledWith('cal-1', expect.objectContaining({
+        recurrenceRule: {
+          frequency: Calendar.Frequency.WEEKLY,
+          interval: 1,
+        },
+      }));
+    });
+
     it('creates event with yearly recurrence for yearly subscription', async () => {
       const yearlySub = { ...mockSubscription, billing_cycle: 'yearly' };
       (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
@@ -266,7 +283,7 @@ describe('calendarService', () => {
       expect(mockEq).toHaveBeenCalledWith('id', 'sub-1');
     });
 
-    it('throws when Supabase update fails', async () => {
+    it('throws when Supabase update fails and deletes orphaned calendar event', async () => {
       const { supabase } = require('@shared/services/supabase');
       const mockEq = jest.fn().mockResolvedValue({ error: { message: 'DB error' } });
       const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
@@ -276,8 +293,29 @@ describe('calendarService', () => {
         { id: 'cal-1', allowsModifications: true },
       ]);
       (Calendar.createEventAsync as jest.Mock).mockResolvedValue('event-fail');
+      (Calendar.deleteEventAsync as jest.Mock).mockResolvedValue(undefined);
 
       await expect(addSubscriptionToCalendar(mockSubscription)).rejects.toEqual({ message: 'DB error' });
+      expect(Calendar.deleteEventAsync).toHaveBeenCalledWith('event-fail');
+    });
+
+    it('formats price with two decimal places in event title', async () => {
+      const { supabase } = require('@shared/services/supabase');
+      const mockEq = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdate = jest.fn().mockReturnValue({ eq: mockEq });
+      supabase.from.mockReturnValue({ update: mockUpdate });
+
+      const oddPriceSub = { ...mockSubscription, price: 9.9 };
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', allowsModifications: true },
+      ]);
+      (Calendar.createEventAsync as jest.Mock).mockResolvedValue('event-price');
+
+      await addSubscriptionToCalendar(oddPriceSub);
+
+      expect(Calendar.createEventAsync).toHaveBeenCalledWith('cal-1', expect.objectContaining({
+        title: 'Netflix Renewal - EUR9.90',
+      }));
     });
 
     it('uses € as default currency when currency is null', async () => {

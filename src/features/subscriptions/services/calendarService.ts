@@ -50,7 +50,7 @@ export async function addSubscriptionToCalendar(
   );
 
   const eventId = await Calendar.createEventAsync(targetCalendarId, {
-    title: `${subscription.name} Renewal - ${subscription.currency ?? '€'}${subscription.price}`,
+    title: `${subscription.name} Renewal - ${subscription.currency ?? '€'}${subscription.price.toFixed(2)}`,
     startDate: new Date(subscription.renewal_date),
     endDate: new Date(subscription.renewal_date),
     allDay: true,
@@ -65,7 +65,14 @@ export async function addSubscriptionToCalendar(
     .update({ calendar_event_id: eventId })
     .eq('id', subscription.id);
 
-  if (error) throw error;
+  if (error) {
+    await Calendar.deleteEventAsync(eventId).catch(() => {});
+    throw error;
+  }
 
   return eventId;
+}
+
+export async function deleteCalendarEvent(eventId: string): Promise<void> {
+  await Calendar.deleteEventAsync(eventId);
 }
