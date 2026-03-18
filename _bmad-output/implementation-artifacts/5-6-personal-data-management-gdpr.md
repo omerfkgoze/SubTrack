@@ -1,6 +1,6 @@
 # Story 5.6: Personal Data Management (GDPR)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -78,6 +78,7 @@ So that I have transparency and control over my information per GDPR requirement
 ### Screen Layout Pattern
 
 Follow existing `DataExportScreen` pattern:
+
 - Use `ScrollView` with `List.Section` components (react-native-paper)
 - Use `List.Item` for data rows
 - Use `Button` mode="contained" for actions
@@ -87,6 +88,7 @@ Follow existing `DataExportScreen` pattern:
 ### Data Summary Section (AC1)
 
 Display as `List.Item` rows:
+
 - Email: from `useAuthStore` → `user.email`
 - Account created: from `useAuthStore` → `user.created_at` (format with `toLocaleDateString()`)
 - Subscriptions: count from `useSubscriptionStore` → `subscriptions.length`
@@ -95,6 +97,7 @@ Display as `List.Item` rows:
 ### Detailed Data View (AC2)
 
 Use expandable `List.Accordion` sections:
+
 - **Profile Data**: email, user ID, creation date
 - **Subscriptions**: render each subscription's name, price, billing cycle, status (reuse data from `useSubscriptionStore`)
 - **Notification Settings**: reminder timing preferences, per-subscription settings

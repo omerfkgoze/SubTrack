@@ -89,7 +89,7 @@ development_status:
   5-3-calendar-event-cleanup-on-subscription-delete: done
   5-4-export-subscription-data: done
   5-5-cloud-data-sync: done
-  5-6-personal-data-management-gdpr: review
+  5-6-personal-data-management-gdpr: done
   epic-5-retrospective: optional
 
   # Epic 6: Premium & Monetization
