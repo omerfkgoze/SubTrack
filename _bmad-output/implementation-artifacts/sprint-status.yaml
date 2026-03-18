@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-18 # story 5.6 review
+last_updated: 2026-03-18 # epic-5 retrospective
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -83,14 +83,14 @@ development_status:
   epic-4-retrospective: done
 
   # Epic 5: Calendar Integration & Data Management
-  epic-5: in-progress
+  epic-5: done
   5-1-add-subscription-renewals-to-device-calendar: done
   5-2-calendar-selection: done
   5-3-calendar-event-cleanup-on-subscription-delete: done
   5-4-export-subscription-data: done
   5-5-cloud-data-sync: done
   5-6-personal-data-management-gdpr: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
   # Epic 6: Premium & Monetization
   epic-6: backlog
