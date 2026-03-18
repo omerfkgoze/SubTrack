@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -36,6 +37,7 @@ export function HomeScreen() {
   const upcomingRenewals = getUpcomingRenewals(subscriptions);
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <NotificationStatusBanner />
       {permissionStatus !== 'denied' && <NotificationStatusBadge variant="header" />}
@@ -65,10 +67,14 @@ export function HomeScreen() {
         </Button>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

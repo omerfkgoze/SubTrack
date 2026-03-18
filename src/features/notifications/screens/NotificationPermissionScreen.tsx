@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   segmentedButtons: {
-    alignSelf: 'stretch',
+    alignSelf: 'center',
+    maxWidth: '100%',
   },
 });

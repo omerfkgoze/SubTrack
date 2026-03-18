@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Text,
   TextInput,
@@ -136,6 +137,7 @@ export function AddSubscriptionScreen() {
   const selectedCategory = watch('category');
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
@@ -402,10 +404,14 @@ export function AddSubscriptionScreen() {
         {snackbarMessage}
       </Snackbar>
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
