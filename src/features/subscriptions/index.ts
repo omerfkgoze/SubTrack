@@ -22,7 +22,10 @@ export {
   mapBillingCycleToRecurrence,
   addSubscriptionToCalendar,
   deleteCalendarEvent,
+  getWritableCalendars,
+  isCalendarAvailable,
 } from './services/calendarService';
+export { CalendarSelectionDialog } from './components/CalendarSelectionDialog';
 export {
   formatPrice,
   formatBillingCycleShort,

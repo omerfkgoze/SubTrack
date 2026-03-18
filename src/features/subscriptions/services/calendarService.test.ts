@@ -27,7 +27,7 @@ jest.mock('@shared/services/supabase', () => ({
 }));
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-const { requestCalendarAccess, getDefaultCalendarId, mapBillingCycleToRecurrence, addSubscriptionToCalendar } =
+const { requestCalendarAccess, getDefaultCalendarId, mapBillingCycleToRecurrence, addSubscriptionToCalendar, getWritableCalendars, isCalendarAvailable } =
   require('./calendarService') as typeof import('./calendarService');
 
 const mockSubscription: Subscription = {
@@ -167,6 +167,77 @@ describe('calendarService', () => {
     it('maps yearly to YEARLY with interval 1', () => {
       const result = mapBillingCycleToRecurrence('yearly' as BillingCycle);
       expect(result).toEqual({ frequency: Calendar.Frequency.YEARLY, interval: 1 });
+    });
+  });
+
+  describe('getWritableCalendars', () => {
+    it('returns only writable calendars with correct shape', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true, allowsModifications: true },
+        { id: 'cal-2', title: 'Holidays', color: '#00FF00', isPrimary: false, allowsModifications: false },
+        { id: 'cal-3', title: 'Work', color: '#0000FF', isPrimary: false, allowsModifications: true },
+      ]);
+
+      const result = await getWritableCalendars();
+      expect(result).toEqual([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-3', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+    });
+
+    it('returns empty array when no writable calendars exist', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', title: 'ReadOnly', allowsModifications: false },
+      ]);
+
+      const result = await getWritableCalendars();
+      expect(result).toEqual([]);
+    });
+
+    it('defaults color to #888888 when null', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', title: 'NoColor', color: null, isPrimary: false, allowsModifications: true },
+      ]);
+
+      const result = await getWritableCalendars();
+      expect(result[0].color).toBe('#888888');
+    });
+
+    it('defaults isPrimary to false when undefined', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1', title: 'Test', color: '#123456', allowsModifications: true },
+      ]);
+
+      const result = await getWritableCalendars();
+      expect(result[0].isPrimary).toBe(false);
+    });
+  });
+
+  describe('isCalendarAvailable', () => {
+    it('returns true when calendar exists', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1' },
+        { id: 'cal-2' },
+      ]);
+
+      const result = await isCalendarAvailable('cal-1');
+      expect(result).toBe(true);
+    });
+
+    it('returns false when calendar does not exist', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([
+        { id: 'cal-1' },
+      ]);
+
+      const result = await isCalendarAvailable('cal-nonexistent');
+      expect(result).toBe(false);
+    });
+
+    it('returns false when no calendars exist', async () => {
+      (Calendar.getCalendarsAsync as jest.Mock).mockResolvedValue([]);
+
+      const result = await isCalendarAvailable('cal-1');
+      expect(result).toBe(false);
     });
   });
 

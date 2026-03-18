@@ -36,7 +36,15 @@ import {
   requestCalendarAccess,
   addSubscriptionToCalendar,
   deleteCalendarEvent,
+  getWritableCalendars,
+  isCalendarAvailable,
 } from '@features/subscriptions/services/calendarService';
+import {
+  getUserSettings,
+  upsertPreferredCalendar,
+  clearPreferredCalendar,
+} from '@features/settings/services/userSettingsService';
+import { CalendarSelectionDialog } from '@features/subscriptions/components/CalendarSelectionDialog';
 
 const REMINDER_TIMING_OPTIONS = [
   { value: '1', label: '1 day' },
@@ -72,6 +80,8 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const [reminderLoading, setReminderLoading] = useState(true);
   const [calendarPermissionDialog, setCalendarPermissionDialog] = useState(false);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarSelectionVisible, setCalendarSelectionVisible] = useState(false);
+  const [writableCalendars, setWritableCalendars] = useState<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>([]);
 
   useEffect(() => {
     if (!subscription || subscription.is_active === false) {
@@ -178,13 +188,63 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         return;
       }
 
+      const calendars = await getWritableCalendars();
+
+      if (calendars.length === 1) {
+        if (subscription.calendar_event_id) {
+          await deleteCalendarEvent(subscription.calendar_event_id);
+        }
+        await addSubscriptionToCalendar(subscription, calendars[0].id);
+        await updateSubscriptionInStore();
+        setSnackbar({ message: `Added to ${calendars[0].title}` });
+        return;
+      }
+
+      if (calendars.length > 1) {
+        const settings = await getUserSettings(subscription.user_id);
+        const preferredId = settings?.preferred_calendar_id;
+
+        if (preferredId) {
+          const available = await isCalendarAvailable(preferredId);
+          if (available) {
+            if (subscription.calendar_event_id) {
+              await deleteCalendarEvent(subscription.calendar_event_id);
+            }
+            await addSubscriptionToCalendar(subscription, preferredId);
+            await updateSubscriptionInStore();
+            const calName = calendars.find((c) => c.id === preferredId)?.title ?? 'calendar';
+            setSnackbar({ message: `Added to ${calName}` });
+            return;
+          }
+          await clearPreferredCalendar(subscription.user_id);
+        }
+
+        setWritableCalendars(calendars);
+        setCalendarSelectionVisible(true);
+        return;
+      }
+
+      throw new Error('No writable calendar found');
+    } catch {
+      setSnackbar({ message: 'Failed to add to calendar. Please try again.' });
+    } finally {
+      setCalendarLoading(false);
+    }
+  }, [subscription, updateSubscriptionInStore]);
+
+  const handleCalendarSelected = useCallback(async (calendarId: string, calendarTitle: string) => {
+    if (!subscription) return;
+    setCalendarSelectionVisible(false);
+    setCalendarLoading(true);
+
+    try {
       if (subscription.calendar_event_id) {
         await deleteCalendarEvent(subscription.calendar_event_id);
       }
-
-      await addSubscriptionToCalendar(subscription);
+      await addSubscriptionToCalendar(subscription, calendarId);
+      await upsertPreferredCalendar(subscription.user_id, calendarId);
       await updateSubscriptionInStore();
-      setSnackbar({ message: 'Added to calendar' });
+      setSnackbar({ message: `Added to ${calendarTitle}` });
     } catch {
       setSnackbar({ message: 'Failed to add to calendar. Please try again.' });
     } finally {
@@ -500,6 +560,13 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      <CalendarSelectionDialog
+        visible={calendarSelectionVisible}
+        calendars={writableCalendars}
+        onSelect={handleCalendarSelected}
+        onDismiss={() => setCalendarSelectionVisible(false)}
+      />
 
       <Snackbar
         visible={!!snackbar}

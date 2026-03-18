@@ -1,6 +1,6 @@
 # Story 5.2: Calendar Selection
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -59,73 +59,73 @@ so that I can keep them organized in a specific calendar.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `user_settings` table and migration (AC: #3)
-  - [ ] 1.1: Create migration `supabase/migrations/YYYYMMDDHHMMSS_create_user_settings.sql`
-  - [ ] 1.2: Table schema: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`, `user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE`, `preferred_calendar_id TEXT`, `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`
-  - [ ] 1.3: Enable RLS: `ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY`
-  - [ ] 1.4: Add RLS policies: SELECT/INSERT/UPDATE/DELETE where `auth.uid() = user_id`
-  - [ ] 1.5: Add `updated_at` trigger (same pattern as `subscriptions` table)
+- [x] Task 1: Create `user_settings` table and migration (AC: #3)
+  - [x] 1.1: Create migration `supabase/migrations/20260318100000_create_user_settings.sql`
+  - [x] 1.2: Table schema: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`, `user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE`, `preferred_calendar_id TEXT`, `created_at TIMESTAMPTZ DEFAULT now()`, `updated_at TIMESTAMPTZ DEFAULT now()`
+  - [x] 1.3: Enable RLS: `ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY`
+  - [x] 1.4: Add RLS policies: SELECT/INSERT/UPDATE/DELETE where `auth.uid() = user_id`
+  - [x] 1.5: Add `updated_at` trigger (same pattern as `subscriptions` table)
 
-- [ ] Task 2: Update TypeScript types for `user_settings` (AC: #3)
-  - [ ] 2.1: Add `user_settings` table definition to `src/shared/types/database.types.ts` with Row/Insert/Update types
-  - [ ] 2.2: Export `UserSettings` type from `src/features/settings/types/index.ts`
+- [x] Task 2: Update TypeScript types for `user_settings` (AC: #3)
+  - [x] 2.1: Add `user_settings` table definition to `src/shared/types/database.types.ts` with Row/Insert/Update types
+  - [x] 2.2: Export `UserSettings` type from `src/features/settings/types/index.ts`
 
-- [ ] Task 3: Create `userSettingsService.ts` (AC: #3, #6)
-  - [ ] 3.1: Create `src/features/settings/services/userSettingsService.ts`
-  - [ ] 3.2: Implement `getUserSettings(userId: string): Promise<UserSettings | null>` — fetch from Supabase
-  - [ ] 3.3: Implement `upsertPreferredCalendar(userId: string, calendarId: string): Promise<void>` — upsert into `user_settings`
-  - [ ] 3.4: Implement `clearPreferredCalendar(userId: string): Promise<void>` — set `preferred_calendar_id` to null
+- [x] Task 3: Create `userSettingsService.ts` (AC: #3, #6)
+  - [x] 3.1: Create `src/features/settings/services/userSettingsService.ts`
+  - [x] 3.2: Implement `getUserSettings(userId: string): Promise<UserSettings | null>` — fetch from Supabase
+  - [x] 3.3: Implement `upsertPreferredCalendar(userId: string, calendarId: string): Promise<void>` — upsert into `user_settings`
+  - [x] 3.4: Implement `clearPreferredCalendar(userId: string): Promise<void>` — set `preferred_calendar_id` to null
 
-- [ ] Task 4: Extend `calendarService.ts` with calendar listing (AC: #1, #2, #6)
-  - [ ] 4.1: Add `getWritableCalendars(): Promise<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>` — fetches all writable calendars via `Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT)`, filters `allowsModifications === true`
-  - [ ] 4.2: Add `isCalendarAvailable(calendarId: string): Promise<boolean>` — checks if a specific calendar still exists on device (for AC #6)
-  - [ ] 4.3: Keep existing `getDefaultCalendarId()` and `addSubscriptionToCalendar(subscription, calendarId?)` unchanged — they already accept optional calendarId
+- [x] Task 4: Extend `calendarService.ts` with calendar listing (AC: #1, #2, #6)
+  - [x] 4.1: Add `getWritableCalendars(): Promise<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>` — fetches all writable calendars via `Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT)`, filters `allowsModifications === true`
+  - [x] 4.2: Add `isCalendarAvailable(calendarId: string): Promise<boolean>` — checks if a specific calendar still exists on device (for AC #6)
+  - [x] 4.3: Keep existing `getDefaultCalendarId()` and `addSubscriptionToCalendar(subscription, calendarId?)` unchanged — they already accept optional calendarId
 
-- [ ] Task 5: Create `CalendarSelectionDialog` component (AC: #1, #4)
-  - [ ] 5.1: Create `src/features/subscriptions/components/CalendarSelectionDialog.tsx`
-  - [ ] 5.2: Props: `visible: boolean`, `calendars: Array<{ id, title, color, isPrimary }>`, `selectedId?: string`, `onSelect: (calendarId: string, calendarTitle: string) => void`, `onDismiss: () => void`
-  - [ ] 5.3: Render as `Portal > Dialog` (react-native-paper pattern, consistent with app)
-  - [ ] 5.4: Each calendar row: color dot (View with backgroundColor), calendar title, radio/check indicator for selected
-  - [ ] 5.5: Minimum touch target 44x44 (NFR30)
-  - [ ] 5.6: Accessibility: `accessibilityRole="radiogroup"` on list, `accessibilityRole="radio"` on items
+- [x] Task 5: Create `CalendarSelectionDialog` component (AC: #1, #4)
+  - [x] 5.1: Create `src/features/subscriptions/components/CalendarSelectionDialog.tsx`
+  - [x] 5.2: Props: `visible: boolean`, `calendars: Array<{ id, title, color, isPrimary }>`, `selectedId?: string`, `onSelect: (calendarId: string, calendarTitle: string) => void`, `onDismiss: () => void`
+  - [x] 5.3: Render as `Portal > Dialog` (react-native-paper pattern, consistent with app)
+  - [x] 5.4: Each calendar row: color dot (View with backgroundColor), calendar title, radio/check indicator for selected
+  - [x] 5.5: Minimum touch target 44x44 (NFR30)
+  - [x] 5.6: Accessibility: `accessibilityRole="radiogroup"` on list, `accessibilityRole="radio"` on items
 
-- [ ] Task 6: Integrate calendar selection into SubscriptionDetailScreen (AC: #1, #2, #3, #5, #6, #7)
-  - [ ] 6.1: Modify `handleCalendarPermissionConfirm` in `SubscriptionDetailScreen.tsx`:
+- [x] Task 6: Integrate calendar selection into SubscriptionDetailScreen (AC: #1, #2, #3, #5, #6, #7)
+  - [x] 6.1: Modify `handleCalendarPermissionConfirm` in `SubscriptionDetailScreen.tsx`:
     - After permission granted, call `getWritableCalendars()`
     - If only 1 calendar → proceed directly (existing behavior)
     - If multiple calendars → check for stored `preferred_calendar_id` via `getUserSettings()`
     - If preference exists AND `isCalendarAvailable(preferredId)` → use it directly
     - If preference exists but calendar gone → clear preference, show selection dialog
     - If no preference → show `CalendarSelectionDialog`
-  - [ ] 6.2: On calendar selection: create event with selected calendarId, then call `upsertPreferredCalendar()`
-  - [ ] 6.3: Update Snackbar message to show calendar name: "Added to {calendarTitle}"
+  - [x] 6.2: On calendar selection: create event with selected calendarId, then call `upsertPreferredCalendar()`
+  - [x] 6.3: Update Snackbar message to show calendar name: "Added to {calendarTitle}"
 
-- [ ] Task 7: Add calendar preference to SettingsScreen (AC: #4)
-  - [ ] 7.1: Add "Calendar" `List.Section` to `SettingsScreen.tsx` between Notifications and Account sections
-  - [ ] 7.2: Add `List.Item` with title "Preferred Calendar", description showing current calendar name or "Default"
-  - [ ] 7.3: On press → request calendar permission if needed, then `getWritableCalendars()`, show `CalendarSelectionDialog`
-  - [ ] 7.4: On selection → call `upsertPreferredCalendar()` and update displayed name
-  - [ ] 7.5: Load current preference on mount via `getUserSettings()` and resolve calendar name from device calendars
+- [x] Task 7: Add calendar preference to SettingsScreen (AC: #4)
+  - [x] 7.1: Add "Calendar" `List.Section` to `SettingsScreen.tsx` between Notifications and Account sections
+  - [x] 7.2: Add `List.Item` with title "Preferred Calendar", description showing current calendar name or "Default"
+  - [x] 7.3: On press → request calendar permission if needed, then `getWritableCalendars()`, show `CalendarSelectionDialog`
+  - [x] 7.4: On selection → call `upsertPreferredCalendar()` and update displayed name
+  - [x] 7.5: Load current preference on mount via `getUserSettings()` and resolve calendar name from device calendars
 
-- [ ] Task 8: Write tests (AC: all)
-  - [ ] 8.1: Test `calendarService.ts` — `getWritableCalendars` returns only writable calendars with correct shape
-  - [ ] 8.2: Test `calendarService.ts` — `isCalendarAvailable` returns true/false correctly
-  - [ ] 8.3: Test `userSettingsService.ts` — `getUserSettings` returns settings or null
-  - [ ] 8.4: Test `userSettingsService.ts` — `upsertPreferredCalendar` calls Supabase correctly
-  - [ ] 8.5: Test `CalendarSelectionDialog` — renders calendar list with colors and titles
-  - [ ] 8.6: Test `CalendarSelectionDialog` — highlights currently selected calendar
-  - [ ] 8.7: Test `CalendarSelectionDialog` — calls onSelect with correct id and title
-  - [ ] 8.8: Test `SubscriptionDetailScreen` — single calendar: no selection dialog shown
-  - [ ] 8.9: Test `SubscriptionDetailScreen` — multiple calendars + no preference: shows selection dialog
-  - [ ] 8.10: Test `SubscriptionDetailScreen` — multiple calendars + stored preference: uses preference directly
-  - [ ] 8.11: Test `SubscriptionDetailScreen` — stale preference: shows selection dialog, clears old preference
-  - [ ] 8.12: Test `SettingsScreen` — shows calendar section with current preference name
-  - [ ] 8.13: Test `SettingsScreen` — tapping opens calendar selection dialog
+- [x] Task 8: Write tests (AC: all)
+  - [x] 8.1: Test `calendarService.ts` — `getWritableCalendars` returns only writable calendars with correct shape
+  - [x] 8.2: Test `calendarService.ts` — `isCalendarAvailable` returns true/false correctly
+  - [x] 8.3: Test `userSettingsService.ts` — `getUserSettings` returns settings or null
+  - [x] 8.4: Test `userSettingsService.ts` — `upsertPreferredCalendar` calls Supabase correctly
+  - [x] 8.5: Test `CalendarSelectionDialog` — renders calendar list with colors and titles
+  - [x] 8.6: Test `CalendarSelectionDialog` — highlights currently selected calendar
+  - [x] 8.7: Test `CalendarSelectionDialog` — calls onSelect with correct id and title
+  - [x] 8.8: Test `SubscriptionDetailScreen` — single calendar: no selection dialog shown
+  - [x] 8.9: Test `SubscriptionDetailScreen` — multiple calendars + no preference: shows selection dialog
+  - [x] 8.10: Test `SubscriptionDetailScreen` — multiple calendars + stored preference: uses preference directly
+  - [x] 8.11: Test `SubscriptionDetailScreen` — stale preference: shows selection dialog, clears old preference
+  - [x] 8.12: Test `SettingsScreen` — shows calendar section with current preference name
+  - [x] 8.13: Test `SettingsScreen` — tapping opens calendar selection dialog
 
-- [ ] Task 9: Verify and validate (AC: all)
-  - [ ] 9.1: `npx tsc --noEmit` — zero errors
-  - [ ] 9.2: ESLint clean on changed files
-  - [ ] 9.3: Full test suite passes (baseline: 440 tests from Story 5.1)
+- [x] Task 9: Verify and validate (AC: all)
+  - [x] 9.1: `npx tsc --noEmit` — zero errors
+  - [x] 9.2: ESLint clean on changed files
+  - [x] 9.3: Full test suite passes (465/466 pass, 1 pre-existing failure in NotificationHistoryScreen unrelated to this story)
 
 ## Dev Notes
 
@@ -451,10 +451,46 @@ jest.mock('expo-calendar', () => ({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+None — clean implementation with no blockers.
+
 ### Completion Notes List
 
+- Created `user_settings` table with RLS policies and updated_at trigger via Supabase migration
+- Added `user_settings` TypeScript types to `database.types.ts` and exported `UserSettings` type
+- Created `userSettingsService.ts` with `getUserSettings`, `upsertPreferredCalendar`, `clearPreferredCalendar`
+- Extended `calendarService.ts` with `getWritableCalendars()` and `isCalendarAvailable()`
+- Created `CalendarSelectionDialog` component with Portal/Dialog pattern, color dots, check indicator, accessibility roles
+- Integrated full calendar selection flow into `SubscriptionDetailScreen`: single calendar auto-select, stored preference lookup, stale preference handling, selection dialog
+- Added Calendar section to `SettingsScreen` with preferred calendar display and selection
+- Snackbar now shows calendar name: "Added to {calendarTitle}"
+- 25 new tests added (465 total passing, 1 pre-existing failure unrelated to this story)
+- TypeScript: zero errors, ESLint: clean on all changed files
+
+### Change Log
+
+- 2026-03-18: Story 5.2 implementation complete — calendar selection, preference persistence, settings integration
+
 ### File List
+
+**New files:**
+- `supabase/migrations/20260318100000_create_user_settings.sql`
+- `src/features/settings/types/index.ts`
+- `src/features/settings/services/userSettingsService.ts`
+- `src/features/settings/services/userSettingsService.test.ts`
+- `src/features/subscriptions/components/CalendarSelectionDialog.tsx`
+- `src/features/subscriptions/components/CalendarSelectionDialog.test.tsx`
+
+**Modified files:**
+- `src/shared/types/database.types.ts` — added `user_settings` table types
+- `src/features/subscriptions/services/calendarService.ts` — added `getWritableCalendars`, `isCalendarAvailable`
+- `src/features/subscriptions/services/calendarService.test.ts` — added tests for new functions
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.tsx` — calendar selection flow integration
+- `src/features/subscriptions/screens/SubscriptionDetailScreen.test.tsx` — added calendar selection tests
+- `src/features/settings/screens/SettingsScreen.tsx` — added Calendar section
+- `src/features/settings/screens/SettingsScreen.test.tsx` — added calendar section tests
+- `src/features/subscriptions/index.ts` — added new exports
+- `src/features/settings/index.ts` — added new exports

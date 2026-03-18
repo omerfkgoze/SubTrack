@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { PaperProvider } from 'react-native-paper';
 import { theme } from '@config/theme';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
@@ -40,6 +40,20 @@ jest.mock('@features/notifications/services/notificationHistoryService', () => (
   getDeliveryCount: jest.fn().mockResolvedValue(0),
   hasPartialNotifications: jest.fn().mockResolvedValue(false),
   getNotificationHistory: jest.fn().mockResolvedValue([]),
+}));
+
+const mockGetUserSettings = jest.fn().mockResolvedValue(null);
+const mockUpsertPreferredCalendar = jest.fn();
+jest.mock('@features/settings/services/userSettingsService', () => ({
+  getUserSettings: (...args: unknown[]) => mockGetUserSettings(...args),
+  upsertPreferredCalendar: (...args: unknown[]) => mockUpsertPreferredCalendar(...args),
+}));
+
+const mockRequestCalendarAccess = jest.fn();
+const mockGetWritableCalendars = jest.fn();
+jest.mock('@features/subscriptions/services/calendarService', () => ({
+  requestCalendarAccess: (...args: unknown[]) => mockRequestCalendarAccess(...args),
+  getWritableCalendars: (...args: unknown[]) => mockGetWritableCalendars(...args),
 }));
 
 const mockNavigate = jest.fn();
@@ -90,6 +104,37 @@ describe('SettingsScreen', () => {
       renderWithProvider();
       fireEvent.press(screen.getByLabelText('Notification Settings'));
       expect(mockNavigate).toHaveBeenCalledWith('Notifications');
+    });
+  });
+
+  describe('Calendar section (Story 5.2 AC4)', () => {
+    it('renders Calendar section with Preferred Calendar item showing Default', () => {
+      renderWithProvider();
+      expect(screen.getByText('Calendar')).toBeTruthy();
+      expect(screen.getByText('Preferred Calendar')).toBeTruthy();
+      expect(screen.getByText('Default')).toBeTruthy();
+    });
+
+    it('renders Preferred Calendar with accessibility label', () => {
+      renderWithProvider();
+      expect(screen.getByLabelText('Preferred Calendar')).toBeTruthy();
+    });
+
+    it('opens calendar selection dialog when tapped', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-2', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Preferred Calendar'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Select Calendar')).toBeTruthy();
+        expect(screen.getByText('Personal')).toBeTruthy();
+        expect(screen.getByText('Work')).toBeTruthy();
+      });
     });
   });
 });

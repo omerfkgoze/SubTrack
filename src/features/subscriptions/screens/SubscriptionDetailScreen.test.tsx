@@ -28,10 +28,23 @@ jest.mock('@features/notifications', () => ({
 const mockRequestCalendarAccess = jest.fn();
 const mockAddSubscriptionToCalendar = jest.fn();
 const mockDeleteCalendarEvent = jest.fn();
+const mockGetWritableCalendars = jest.fn();
+const mockIsCalendarAvailable = jest.fn();
 jest.mock('@features/subscriptions/services/calendarService', () => ({
   requestCalendarAccess: (...args: unknown[]) => mockRequestCalendarAccess(...args),
   addSubscriptionToCalendar: (...args: unknown[]) => mockAddSubscriptionToCalendar(...args),
   deleteCalendarEvent: (...args: unknown[]) => mockDeleteCalendarEvent(...args),
+  getWritableCalendars: (...args: unknown[]) => mockGetWritableCalendars(...args),
+  isCalendarAvailable: (...args: unknown[]) => mockIsCalendarAvailable(...args),
+}));
+
+const mockGetUserSettings = jest.fn();
+const mockUpsertPreferredCalendar = jest.fn();
+const mockClearPreferredCalendar = jest.fn();
+jest.mock('@features/settings/services/userSettingsService', () => ({
+  getUserSettings: (...args: unknown[]) => mockGetUserSettings(...args),
+  upsertPreferredCalendar: (...args: unknown[]) => mockUpsertPreferredCalendar(...args),
+  clearPreferredCalendar: (...args: unknown[]) => mockClearPreferredCalendar(...args),
 }));
 
 jest.mock('react-native-paper-dates', () => ({
@@ -596,8 +609,11 @@ describe('SubscriptionDetailScreen', () => {
       });
     });
 
-    it('shows success snackbar after successful calendar event creation', async () => {
+    it('shows success snackbar after successful calendar event creation (single calendar)', async () => {
       mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+      ]);
       mockAddSubscriptionToCalendar.mockResolvedValue('event-new');
 
       useSubscriptionStore.setState({
@@ -614,7 +630,7 @@ describe('SubscriptionDetailScreen', () => {
       fireEvent.press(screen.getByText('Allow'));
 
       await waitFor(() => {
-        expect(screen.getByText('Added to calendar')).toBeTruthy();
+        expect(screen.getByText('Added to Personal')).toBeTruthy();
       });
     });
 
@@ -631,8 +647,11 @@ describe('SubscriptionDetailScreen', () => {
       });
     });
 
-    it('deletes old calendar event before creating new one when updating', async () => {
+    it('deletes old calendar event before creating new one when updating (single calendar)', async () => {
       mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+      ]);
       mockDeleteCalendarEvent.mockResolvedValue(undefined);
       mockAddSubscriptionToCalendar.mockResolvedValue('event-updated');
 
@@ -652,12 +671,15 @@ describe('SubscriptionDetailScreen', () => {
       await waitFor(() => {
         expect(mockDeleteCalendarEvent).toHaveBeenCalledWith('old-event-id');
         expect(mockAddSubscriptionToCalendar).toHaveBeenCalled();
-        expect(screen.getByText('Added to calendar')).toBeTruthy();
+        expect(screen.getByText('Added to Personal')).toBeTruthy();
       });
     });
 
     it('does not call deleteCalendarEvent when no existing calendar event', async () => {
       mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+      ]);
       mockAddSubscriptionToCalendar.mockResolvedValue('event-new');
 
       useSubscriptionStore.setState({
@@ -676,6 +698,103 @@ describe('SubscriptionDetailScreen', () => {
       await waitFor(() => {
         expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
         expect(mockAddSubscriptionToCalendar).toHaveBeenCalled();
+      });
+    });
+
+    it('shows selection dialog when multiple calendars and no preference', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-2', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+      mockGetUserSettings.mockResolvedValue(null);
+
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Select Calendar')).toBeTruthy();
+        expect(screen.getByText('Personal')).toBeTruthy();
+        expect(screen.getByText('Work')).toBeTruthy();
+      });
+    });
+
+    it('uses stored preference directly when multiple calendars and preference exists', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-2', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+      mockGetUserSettings.mockResolvedValue({
+        id: 'settings-1',
+        user_id: 'user-1',
+        preferred_calendar_id: 'cal-2',
+      });
+      mockIsCalendarAvailable.mockResolvedValue(true);
+      mockAddSubscriptionToCalendar.mockResolvedValue('event-pref');
+
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(mockAddSubscriptionToCalendar).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'sub-1' }),
+          'cal-2',
+        );
+        expect(screen.getByText('Added to Work')).toBeTruthy();
+      });
+    });
+
+    it('shows selection dialog and clears stale preference when preferred calendar is deleted', async () => {
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+        { id: 'cal-2', title: 'Work', color: '#0000FF', isPrimary: false },
+      ]);
+      mockGetUserSettings.mockResolvedValue({
+        id: 'settings-1',
+        user_id: 'user-1',
+        preferred_calendar_id: 'cal-deleted',
+      });
+      mockIsCalendarAvailable.mockResolvedValue(false);
+      mockClearPreferredCalendar.mockResolvedValue(undefined);
+
+      useSubscriptionStore.setState({
+        subscriptions: [mockSubscription],
+        isLoading: false,
+        isSubmitting: false,
+        error: null,
+        pendingDelete: null,
+        fetchSubscriptions: jest.fn().mockResolvedValue(undefined),
+      });
+
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      fireEvent.press(screen.getByText('Allow'));
+
+      await waitFor(() => {
+        expect(mockClearPreferredCalendar).toHaveBeenCalledWith('user-1');
+        expect(screen.getByText('Select Calendar')).toBeTruthy();
       });
     });
   });

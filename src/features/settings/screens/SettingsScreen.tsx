@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import {
   Text,
@@ -18,6 +18,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
+import {
+  getUserSettings,
+  upsertPreferredCalendar,
+} from '@features/settings/services/userSettingsService';
+import {
+  requestCalendarAccess,
+  getWritableCalendars,
+} from '@features/subscriptions/services/calendarService';
+import { CalendarSelectionDialog } from '@features/subscriptions/components/CalendarSelectionDialog';
 
 export function SettingsScreen() {
   const theme = useTheme();
@@ -44,10 +53,68 @@ export function SettingsScreen() {
   const [showDeleteVerification, setShowDeleteVerification] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [preferredCalendarName, setPreferredCalendarName] = useState<string | null>(null);
+  const [calendarSelectionVisible, setCalendarSelectionVisible] = useState(false);
+  const [writableCalendars, setWritableCalendars] = useState<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>([]);
+  const [preferredCalendarId, setPreferredCalendarId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     checkBiometricAvailability();
   }, [checkBiometricAvailability]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const settings = await getUserSettings(user.id);
+        if (cancelled) return;
+        const calId = settings?.preferred_calendar_id;
+        if (calId) {
+          setPreferredCalendarId(calId);
+          const { granted } = await requestCalendarAccess();
+          if (granted && !cancelled) {
+            const calendars = await getWritableCalendars();
+            const match = calendars.find((c) => c.id === calId);
+            if (!cancelled) {
+              setPreferredCalendarName(match?.title ?? null);
+            }
+          }
+        }
+      } catch {
+        // Non-blocking
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const handleCalendarPreference = useCallback(async () => {
+    try {
+      const { granted } = await requestCalendarAccess();
+      if (!granted) {
+        setSnackbarMessage('Calendar access is needed to select a preferred calendar.');
+        return;
+      }
+      const calendars = await getWritableCalendars();
+      setWritableCalendars(calendars);
+      setCalendarSelectionVisible(true);
+    } catch {
+      setSnackbarMessage('Failed to load calendars.');
+    }
+  }, []);
+
+  const handleCalendarSelected = useCallback(async (calendarId: string, calendarTitle: string) => {
+    if (!user?.id) return;
+    setCalendarSelectionVisible(false);
+    try {
+      await upsertPreferredCalendar(user.id, calendarId);
+      setPreferredCalendarId(calendarId);
+      setPreferredCalendarName(calendarTitle);
+      setSnackbarMessage(`Preferred calendar set to ${calendarTitle}`);
+    } catch {
+      setSnackbarMessage('Failed to save calendar preference.');
+    }
+  }, [user?.id]);
 
   const biometricLabel =
     biometryType === 'FaceID'
@@ -168,6 +235,20 @@ export function SettingsScreen() {
             onPress={() => navigation.navigate('NotificationHistory')}
             style={styles.listItem}
             accessibilityLabel="Notification History"
+            accessibilityRole="button"
+          />
+        </List.Section>
+
+        <List.Section>
+          <List.Subheader>Calendar</List.Subheader>
+          <List.Item
+            title="Preferred Calendar"
+            description={preferredCalendarName ?? 'Default'}
+            left={(props) => <List.Icon {...props} icon="calendar" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={handleCalendarPreference}
+            style={styles.listItem}
+            accessibilityLabel="Preferred Calendar"
             accessibilityRole="button"
           />
         </List.Section>
@@ -323,6 +404,14 @@ export function SettingsScreen() {
           </Dialog.Actions>
         </Dialog>
       </Portal>
+
+      <CalendarSelectionDialog
+        visible={calendarSelectionVisible}
+        calendars={writableCalendars}
+        selectedId={preferredCalendarId}
+        onSelect={handleCalendarSelected}
+        onDismiss={() => setCalendarSelectionVisible(false)}
+      />
 
       <Snackbar
         visible={!!snackbarMessage}

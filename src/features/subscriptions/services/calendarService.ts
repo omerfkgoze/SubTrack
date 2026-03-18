@@ -73,6 +73,25 @@ export async function addSubscriptionToCalendar(
   return eventId;
 }
 
+export async function getWritableCalendars(): Promise<
+  Array<{ id: string; title: string; color: string; isPrimary: boolean }>
+> {
+  const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+  return calendars
+    .filter((cal) => cal.allowsModifications)
+    .map((cal) => ({
+      id: cal.id,
+      title: cal.title,
+      color: cal.color ?? '#888888',
+      isPrimary: cal.isPrimary ?? false,
+    }));
+}
+
+export async function isCalendarAvailable(calendarId: string): Promise<boolean> {
+  const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+  return calendars.some((cal) => cal.id === calendarId);
+}
+
 export async function deleteCalendarEvent(eventId: string): Promise<void> {
   await Calendar.deleteEventAsync(eventId);
 }
