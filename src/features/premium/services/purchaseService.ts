@@ -3,6 +3,7 @@ import {
   initConnection,
   endConnection,
   getSubscriptions,
+  getAvailablePurchases,
   requestPurchase,
   purchaseUpdatedListener,
   purchaseErrorListener,
@@ -98,6 +99,59 @@ export function handlePurchaseError(error: PurchaseError): {
     isCancelled: false,
     message: 'Something went wrong with your purchase. Please try again.',
   };
+}
+
+export async function restorePurchases(): Promise<{
+  valid: boolean;
+  expiresAt?: string;
+  planType?: string;
+  error?: string;
+} | null> {
+  const user = useAuthStore.getState().user;
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const purchases = await getAvailablePurchases();
+  const validPurchases = purchases.filter((p) =>
+    (ALL_SKUS as readonly string[]).includes(p.productId),
+  );
+
+  if (validPurchases.length === 0) {
+    return null;
+  }
+
+  // Sort by transactionDate descending to get the most recent purchase
+  const sortedPurchases = [...validPurchases].sort((a, b) => {
+    const dateA = Number(a.transactionDate ?? 0);
+    const dateB = Number(b.transactionDate ?? 0);
+    return dateB - dateA;
+  });
+
+  const purchase = sortedPurchases[0];
+  const receipt =
+    Platform.OS === 'ios'
+      ? (purchase as ProductPurchase).transactionReceipt
+      : (purchase as SubscriptionPurchase).purchaseToken;
+
+  if (!receipt) {
+    return null;
+  }
+
+  const { data, error } = await supabase.functions.invoke('validate-premium', {
+    body: {
+      platform: Platform.OS as 'ios' | 'android',
+      receipt,
+      userId: user.id,
+    },
+  });
+
+  if (error || !data) {
+    throw new Error(error?.message || 'Failed to validate restored purchase');
+  }
+
+  // Note: Do NOT call finishTransaction — getAvailablePurchases returns already-finished transactions
+  return data as { valid: boolean; expiresAt?: string; planType?: string; error?: string };
 }
 
 export function cleanupIAP(): void {

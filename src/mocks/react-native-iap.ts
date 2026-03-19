@@ -5,6 +5,7 @@
 export const initConnection = async (): Promise<boolean> => true;
 export const endConnection = async (): Promise<void> => {};
 export const getSubscriptions = async (_params: unknown): Promise<never[]> => [];
+export const getAvailablePurchases = async (): Promise<never[]> => [];
 export const requestPurchase = async (_request: unknown): Promise<void> => {};
 export const finishTransaction = async (_params: unknown): Promise<void> => {};
 export const purchaseUpdatedListener = (_handler: unknown): { remove: () => void } => ({

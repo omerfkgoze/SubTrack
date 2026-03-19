@@ -34,6 +34,7 @@ export function PaywallScreen() {
 
   const isPremium = usePremiumStore((s) => s.isPremium);
   const purchaseInProgress = usePremiumStore((s) => s.purchaseInProgress);
+  const restoreInProgress = usePremiumStore((s) => s.restoreInProgress);
   const expiresAt = usePremiumStore((s) => s.expiresAt);
   const purchaseErrorMessage = usePremiumStore((s) => s.purchaseErrorMessage);
 
@@ -79,6 +80,18 @@ export function PaywallScreen() {
     }
     prevPurchaseInProgress.current = purchaseInProgress;
   }, [purchaseInProgress, isPremium, purchaseErrorMessage]);
+
+  const handleRestorePress = async () => {
+    const result = await usePremiumStore.getState().restorePurchases();
+    if (result === 'success') {
+      setSnackbarMessage('Premium restored successfully!');
+    } else if (result === 'no_purchases') {
+      setSnackbarMessage('No previous purchases found');
+    } else {
+      const { purchaseErrorMessage: errorMsg } = usePremiumStore.getState();
+      setSnackbarMessage(errorMsg || "Couldn't restore purchases. Please try again.");
+    }
+  };
 
   const handleDismiss = () => {
     navigation.goBack();
@@ -192,7 +205,14 @@ export function PaywallScreen() {
         </View>
 
         <View style={styles.legalSection}>
-          <Button mode="text" compact textColor={theme.colors.onSurfaceVariant} onPress={() => {}}>
+          <Button
+            mode="text"
+            compact
+            textColor={theme.colors.onSurfaceVariant}
+            onPress={handleRestorePress}
+            disabled={restoreInProgress || purchaseInProgress}
+            loading={restoreInProgress}
+          >
             Restore Purchases
           </Button>
           <Button mode="text" compact textColor={theme.colors.onSurfaceVariant} onPress={() => {}}>

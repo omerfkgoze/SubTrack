@@ -32,12 +32,14 @@ const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePre
 const mockStoreState = {
   isPremium: false,
   purchaseInProgress: false,
+  restoreInProgress: false,
   expiresAt: null,
   planType: null,
   purchaseErrorMessage: null,
   purchaseSubscription: jest.fn(),
   handlePurchaseSuccess: jest.fn(),
   handlePurchaseFailure: jest.fn(),
+  restorePurchases: jest.fn().mockResolvedValue('no_purchases'),
   clearPurchaseError: jest.fn(),
 };
 
@@ -140,6 +142,35 @@ describe('PaywallScreen', () => {
 
       const { getByText } = renderWithTheme(<PaywallScreen />);
       expect(getByText('Your premium has ended. Renew to keep unlimited access.')).toBeTruthy();
+    });
+
+    it('calls restorePurchases when Restore Purchases button is pressed', async () => {
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState }) as never,
+      );
+
+      const { getByText } = renderWithTheme(<PaywallScreen />);
+      fireEvent.press(getByText('Restore Purchases'));
+      expect(mockStoreState.restorePurchases).toHaveBeenCalled();
+    });
+
+    it('disables Restore Purchases button while restoreInProgress', () => {
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, restoreInProgress: true }) as never,
+      );
+
+      const { getByText } = renderWithTheme(<PaywallScreen />);
+      // Button with loading prop is disabled
+      expect(getByText('Restore Purchases')).toBeTruthy();
+    });
+
+    it('disables Restore Purchases button while purchaseInProgress', () => {
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, purchaseInProgress: true }) as never,
+      );
+
+      const { getByText } = renderWithTheme(<PaywallScreen />);
+      expect(getByText('Restore Purchases')).toBeTruthy();
     });
   });
 

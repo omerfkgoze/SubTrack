@@ -1,6 +1,6 @@
 # Story 6.4: Restore Previous Purchases
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -40,42 +40,42 @@ So that I don't have to pay again.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `restorePurchases` to `purchaseService.ts` (AC: #1, #2)
-  - [ ] 1.1: Import `getAvailablePurchases` from `react-native-iap`
-  - [ ] 1.2: Create `restorePurchases()` function — calls `getAvailablePurchases()`, filters for SubTrack SKUs (`MONTHLY_SKU`, `YEARLY_SKU`), returns the most recent valid purchase or null
-  - [ ] 1.3: For each found purchase, call `validate-premium` Edge Function with receipt/purchaseToken to verify and update server-side premium status
+- [x] Task 1: Add `restorePurchases` to `purchaseService.ts` (AC: #1, #2)
+  - [x] 1.1: Import `getAvailablePurchases` from `react-native-iap`
+  - [x] 1.2: Create `restorePurchases()` function — calls `getAvailablePurchases()`, filters for SubTrack SKUs (`MONTHLY_SKU`, `YEARLY_SKU`), returns the most recent valid purchase or null
+  - [x] 1.3: For each found purchase, call `validate-premium` Edge Function with receipt/purchaseToken to verify and update server-side premium status
 
-- [ ] Task 2: Add `restorePurchases` action to `usePremiumStore` (AC: #1, #2, #4)
-  - [ ] 2.1: Add state field: `restoreInProgress: boolean`
-  - [ ] 2.2: Add action `restorePurchases()` — sets `restoreInProgress = true`, calls `purchaseService.restorePurchases()`, processes the result
-  - [ ] 2.3: On success (valid purchase found): update `isPremium`, `planType`, `expiresAt` from Edge Function response; set `restoreInProgress = false`
-  - [ ] 2.4: On no purchases found: set `restoreInProgress = false`, return indicator to caller
-  - [ ] 2.5: On failure: set `restoreInProgress = false`, set `purchaseErrorMessage`
+- [x] Task 2: Add `restorePurchases` action to `usePremiumStore` (AC: #1, #2, #4)
+  - [x] 2.1: Add state field: `restoreInProgress: boolean`
+  - [x] 2.2: Add action `restorePurchases()` — sets `restoreInProgress = true`, calls `purchaseService.restorePurchases()`, processes the result
+  - [x] 2.3: On success (valid purchase found): update `isPremium`, `planType`, `expiresAt` from Edge Function response; set `restoreInProgress = false`
+  - [x] 2.4: On no purchases found: set `restoreInProgress = false`, return indicator to caller
+  - [x] 2.5: On failure: set `restoreInProgress = false`, set `purchaseErrorMessage`
 
-- [ ] Task 3: Wire "Restore Purchases" button in PaywallScreen (AC: #1, #2, #4)
-  - [ ] 3.1: Replace the empty `onPress={() => {}}` on "Restore Purchases" button with actual `restorePurchases()` call
-  - [ ] 3.2: Show loading indicator during restore (`restoreInProgress`)
-  - [ ] 3.3: On success: show Snackbar "Premium restored successfully!" and refresh screen to show PremiumStatusCard
-  - [ ] 3.4: On no purchases: show Snackbar "No previous purchases found"
-  - [ ] 3.5: On error: show Snackbar with error message from store
-  - [ ] 3.6: Disable Restore button while `restoreInProgress` or `purchaseInProgress`
+- [x] Task 3: Wire "Restore Purchases" button in PaywallScreen (AC: #1, #2, #4)
+  - [x] 3.1: Replace the empty `onPress={() => {}}` on "Restore Purchases" button with actual `restorePurchases()` call
+  - [x] 3.2: Show loading indicator during restore (`restoreInProgress`)
+  - [x] 3.3: On success: show Snackbar "Premium restored successfully!" and refresh screen to show PremiumStatusCard
+  - [x] 3.4: On no purchases: show Snackbar "No previous purchases found"
+  - [x] 3.5: On error: show Snackbar with error message from store
+  - [x] 3.6: Disable Restore button while `restoreInProgress` or `purchaseInProgress`
 
-- [ ] Task 4: Background entitlement re-validation on app resume (AC: #3)
-  - [ ] 4.1: In `checkPremiumStatus()` (usePremiumStore), when `is_premium` is true but `premium_expires_at` is past, call `restorePurchases()` to re-verify with the store instead of immediately downgrading
-  - [ ] 4.2: If restore confirms valid subscription: update `expiresAt` with new expiry from the store
-  - [ ] 4.3: If restore finds no valid subscription: downgrade to free tier (set `isPremium = false`)
-  - [ ] 4.4: This replaces the current immediate-downgrade logic in `checkPremiumStatus()`
+- [x] Task 4: Background entitlement re-validation on app resume (AC: #3)
+  - [x] 4.1: In `checkPremiumStatus()` (usePremiumStore), when `is_premium` is true but `premium_expires_at` is past, call `restorePurchases()` to re-verify with the store instead of immediately downgrading
+  - [x] 4.2: If restore confirms valid subscription: update `expiresAt` with new expiry from the store
+  - [x] 4.3: If restore finds no valid subscription: downgrade to free tier (set `isPremium = false`)
+  - [x] 4.4: This replaces the current immediate-downgrade logic in `checkPremiumStatus()`
 
-- [ ] Task 5: Update `__mocks__/react-native-iap.js` (AC: #1, #2)
-  - [ ] 5.1: Add `getAvailablePurchases` mock to the existing IAP mock file
-  - [ ] 5.2: Default mock returns empty array (no purchases)
+- [x] Task 5: Update `__mocks__/react-native-iap.js` (AC: #1, #2)
+  - [x] 5.1: Add `getAvailablePurchases` mock to the existing IAP mock file
+  - [x] 5.2: Default mock returns empty array (no purchases)
 
-- [ ] Task 6: Tests (AC: #1, #2, #3, #4)
-  - [ ] 6.1: Unit test `purchaseService.restorePurchases()` — mock `getAvailablePurchases`; test with valid purchase, no purchases, and error scenarios
-  - [ ] 6.2: Unit test `usePremiumStore.restorePurchases()` — test success flow (premium restored), no-purchase flow, failure flow, loading state transitions
-  - [ ] 6.3: Unit test `usePremiumStore.checkPremiumStatus()` — test that expired premium now triggers restore instead of immediate downgrade
-  - [ ] 6.4: Unit test PaywallScreen — restore button triggers `restorePurchases`, loading state during restore, success/no-purchase/error snackbar messages
-  - [ ] 6.5: Co-locate tests with source files per project convention
+- [x] Task 6: Tests (AC: #1, #2, #3, #4)
+  - [x] 6.1: Unit test `purchaseService.restorePurchases()` — mock `getAvailablePurchases`; test with valid purchase, no purchases, and error scenarios
+  - [x] 6.2: Unit test `usePremiumStore.restorePurchases()` — test success flow (premium restored), no-purchase flow, failure flow, loading state transitions
+  - [x] 6.3: Unit test `usePremiumStore.checkPremiumStatus()` — test that expired premium now triggers restore instead of immediate downgrade
+  - [x] 6.4: Unit test PaywallScreen — restore button triggers `restorePurchases`, loading state during restore, success/no-purchase/error snackbar messages
+  - [x] 6.5: Co-locate tests with source files per project convention
 
 ## Dev Notes
 
@@ -179,10 +179,28 @@ Follow co-located test pattern from Stories 6.1/6.2/6.3:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Implemented `restorePurchases()` in `purchaseService.ts`: calls `getAvailablePurchases()`, filters for SubTrack SKUs, picks most recent purchase (by transactionDate), validates via `validate-premium` Edge Function. Does NOT call `finishTransaction` (restored purchases are already finished).
+- Added `restoreInProgress: boolean` state and `restorePurchases()` action to `usePremiumStore`. Action returns `'success' | 'no_purchases' | 'error'` for direct UI handling.
+- Updated `checkPremiumStatus()` in `usePremiumStore`: expired premium now calls `restorePurchasesService()` silently before downgrading. If store confirms valid subscription → updates expiry, keeps premium. On null/error → downgrades.
+- Wired "Restore Purchases" button in `PaywallScreen`: uses `loading` prop (react-native-paper Button built-in), disabled during `restoreInProgress || purchaseInProgress`, shows appropriate Snackbar messages on each outcome.
+- Added `getAvailablePurchases` mock to `__mocks__/react-native-iap.js` (default: empty array) and no-op to `src/mocks/react-native-iap.ts`.
+- All 614 tests pass, zero regressions.
+
 ### File List
+
+- src/features/premium/services/purchaseService.ts
+- src/features/premium/services/purchaseService.test.ts
+- src/shared/stores/usePremiumStore.ts
+- src/shared/stores/usePremiumStore.test.ts
+- src/features/premium/screens/PaywallScreen.tsx
+- src/features/premium/screens/PaywallScreen.test.tsx
+- __mocks__/react-native-iap.js
+- src/mocks/react-native-iap.ts
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- _bmad-output/implementation-artifacts/6-4-restore-previous-purchases.md

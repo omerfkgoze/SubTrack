@@ -25,6 +25,7 @@ import {
   buySubscription,
   handlePurchaseUpdate,
   handlePurchaseError,
+  restorePurchases,
   cleanupIAP,
 } from './purchaseService';
 
@@ -34,6 +35,7 @@ describe('purchaseService', () => {
     // Re-set default mocks
     iap.initConnection.mockResolvedValue(true);
     iap.getSubscriptions.mockResolvedValue([]);
+    iap.getAvailablePurchases.mockResolvedValue([]);
     iap.requestPurchase.mockResolvedValue(undefined);
     iap.finishTransaction.mockResolvedValue(undefined);
     iap.purchaseUpdatedListener.mockReturnValue({ remove: jest.fn() });
@@ -128,6 +130,100 @@ describe('purchaseService', () => {
       const result = handlePurchaseError({ code: 'E_UNKNOWN' } as never);
       expect(result.isCancelled).toBe(false);
       expect(result.message).toContain('went wrong');
+    });
+  });
+
+  describe('restorePurchases', () => {
+    const { supabase } = jest.requireMock('@shared/services/supabase');
+
+    it('returns null when no purchases are available', async () => {
+      iap.getAvailablePurchases.mockResolvedValue([]);
+
+      const result = await restorePurchases();
+
+      expect(result).toBeNull();
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('returns null when no purchases match SubTrack SKUs', async () => {
+      iap.getAvailablePurchases.mockResolvedValue([
+        { productId: 'com.other.app.subscription', transactionReceipt: 'receipt', transactionDate: 1000 },
+      ]);
+
+      const result = await restorePurchases();
+
+      expect(result).toBeNull();
+    });
+
+    it('validates most recent purchase and returns server result on iOS', async () => {
+      Platform.OS = 'ios';
+      iap.getAvailablePurchases.mockResolvedValue([
+        { productId: 'com.subtrack.premium.monthly', transactionReceipt: 'old-receipt', transactionDate: 1000 },
+        { productId: 'com.subtrack.premium.yearly', transactionReceipt: 'new-receipt', transactionDate: 2000 },
+      ]);
+      supabase.functions.invoke.mockResolvedValueOnce({
+        data: { valid: true, expiresAt: '2027-01-01T00:00:00Z', planType: 'yearly' },
+        error: null,
+      });
+
+      const result = await restorePurchases();
+
+      expect(iap.getAvailablePurchases).toHaveBeenCalled();
+      expect(supabase.functions.invoke).toHaveBeenCalledWith('validate-premium', {
+        body: { platform: 'ios', receipt: 'new-receipt', userId: 'user-1' },
+      });
+      expect(result).toEqual({ valid: true, expiresAt: '2027-01-01T00:00:00Z', planType: 'yearly' });
+      expect(iap.finishTransaction).not.toHaveBeenCalled();
+    });
+
+    it('validates purchase using purchaseToken on Android', async () => {
+      Platform.OS = 'android';
+      iap.getAvailablePurchases.mockResolvedValue([
+        { productId: 'com.subtrack.premium.monthly', purchaseToken: 'android-token', transactionDate: 1000 },
+      ]);
+      supabase.functions.invoke.mockResolvedValueOnce({
+        data: { valid: true, expiresAt: '2027-06-01T00:00:00Z', planType: 'monthly' },
+        error: null,
+      });
+
+      const result = await restorePurchases();
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith('validate-premium', {
+        body: { platform: 'android', receipt: 'android-token', userId: 'user-1' },
+      });
+      expect(result).toEqual({ valid: true, expiresAt: '2027-06-01T00:00:00Z', planType: 'monthly' });
+    });
+
+    it('returns null when purchase has no receipt', async () => {
+      Platform.OS = 'ios';
+      iap.getAvailablePurchases.mockResolvedValue([
+        { productId: 'com.subtrack.premium.monthly', transactionDate: 1000 },
+      ]);
+
+      const result = await restorePurchases();
+
+      expect(result).toBeNull();
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('throws when edge function returns error', async () => {
+      Platform.OS = 'ios';
+      iap.getAvailablePurchases.mockResolvedValue([
+        { productId: 'com.subtrack.premium.monthly', transactionReceipt: 'receipt', transactionDate: 1000 },
+      ]);
+      supabase.functions.invoke.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Network error' },
+      });
+
+      await expect(restorePurchases()).rejects.toThrow('Network error');
+    });
+
+    it('throws when user not authenticated', async () => {
+      const { useAuthStore } = jest.requireMock('@shared/stores/useAuthStore');
+      useAuthStore.getState.mockReturnValueOnce({ user: null });
+
+      await expect(restorePurchases()).rejects.toThrow('User not authenticated');
     });
   });
 

@@ -7,6 +7,7 @@ import {
   buySubscription,
   handlePurchaseUpdate,
   handlePurchaseError as mapPurchaseError,
+  restorePurchases as restorePurchasesService,
 } from '@features/premium/services/purchaseService';
 import type { ProductPurchase, PurchaseError, SubscriptionPurchase } from 'react-native-iap';
 
@@ -18,6 +19,7 @@ interface PremiumState {
   planType: 'monthly' | 'yearly' | null;
   expiresAt: string | null;
   purchaseInProgress: boolean;
+  restoreInProgress: boolean;
   purchaseErrorMessage: string | null;
 }
 
@@ -28,6 +30,7 @@ interface PremiumActions {
   purchaseSubscription: (sku: string, offerToken?: string) => Promise<void>;
   handlePurchaseSuccess: (purchase: ProductPurchase | SubscriptionPurchase) => Promise<void>;
   handlePurchaseFailure: (error: PurchaseError) => { isCancelled: boolean; message: string };
+  restorePurchases: () => Promise<'success' | 'no_purchases' | 'error'>;
   clearPurchaseError: () => void;
 }
 
@@ -41,6 +44,7 @@ export const usePremiumStore = create<PremiumStore>()(
       planType: null,
       expiresAt: null,
       purchaseInProgress: false,
+      restoreInProgress: false,
       purchaseErrorMessage: null,
 
       checkPremiumStatus: async () => {
@@ -61,15 +65,24 @@ export const usePremiumStore = create<PremiumStore>()(
 
           // If premium and has expiry date, check if expired
           if (isPremium && expiresAt && new Date(expiresAt) < new Date()) {
-            // Subscription appears expired — downgrade locally.
-            // Full re-validation via the store happens through Restore Purchases (Story 6.4).
-            // Sending an empty receipt to the edge function would fail with real store credentials.
-            set({
-              isPremium: false,
-              planType: null,
-              expiresAt: null,
-              isLoading: false,
-            });
+            // Subscription appears expired — re-validate with the store before downgrading.
+            // If the subscription auto-renewed, the store will confirm it and return updated expiry.
+            try {
+              const restoreResult = await restorePurchasesService();
+              if (restoreResult?.valid) {
+                set({
+                  isPremium: true,
+                  planType: (restoreResult.planType as 'monthly' | 'yearly') ?? null,
+                  expiresAt: restoreResult.expiresAt ?? null,
+                  isLoading: false,
+                });
+              } else {
+                set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
+              }
+            } catch {
+              // If restore fails, downgrade to free
+              set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
+            }
           } else {
             set({
               isPremium,
@@ -125,6 +138,34 @@ export const usePremiumStore = create<PremiumStore>()(
         const result = mapPurchaseError(error);
         set({ purchaseInProgress: false, purchaseErrorMessage: result.message });
         return result;
+      },
+
+      restorePurchases: async () => {
+        set({ restoreInProgress: true });
+        try {
+          const result = await restorePurchasesService();
+          if (result === null) {
+            set({ restoreInProgress: false });
+            return 'no_purchases';
+          }
+          if (result.valid) {
+            set({
+              isPremium: true,
+              planType: (result.planType as 'monthly' | 'yearly') ?? null,
+              expiresAt: result.expiresAt ?? null,
+              restoreInProgress: false,
+            });
+            return 'success';
+          } else {
+            set({ restoreInProgress: false });
+            return 'no_purchases';
+          }
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : "Couldn't restore purchases. Please try again.";
+          set({ restoreInProgress: false, purchaseErrorMessage: message });
+          return 'error';
+        }
       },
 
       clearPurchaseError: () => {

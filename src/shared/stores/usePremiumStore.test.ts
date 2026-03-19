@@ -24,6 +24,7 @@ jest.mock('@features/premium/services/purchaseService', () => ({
   buySubscription: jest.fn().mockResolvedValue(undefined),
   handlePurchaseUpdate: jest.fn().mockResolvedValue({ valid: true, planType: 'monthly', expiresAt: '2027-01-01T00:00:00Z' }),
   handlePurchaseError: jest.fn().mockReturnValue({ isCancelled: false, message: 'Error' }),
+  restorePurchases: jest.fn().mockResolvedValue(null), // default: no purchases found
 }));
 
 jest.mock('react-native-iap', () => ({}));
@@ -48,8 +49,11 @@ describe('usePremiumStore', () => {
       planType: null,
       expiresAt: null,
       purchaseInProgress: false,
+      restoreInProgress: false,
       purchaseErrorMessage: null,
     });
+    // Reset restorePurchases default mock
+    purchaseService.restorePurchases.mockResolvedValue(null);
   });
 
   describe('MAX_FREE_SUBSCRIPTIONS', () => {
@@ -120,21 +124,61 @@ describe('usePremiumStore', () => {
       expect(usePremiumStore.getState().isLoading).toBe(false);
     });
 
-    it('downgrades to free when premium is expired without calling edge function', async () => {
+    it('calls restorePurchases when premium is expired (instead of immediate downgrade)', async () => {
       usePremiumStore.setState({ isPremium: true });
       supabase.from.mockReturnValue(buildSupabaseMock({
         is_premium: true,
         premium_plan_type: 'monthly',
         premium_expires_at: '2020-01-01T00:00:00Z', // past date
       }));
+      // Default mock returns null (no purchases)
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(purchaseService.restorePurchases).toHaveBeenCalled();
+      expect(usePremiumStore.getState().isPremium).toBe(false);
+      expect(usePremiumStore.getState().planType).toBeNull();
+    });
+
+    it('keeps premium with updated expiry when restore confirms valid subscription', async () => {
+      usePremiumStore.setState({ isPremium: true });
+      supabase.from.mockReturnValue(buildSupabaseMock({
+        is_premium: true,
+        premium_plan_type: 'monthly',
+        premium_expires_at: '2020-01-01T00:00:00Z', // past date
+      }));
+      purchaseService.restorePurchases.mockResolvedValueOnce({
+        valid: true,
+        planType: 'monthly',
+        expiresAt: '2027-06-01T00:00:00Z',
+      });
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().planType).toBe('monthly');
+      expect(usePremiumStore.getState().expiresAt).toBe('2027-06-01T00:00:00Z');
+    });
+
+    it('downgrades when restore throws an error during expiry check', async () => {
+      usePremiumStore.setState({ isPremium: true });
+      supabase.from.mockReturnValue(buildSupabaseMock({
+        is_premium: true,
+        premium_plan_type: 'yearly',
+        premium_expires_at: '2020-01-01T00:00:00Z', // past date
+      }));
+      purchaseService.restorePurchases.mockRejectedValueOnce(new Error('Store error'));
 
       await act(async () => {
         await usePremiumStore.getState().checkPremiumStatus();
       });
 
       expect(usePremiumStore.getState().isPremium).toBe(false);
-      expect(usePremiumStore.getState().planType).toBeNull();
-      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+      expect(usePremiumStore.getState().isLoading).toBe(false);
     });
 
     it('does nothing when user is not authenticated', async () => {
@@ -221,6 +265,90 @@ describe('usePremiumStore', () => {
       expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
       expect(usePremiumStore.getState().purchaseErrorMessage).toBe('Error');
       expect(result).toEqual({ isCancelled: false, message: 'Error' });
+    });
+  });
+
+  describe('restorePurchases', () => {
+    it('sets restoreInProgress to true then false on success', async () => {
+      purchaseService.restorePurchases.mockResolvedValueOnce({
+        valid: true,
+        planType: 'yearly',
+        expiresAt: '2027-01-01T00:00:00Z',
+      });
+
+      await act(async () => {
+        await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
+    });
+
+    it('returns "success" and updates premium state when valid purchase is found', async () => {
+      purchaseService.restorePurchases.mockResolvedValueOnce({
+        valid: true,
+        planType: 'yearly',
+        expiresAt: '2027-01-01T00:00:00Z',
+      });
+
+      let result: string | undefined;
+      await act(async () => {
+        result = await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(result).toBe('success');
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().planType).toBe('yearly');
+      expect(usePremiumStore.getState().expiresAt).toBe('2027-01-01T00:00:00Z');
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
+    });
+
+    it('returns "no_purchases" when service returns null', async () => {
+      purchaseService.restorePurchases.mockResolvedValueOnce(null);
+
+      let result: string | undefined;
+      await act(async () => {
+        result = await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(result).toBe('no_purchases');
+      expect(usePremiumStore.getState().isPremium).toBe(false);
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
+    });
+
+    it('returns "no_purchases" when service returns invalid result', async () => {
+      purchaseService.restorePurchases.mockResolvedValueOnce({ valid: false });
+
+      let result: string | undefined;
+      await act(async () => {
+        result = await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(result).toBe('no_purchases');
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
+    });
+
+    it('returns "error" and sets purchaseErrorMessage when service throws', async () => {
+      purchaseService.restorePurchases.mockRejectedValueOnce(new Error('Store unavailable'));
+
+      let result: string | undefined;
+      await act(async () => {
+        result = await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(result).toBe('error');
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
+      expect(usePremiumStore.getState().purchaseErrorMessage).toBe('Store unavailable');
+    });
+
+    it('resets restoreInProgress on error', async () => {
+      purchaseService.restorePurchases.mockRejectedValueOnce(new Error('fail'));
+      usePremiumStore.setState({ restoreInProgress: true });
+
+      await act(async () => {
+        await usePremiumStore.getState().restorePurchases();
+      });
+
+      expect(usePremiumStore.getState().restoreInProgress).toBe(false);
     });
   });
 
