@@ -73,8 +73,8 @@ export async function handlePurchaseUpdate(
     },
   });
 
-  if (error) {
-    throw new Error(error.message || 'Failed to validate purchase');
+  if (error || !data) {
+    throw new Error(error?.message || 'Failed to validate purchase: no response from server');
   }
 
   await finishTransaction({ purchase, isConsumable: false });

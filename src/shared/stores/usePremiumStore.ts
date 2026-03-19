@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +18,7 @@ interface PremiumState {
   planType: 'monthly' | 'yearly' | null;
   expiresAt: string | null;
   purchaseInProgress: boolean;
+  purchaseErrorMessage: string | null;
 }
 
 interface PremiumActions {
@@ -28,6 +28,7 @@ interface PremiumActions {
   purchaseSubscription: (sku: string, offerToken?: string) => Promise<void>;
   handlePurchaseSuccess: (purchase: ProductPurchase | SubscriptionPurchase) => Promise<void>;
   handlePurchaseFailure: (error: PurchaseError) => { isCancelled: boolean; message: string };
+  clearPurchaseError: () => void;
 }
 
 export type PremiumStore = PremiumState & PremiumActions;
@@ -40,6 +41,7 @@ export const usePremiumStore = create<PremiumStore>()(
       planType: null,
       expiresAt: null,
       purchaseInProgress: false,
+      purchaseErrorMessage: null,
 
       checkPremiumStatus: async () => {
         const user = useAuthStore.getState().user;
@@ -59,40 +61,15 @@ export const usePremiumStore = create<PremiumStore>()(
 
           // If premium and has expiry date, check if expired
           if (isPremium && expiresAt && new Date(expiresAt) < new Date()) {
-            // Re-verify with the store via Edge Function
-            try {
-              const { data: validationData } = await supabase.functions.invoke('validate-premium', {
-                body: {
-                  platform: Platform.OS as 'ios' | 'android',
-                  receipt: '', // Empty receipt triggers re-validation from stored token
-                  userId: user.id,
-                },
-              });
-
-              if (validationData?.valid) {
-                set({
-                  isPremium: true,
-                  planType: validationData.planType ?? data.premium_plan_type ?? null,
-                  expiresAt: validationData.expiresAt ?? expiresAt,
-                  isLoading: false,
-                });
-              } else {
-                set({
-                  isPremium: false,
-                  planType: null,
-                  expiresAt: null,
-                  isLoading: false,
-                });
-              }
-            } catch {
-              // On validation failure, use DB state
-              set({
-                isPremium: false,
-                planType: null,
-                expiresAt: null,
-                isLoading: false,
-              });
-            }
+            // Subscription appears expired — downgrade locally.
+            // Full re-validation via the store happens through Restore Purchases (Story 6.4).
+            // Sending an empty receipt to the edge function would fail with real store credentials.
+            set({
+              isPremium: false,
+              planType: null,
+              expiresAt: null,
+              isLoading: false,
+            });
           } else {
             set({
               isPremium,
@@ -145,8 +122,13 @@ export const usePremiumStore = create<PremiumStore>()(
       },
 
       handlePurchaseFailure: (error: PurchaseError) => {
-        set({ purchaseInProgress: false });
-        return mapPurchaseError(error);
+        const result = mapPurchaseError(error);
+        set({ purchaseInProgress: false, purchaseErrorMessage: result.message });
+        return result;
+      },
+
+      clearPurchaseError: () => {
+        set({ purchaseErrorMessage: null });
       },
     }),
     {

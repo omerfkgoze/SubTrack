@@ -1,6 +1,6 @@
 # Story 6.3: In-App Purchase Flow
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -235,7 +235,9 @@ Claude Opus 4.6
 - `src/app/App.tsx` (modified)
 - `jest.config.js` (modified)
 - `package.json` (modified — react-native-iap dependency added)
+- `app.json` (modified — react-native-iap plugin added)
 
 ## Change Log
 
 - 2026-03-19: Story 6.3 implementation complete — full in-app purchase flow with react-native-iap, server-side receipt validation via Supabase Edge Function, extended premium store with purchase actions, updated PaywallScreen and PremiumStatusCard with real purchase flow and data, subscription expiry handling, database migration, comprehensive test coverage (593 tests passing)
+- 2026-03-19: Code review fixes — (H1) added `purchaseErrorMessage` state to usePremiumStore; PaywallScreen now shows failure/cancellation snackbar via store state; (H2) Android Google Play validation changed to fail-closed when credentials configured (was returning valid=true always — security risk); (M2) removed broken empty-receipt edge function call in expiry re-check; (L1) added null guard on Edge Function response; added `app.json` to File List; 596 tests passing

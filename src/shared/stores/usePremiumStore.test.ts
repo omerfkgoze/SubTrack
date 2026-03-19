@@ -48,6 +48,7 @@ describe('usePremiumStore', () => {
       planType: null,
       expiresAt: null,
       purchaseInProgress: false,
+      purchaseErrorMessage: null,
     });
   });
 
@@ -117,6 +118,23 @@ describe('usePremiumStore', () => {
 
       expect(usePremiumStore.getState().isPremium).toBe(false);
       expect(usePremiumStore.getState().isLoading).toBe(false);
+    });
+
+    it('downgrades to free when premium is expired without calling edge function', async () => {
+      usePremiumStore.setState({ isPremium: true });
+      supabase.from.mockReturnValue(buildSupabaseMock({
+        is_premium: true,
+        premium_plan_type: 'monthly',
+        premium_expires_at: '2020-01-01T00:00:00Z', // past date
+      }));
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(false);
+      expect(usePremiumStore.getState().planType).toBeNull();
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
     });
 
     it('does nothing when user is not authenticated', async () => {
@@ -195,13 +213,24 @@ describe('usePremiumStore', () => {
   });
 
   describe('handlePurchaseFailure', () => {
-    it('resets purchaseInProgress and returns error info', () => {
+    it('resets purchaseInProgress, sets purchaseErrorMessage, and returns error info', () => {
       usePremiumStore.setState({ purchaseInProgress: true });
 
       const result = usePremiumStore.getState().handlePurchaseFailure({ code: 'E_UNKNOWN' } as never);
 
       expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
+      expect(usePremiumStore.getState().purchaseErrorMessage).toBe('Error');
       expect(result).toEqual({ isCancelled: false, message: 'Error' });
+    });
+  });
+
+  describe('clearPurchaseError', () => {
+    it('clears purchaseErrorMessage', () => {
+      usePremiumStore.setState({ purchaseErrorMessage: 'Some error' });
+
+      usePremiumStore.getState().clearPurchaseError();
+
+      expect(usePremiumStore.getState().purchaseErrorMessage).toBeNull();
     });
   });
 });

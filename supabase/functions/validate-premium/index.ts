@@ -65,19 +65,25 @@ async function validateAppleReceipt(receipt: string): Promise<ValidationResult> 
   return { valid: true, expiresAt, planType }
 }
 
-async function validateGoogleReceipt(receipt: string): Promise<ValidationResult> {
+async function validateGoogleReceipt(_receipt: string): Promise<ValidationResult> {
   // Google Play Developer API validation
-  const googleApiKey = Deno.env.get('GOOGLE_PLAY_API_KEY')
+  const googleServiceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON')
 
-  if (!googleApiKey) {
-    console.warn('GOOGLE_PLAY_API_KEY not configured — using receipt trust mode')
+  if (!googleServiceAccountJson) {
+    // Development/testing: no credentials configured — trust mode
+    console.warn('GOOGLE_SERVICE_ACCOUNT_JSON not configured — using receipt trust mode (dev only)')
     return { valid: true, expiresAt: undefined, planType: undefined }
   }
 
-  // In production, validate with Google Play Developer API
-  // using the purchaseToken
-  // For now, trust mode for development
-  return { valid: true, expiresAt: undefined, planType: undefined }
+  // TODO: Full implementation requires:
+  //   1. Parse service account JSON and obtain OAuth2 access token
+  //   2. GET https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{packageName}/purchases/subscriptions/{productId}/tokens/{receipt}
+  //   3. Parse expiryTimeMillis and autoRenewing from the response
+  //   Note: productId (subscription SKU) must also be included in the ValidateRequest body
+  //         and passed here — the current API contract does not include it yet.
+  // Failing closed in production until full implementation is in place.
+  console.error('Google Play validation not fully implemented — failing closed for security')
+  return { valid: false }
 }
 
 Deno.serve(async (req: Request) => {

@@ -35,6 +35,7 @@ export function PaywallScreen() {
   const isPremium = usePremiumStore((s) => s.isPremium);
   const purchaseInProgress = usePremiumStore((s) => s.purchaseInProgress);
   const expiresAt = usePremiumStore((s) => s.expiresAt);
+  const purchaseErrorMessage = usePremiumStore((s) => s.purchaseErrorMessage);
 
   const isExpired = !isPremium && expiresAt !== null;
 
@@ -71,10 +72,13 @@ export function PaywallScreen() {
     if (prevPurchaseInProgress.current && !purchaseInProgress) {
       if (isPremium) {
         setSnackbarMessage('🎉 Welcome to Premium! All features are now unlocked.');
+      } else if (purchaseErrorMessage) {
+        setSnackbarMessage(purchaseErrorMessage);
+        usePremiumStore.getState().clearPurchaseError();
       }
     }
     prevPurchaseInProgress.current = purchaseInProgress;
-  }, [purchaseInProgress, isPremium]);
+  }, [purchaseInProgress, isPremium, purchaseErrorMessage]);
 
   const handleDismiss = () => {
     navigation.goBack();
