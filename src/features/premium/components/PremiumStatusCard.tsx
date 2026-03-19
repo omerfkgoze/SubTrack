@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Icon, Text, useTheme } from 'react-native-paper';
 import { openSubscriptionManagement } from '@features/premium/services/subscriptionManagement';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
+import { format, parseISO } from 'date-fns';
 
 const PREMIUM_FEATURES = [
   'Unlimited subscriptions',
@@ -17,6 +19,11 @@ interface PremiumStatusCardProps {
 
 export function PremiumStatusCard({ onManageError }: PremiumStatusCardProps) {
   const theme = useTheme();
+  const planType = usePremiumStore((s) => s.planType);
+  const expiresAt = usePremiumStore((s) => s.expiresAt);
+
+  const planLabel = planType === 'yearly' ? 'Yearly Plan' : planType === 'monthly' ? 'Monthly Plan' : 'Premium Subscription';
+  const renewalDate = expiresAt ? format(parseISO(expiresAt), 'dd MMM yyyy') : null;
 
   const handleManageSubscription = async () => {
     try {
@@ -36,11 +43,17 @@ export function PremiumStatusCard({ onManageError }: PremiumStatusCardProps) {
           </Text>
         </View>
         <Text variant="titleLarge" style={[styles.planTitle, { color: theme.colors.onSurface }]}>
-          Premium Subscription
+          {planLabel}
         </Text>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-          Managed via App Store / Play Store
-        </Text>
+        {renewalDate ? (
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Renews on {renewalDate}
+          </Text>
+        ) : (
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Managed via App Store / Play Store
+          </Text>
+        )}
       </View>
 
       <Button

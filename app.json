@@ -46,7 +46,8 @@
         {
           "calendarPermission": "SubTrack needs calendar access to add subscription renewal dates."
         }
-      ]
+      ],
+      "react-native-iap"
     ],
     "extra": {
       "eas": {

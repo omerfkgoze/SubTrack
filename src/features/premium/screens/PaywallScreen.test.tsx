@@ -21,7 +21,26 @@ jest.mock('@features/premium/services/subscriptionManagement', () => ({
   openSubscriptionManagement: jest.fn(),
 }));
 
+jest.mock('@features/premium/services/purchaseService', () => ({
+  fetchSubscriptions: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('react-native-iap', () => ({}));
+
 const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePremiumStore>;
+
+const mockStoreState = {
+  isPremium: false,
+  purchaseInProgress: false,
+  expiresAt: null,
+  planType: null,
+  purchaseSubscription: jest.fn(),
+  handlePurchaseSuccess: jest.fn(),
+  handlePurchaseFailure: jest.fn(),
+};
+
+// Mock getState for the purchase flow
+(usePremiumStore as unknown as { getState: () => typeof mockStoreState }).getState = () => mockStoreState;
 
 function renderWithTheme(ui: React.ReactElement) {
   return render(<PaperProvider theme={theme}>{ui}</PaperProvider>);
@@ -30,8 +49,8 @@ function renderWithTheme(ui: React.ReactElement) {
 describe('PaywallScreen', () => {
   describe('free user view', () => {
     beforeEach(() => {
-      mockUsePremiumStore.mockImplementation((selector: (s: { isPremium: boolean }) => unknown) =>
-        selector({ isPremium: false }) as never,
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, isPremium: false }) as never,
       );
     });
 
@@ -62,16 +81,16 @@ describe('PaywallScreen', () => {
       expect(getByText('Full analytics & insights')).toBeTruthy();
     });
 
-    it('renders pricing options', () => {
+    it('renders plan selection buttons with fallback prices', () => {
       const { getByText } = renderWithTheme(<PaywallScreen />);
       expect(getByText('€2.99/month')).toBeTruthy();
-      expect(getByText('€24.99/year')).toBeTruthy();
+      expect(getByText('€24.99/year · Save 30%')).toBeTruthy();
     });
 
-    it('shows "Coming soon" snackbar when upgrade button is pressed', async () => {
+    it('triggers purchase when upgrade button is pressed', () => {
       const { getByText } = renderWithTheme(<PaywallScreen />);
       fireEvent.press(getByText('Upgrade to Premium'));
-      expect(getByText('Coming soon')).toBeTruthy();
+      expect(mockStoreState.purchaseSubscription).toHaveBeenCalled();
     });
 
     it('renders legal links', () => {
@@ -85,23 +104,36 @@ describe('PaywallScreen', () => {
       const { queryByText } = renderWithTheme(<PaywallScreen />);
       expect(queryByText('Premium Active')).toBeNull();
     });
+
+    it('shows loading state during purchase', () => {
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, isPremium: false, purchaseInProgress: true }) as never,
+      );
+
+      const { getByText } = renderWithTheme(<PaywallScreen />);
+      expect(getByText('Processing...')).toBeTruthy();
+    });
+
+    it('shows expired message when user had premium before', () => {
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, isPremium: false, expiresAt: '2026-01-01T00:00:00Z' }) as never,
+      );
+
+      const { getByText } = renderWithTheme(<PaywallScreen />);
+      expect(getByText('Your premium has ended. Renew to keep unlimited access.')).toBeTruthy();
+    });
   });
 
   describe('premium user view', () => {
     beforeEach(() => {
-      mockUsePremiumStore.mockImplementation((selector: (s: { isPremium: boolean }) => unknown) =>
-        selector({ isPremium: true }) as never,
+      mockUsePremiumStore.mockImplementation((selector: (s: typeof mockStoreState) => unknown) =>
+        selector({ ...mockStoreState, isPremium: true, planType: 'monthly', expiresAt: '2027-01-01T00:00:00Z' }) as never,
       );
     });
 
     it('renders premium status view for premium users', () => {
       const { getByText } = renderWithTheme(<PaywallScreen />);
       expect(getByText('Premium Active')).toBeTruthy();
-    });
-
-    it('renders "Premium Subscription" plan type', () => {
-      const { getByText } = renderWithTheme(<PaywallScreen />);
-      expect(getByText('Premium Subscription')).toBeTruthy();
     });
 
     it('renders "Manage Subscription" button', () => {

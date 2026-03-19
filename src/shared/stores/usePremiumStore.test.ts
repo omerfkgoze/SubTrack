@@ -8,6 +8,9 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 jest.mock('@shared/services/supabase', () => ({
   supabase: {
     from: jest.fn(),
+    functions: {
+      invoke: jest.fn().mockResolvedValue({ data: { valid: true }, error: null }),
+    },
   },
 }));
 
@@ -17,7 +20,16 @@ jest.mock('@shared/stores/useAuthStore', () => ({
   },
 }));
 
+jest.mock('@features/premium/services/purchaseService', () => ({
+  buySubscription: jest.fn().mockResolvedValue(undefined),
+  handlePurchaseUpdate: jest.fn().mockResolvedValue({ valid: true, planType: 'monthly', expiresAt: '2027-01-01T00:00:00Z' }),
+  handlePurchaseError: jest.fn().mockReturnValue({ isCancelled: false, message: 'Error' }),
+}));
+
+jest.mock('react-native-iap', () => ({}));
+
 const { supabase } = jest.requireMock('@shared/services/supabase');
+const purchaseService = jest.requireMock('@features/premium/services/purchaseService');
 
 function buildSupabaseMock(data: unknown, error: unknown = null) {
   return {
@@ -30,7 +42,13 @@ function buildSupabaseMock(data: unknown, error: unknown = null) {
 describe('usePremiumStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    usePremiumStore.setState({ isPremium: false, isLoading: false });
+    usePremiumStore.setState({
+      isPremium: false,
+      isLoading: false,
+      planType: null,
+      expiresAt: null,
+      purchaseInProgress: false,
+    });
   });
 
   describe('MAX_FREE_SUBSCRIPTIONS', () => {
@@ -67,19 +85,20 @@ describe('usePremiumStore', () => {
 
   describe('checkPremiumStatus', () => {
     it('sets isPremium to true when user_settings.is_premium is true', async () => {
-      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: true }));
+      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: true, premium_plan_type: 'monthly', premium_expires_at: '2027-01-01' }));
 
       await act(async () => {
         await usePremiumStore.getState().checkPremiumStatus();
       });
 
       expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().planType).toBe('monthly');
       expect(usePremiumStore.getState().isLoading).toBe(false);
     });
 
     it('sets isPremium to false when user_settings.is_premium is false', async () => {
       usePremiumStore.setState({ isPremium: true });
-      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: false }));
+      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: false, premium_plan_type: null, premium_expires_at: null }));
 
       await act(async () => {
         await usePremiumStore.getState().checkPremiumStatus();
@@ -114,13 +133,75 @@ describe('usePremiumStore', () => {
 
   describe('refreshPremiumStatus', () => {
     it('calls checkPremiumStatus', async () => {
-      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: true }));
+      supabase.from.mockReturnValue(buildSupabaseMock({ is_premium: true, premium_plan_type: 'yearly', premium_expires_at: '2027-06-01' }));
 
       await act(async () => {
         await usePremiumStore.getState().refreshPremiumStatus();
       });
 
       expect(usePremiumStore.getState().isPremium).toBe(true);
+    });
+  });
+
+  describe('purchaseSubscription', () => {
+    it('sets purchaseInProgress and calls buySubscription', async () => {
+      await act(async () => {
+        await usePremiumStore.getState().purchaseSubscription('com.subtrack.premium.monthly');
+      });
+
+      expect(purchaseService.buySubscription).toHaveBeenCalledWith('com.subtrack.premium.monthly', undefined);
+    });
+
+    it('resets purchaseInProgress on error', async () => {
+      purchaseService.buySubscription.mockRejectedValueOnce(new Error('fail'));
+
+      await act(async () => {
+        try {
+          await usePremiumStore.getState().purchaseSubscription('sku');
+        } catch {
+          // expected
+        }
+      });
+
+      expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
+    });
+  });
+
+  describe('handlePurchaseSuccess', () => {
+    it('validates purchase and updates state on success', async () => {
+      const purchase = { transactionReceipt: 'receipt' } as never;
+
+      await act(async () => {
+        await usePremiumStore.getState().handlePurchaseSuccess(purchase);
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().planType).toBe('monthly');
+      expect(usePremiumStore.getState().expiresAt).toBe('2027-01-01T00:00:00Z');
+      expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
+    });
+
+    it('resets purchaseInProgress on validation failure', async () => {
+      purchaseService.handlePurchaseUpdate.mockResolvedValueOnce({ valid: false });
+      usePremiumStore.setState({ purchaseInProgress: true });
+
+      await act(async () => {
+        await usePremiumStore.getState().handlePurchaseSuccess({} as never);
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(false);
+      expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
+    });
+  });
+
+  describe('handlePurchaseFailure', () => {
+    it('resets purchaseInProgress and returns error info', () => {
+      usePremiumStore.setState({ purchaseInProgress: true });
+
+      const result = usePremiumStore.getState().handlePurchaseFailure({ code: 'E_UNKNOWN' } as never);
+
+      expect(usePremiumStore.getState().purchaseInProgress).toBe(false);
+      expect(result).toEqual({ isCancelled: false, message: 'Error' });
     });
   });
 });

@@ -1,12 +1,15 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Divider, Icon, Snackbar, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Divider, Icon, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 import { PremiumStatusCard } from '@features/premium/components/PremiumStatusCard';
+import { MONTHLY_SKU, YEARLY_SKU } from '@features/premium/config/iapProducts';
+import { fetchSubscriptions } from '@features/premium/services/purchaseService';
+import type { Subscription } from 'react-native-iap';
 
 const FREE_FEATURES = [
   'Up to 5 subscriptions',
@@ -26,11 +29,52 @@ export function PaywallScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const [snackbarMessage, setSnackbarMessage] = React.useState('');
-  const isPremium = usePremiumStore((s) => s.isPremium);
+  const [selectedSku, setSelectedSku] = React.useState(YEARLY_SKU);
+  const [products, setProducts] = React.useState<Subscription[]>([]);
 
-  const handleUpgradePress = () => {
-    setSnackbarMessage('Coming soon');
+  const isPremium = usePremiumStore((s) => s.isPremium);
+  const purchaseInProgress = usePremiumStore((s) => s.purchaseInProgress);
+  const expiresAt = usePremiumStore((s) => s.expiresAt);
+
+  const isExpired = !isPremium && expiresAt !== null;
+
+  React.useEffect(() => {
+    fetchSubscriptions()
+      .then(setProducts)
+      .catch(() => {
+        // Products will show fallback prices
+      });
+  }, []);
+
+  const getPrice = (sku: string, fallback: string): string => {
+    const product = products.find((p) => p.productId === sku);
+    return product?.localizedPrice ?? fallback;
   };
+
+  const getOfferToken = (sku: string): string | undefined => {
+    const product = products.find((p) => p.productId === sku);
+    return product?.subscriptionOfferDetails?.[0]?.offerToken;
+  };
+
+  const handleUpgradePress = async () => {
+    try {
+      const offerToken = getOfferToken(selectedSku);
+      await usePremiumStore.getState().purchaseSubscription(selectedSku, offerToken);
+    } catch {
+      setSnackbarMessage('Failed to start purchase. Please try again.');
+    }
+  };
+
+  // Listen for purchase completion via store state changes
+  const prevPurchaseInProgress = React.useRef(purchaseInProgress);
+  React.useEffect(() => {
+    if (prevPurchaseInProgress.current && !purchaseInProgress) {
+      if (isPremium) {
+        setSnackbarMessage('🎉 Welcome to Premium! All features are now unlocked.');
+      }
+    }
+    prevPurchaseInProgress.current = purchaseInProgress;
+  }, [purchaseInProgress, isPremium]);
 
   const handleDismiss = () => {
     navigation.goBack();
@@ -53,6 +97,9 @@ export function PaywallScreen() {
     );
   }
 
+  const monthlyPrice = getPrice(MONTHLY_SKU, '€2.99');
+  const yearlyPrice = getPrice(YEARLY_SKU, '€24.99');
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -62,7 +109,9 @@ export function PaywallScreen() {
             Unlock Premium
           </Text>
           <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-            Upgrade to Premium to track unlimited subscriptions and unlock all features.
+            {isExpired
+              ? 'Your premium has ended. Renew to keep unlimited access.'
+              : 'Upgrade to Premium to track unlimited subscriptions and unlock all features.'}
           </Text>
         </View>
 
@@ -99,22 +148,24 @@ export function PaywallScreen() {
         </View>
 
         <View style={styles.pricingSection}>
-          <View style={[styles.pricingOption, { borderColor: theme.colors.secondary }]}>
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              €2.99/month
-            </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Billed monthly. Auto-renews. Cancel anytime.
-            </Text>
-          </View>
-          <View style={[styles.pricingOption, styles.pricingHighlight, { borderColor: theme.colors.secondary, backgroundColor: theme.colors.secondaryContainer }]}>
-            <Text variant="titleMedium" style={{ color: theme.colors.onSecondaryContainer }}>
-              €24.99/year
-            </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
-              Save 30% · Billed annually. Auto-renews. Cancel anytime.
-            </Text>
-          </View>
+          <Button
+            mode={selectedSku === MONTHLY_SKU ? 'contained' : 'outlined'}
+            onPress={() => setSelectedSku(MONTHLY_SKU)}
+            buttonColor={selectedSku === MONTHLY_SKU ? theme.colors.secondaryContainer : undefined}
+            textColor={selectedSku === MONTHLY_SKU ? theme.colors.onSecondaryContainer : theme.colors.onSurface}
+            style={[styles.pricingButton, { borderColor: theme.colors.secondary }]}
+          >
+            {`${monthlyPrice}/month`}
+          </Button>
+          <Button
+            mode={selectedSku === YEARLY_SKU ? 'contained' : 'outlined'}
+            onPress={() => setSelectedSku(YEARLY_SKU)}
+            buttonColor={selectedSku === YEARLY_SKU ? theme.colors.secondaryContainer : undefined}
+            textColor={selectedSku === YEARLY_SKU ? theme.colors.onSecondaryContainer : theme.colors.onSurface}
+            style={[styles.pricingButton, { borderColor: theme.colors.secondary }]}
+          >
+            {`${yearlyPrice}/year · Save 30%`}
+          </Button>
         </View>
 
         <View style={styles.ctaSection}>
@@ -124,9 +175,13 @@ export function PaywallScreen() {
             buttonColor={theme.colors.secondary}
             textColor={theme.colors.onSecondary}
             style={styles.upgradeButton}
+            disabled={purchaseInProgress}
           >
-            Upgrade to Premium
+            {purchaseInProgress ? 'Processing...' : 'Upgrade to Premium'}
           </Button>
+          {purchaseInProgress && (
+            <ActivityIndicator size="small" color={theme.colors.secondary} style={styles.loader} />
+          )}
           <Button mode="text" onPress={handleDismiss} textColor={theme.colors.onSurfaceVariant}>
             Maybe Later
           </Button>
@@ -201,20 +256,19 @@ const styles = StyleSheet.create({
   pricingSection: {
     gap: 12,
   },
-  pricingOption: {
-    borderWidth: 1,
+  pricingButton: {
     borderRadius: 12,
-    padding: 16,
-    gap: 4,
-  },
-  pricingHighlight: {
-    borderWidth: 2,
   },
   ctaSection: {
     gap: 8,
+    alignItems: 'center',
   },
   upgradeButton: {
     borderRadius: 8,
+    width: '100%',
+  },
+  loader: {
+    marginTop: 4,
   },
   legalSection: {
     flexDirection: 'row',

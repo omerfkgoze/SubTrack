@@ -1,6 +1,6 @@
 # Story 6.3: In-App Purchase Flow
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -42,70 +42,70 @@ So that I can unlock unlimited subscriptions and advanced features.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install and configure `react-native-iap` (AC: #1)
-  - [ ] 1.1: Install `react-native-iap` — `npx expo install react-native-iap`
-  - [ ] 1.2: Add IAP product IDs to a config file `src/features/premium/config/iapProducts.ts` — export `MONTHLY_SKU = 'com.subtrack.premium.monthly'` and `YEARLY_SKU = 'com.subtrack.premium.yearly'`
-  - [ ] 1.3: Create `src/features/premium/services/purchaseService.ts` with store connection init, product fetching, and purchase request logic
+- [x] Task 1: Install and configure `react-native-iap` (AC: #1)
+  - [x] 1.1: Install `react-native-iap` — `npx expo install react-native-iap`
+  - [x] 1.2: Add IAP product IDs to a config file `src/features/premium/config/iapProducts.ts` — export `MONTHLY_SKU = 'com.subtrack.premium.monthly'` and `YEARLY_SKU = 'com.subtrack.premium.yearly'`
+  - [x] 1.3: Create `src/features/premium/services/purchaseService.ts` with store connection init, product fetching, and purchase request logic
 
-- [ ] Task 2: Implement `purchaseService.ts` (AC: #1, #2, #3)
-  - [ ] 2.1: `initIAP()` — call `initConnection()` from `react-native-iap`, set up `purchaseUpdatedListener` and `purchaseErrorListener`
-  - [ ] 2.2: `getSubscriptions()` — call `getSubscriptions({ skus: [MONTHLY_SKU, YEARLY_SKU] })` and return product details (price, currency, description)
-  - [ ] 2.3: `buySubscription(sku: string)` — platform-aware purchase request: iOS uses `{ sku }`, Android uses `{ skus: [sku], subscriptionOffers }` with `offerToken`
-  - [ ] 2.4: `handlePurchaseUpdate(purchase)` — validate receipt via `validate-premium` Edge Function, then call `finishTransaction({ purchase, isConsumable: false })`
-  - [ ] 2.5: `handlePurchaseError(error)` — map error codes to user-friendly messages; distinguish user cancellation from real errors
-  - [ ] 2.6: `cleanupIAP()` — remove listeners, call `endConnection()`
+- [x] Task 2: Implement `purchaseService.ts` (AC: #1, #2, #3)
+  - [x] 2.1: `initIAP()` — call `initConnection()` from `react-native-iap`, set up `purchaseUpdatedListener` and `purchaseErrorListener`
+  - [x] 2.2: `getSubscriptions()` — call `getSubscriptions({ skus: [MONTHLY_SKU, YEARLY_SKU] })` and return product details (price, currency, description)
+  - [x] 2.3: `buySubscription(sku: string)` — platform-aware purchase request: iOS uses `{ sku }`, Android uses `{ skus: [sku], subscriptionOffers }` with `offerToken`
+  - [x] 2.4: `handlePurchaseUpdate(purchase)` — validate receipt via `validate-premium` Edge Function, then call `finishTransaction({ purchase, isConsumable: false })`
+  - [x] 2.5: `handlePurchaseError(error)` — map error codes to user-friendly messages; distinguish user cancellation from real errors
+  - [x] 2.6: `cleanupIAP()` — remove listeners, call `endConnection()`
 
-- [ ] Task 3: Create `validate-premium` Supabase Edge Function (AC: #2, #4)
-  - [ ] 3.1: Create `supabase/functions/validate-premium/index.ts`
-  - [ ] 3.2: Accept POST body: `{ platform: 'ios' | 'android', receipt: string, userId: string }`
-  - [ ] 3.3: For iOS: validate receipt with Apple App Store Server API (or use `transactionReceipt` verification)
-  - [ ] 3.4: For Android: validate `purchaseToken` with Google Play Developer API
-  - [ ] 3.5: On valid receipt: update `user_settings` table — set `is_premium = true`, store `premium_expires_at`, `premium_plan_type` ('monthly'|'yearly'), `premium_purchase_token`
-  - [ ] 3.6: On invalid/expired receipt: set `is_premium = false`, return appropriate error
-  - [ ] 3.7: Return JSON `{ valid: boolean, expiresAt?: string, error?: string }`
+- [x] Task 3: Create `validate-premium` Supabase Edge Function (AC: #2, #4)
+  - [x] 3.1: Create `supabase/functions/validate-premium/index.ts`
+  - [x] 3.2: Accept POST body: `{ platform: 'ios' | 'android', receipt: string, userId: string }`
+  - [x] 3.3: For iOS: validate receipt with Apple App Store Server API (or use `transactionReceipt` verification)
+  - [x] 3.4: For Android: validate `purchaseToken` with Google Play Developer API
+  - [x] 3.5: On valid receipt: update `user_settings` table — set `is_premium = true`, store `premium_expires_at`, `premium_plan_type` ('monthly'|'yearly'), `premium_purchase_token`
+  - [x] 3.6: On invalid/expired receipt: set `is_premium = false`, return appropriate error
+  - [x] 3.7: Return JSON `{ valid: boolean, expiresAt?: string, error?: string }`
 
-- [ ] Task 4: Extend `usePremiumStore` Zustand store (AC: #2, #4)
-  - [ ] 4.1: Add state fields: `planType: 'monthly' | 'yearly' | null`, `expiresAt: string | null`, `purchaseInProgress: boolean`
-  - [ ] 4.2: Add action `purchaseSubscription(sku: string)` — sets `purchaseInProgress`, calls `buySubscription`, handles result
-  - [ ] 4.3: Add action `handlePurchaseSuccess(purchase)` — calls `validate-premium` Edge Function, updates local state (`isPremium = true`, `planType`, `expiresAt`)
-  - [ ] 4.4: Add action `handlePurchaseFailure(error)` — resets `purchaseInProgress`, returns user-friendly error message
-  - [ ] 4.5: Modify existing `checkPremiumStatus()` to also fetch `premium_expires_at` and `premium_plan_type` from Supabase
+- [x] Task 4: Extend `usePremiumStore` Zustand store (AC: #2, #4)
+  - [x] 4.1: Add state fields: `planType: 'monthly' | 'yearly' | null`, `expiresAt: string | null`, `purchaseInProgress: boolean`
+  - [x] 4.2: Add action `purchaseSubscription(sku: string)` — sets `purchaseInProgress`, calls `buySubscription`, handles result
+  - [x] 4.3: Add action `handlePurchaseSuccess(purchase)` — calls `validate-premium` Edge Function, updates local state (`isPremium = true`, `planType`, `expiresAt`)
+  - [x] 4.4: Add action `handlePurchaseFailure(error)` — resets `purchaseInProgress`, returns user-friendly error message
+  - [x] 4.5: Modify existing `checkPremiumStatus()` to also fetch `premium_expires_at` and `premium_plan_type` from Supabase
 
-- [ ] Task 5: Update PaywallScreen to trigger real purchases (AC: #1, #2, #3)
-  - [ ] 5.1: Replace `handleUpgradePress` "Coming soon" snackbar with actual purchase flow — call `purchaseSubscription(selectedSku)`
-  - [ ] 5.2: Add plan selection state: let user toggle between monthly/yearly before purchasing
-  - [ ] 5.3: Show loading indicator during `purchaseInProgress`
-  - [ ] 5.4: On success: show success celebration (Snackbar or simple animation with checkmark), then navigate back or refresh screen to show PremiumStatusCard
-  - [ ] 5.5: On failure/cancel: show Snackbar with user-friendly message
-  - [ ] 5.6: Display real prices fetched from store (via `getSubscriptions()`) instead of hardcoded €2.99/€24.99
+- [x] Task 5: Update PaywallScreen to trigger real purchases (AC: #1, #2, #3)
+  - [x] 5.1: Replace `handleUpgradePress` "Coming soon" snackbar with actual purchase flow — call `purchaseSubscription(selectedSku)`
+  - [x] 5.2: Add plan selection state: let user toggle between monthly/yearly before purchasing
+  - [x] 5.3: Show loading indicator during `purchaseInProgress`
+  - [x] 5.4: On success: show success celebration (Snackbar or simple animation with checkmark), then navigate back or refresh screen to show PremiumStatusCard
+  - [x] 5.5: On failure/cancel: show Snackbar with user-friendly message
+  - [x] 5.6: Display real prices fetched from store (via `getSubscriptions()`) instead of hardcoded €2.99/€24.99
 
-- [ ] Task 6: Update PremiumStatusCard with real data (AC: #2, #4)
-  - [ ] 6.1: Read `planType` and `expiresAt` from `usePremiumStore` instead of placeholder text
-  - [ ] 6.2: Display plan type: "Monthly Plan" or "Yearly Plan"
-  - [ ] 6.3: Display renewal date formatted with `date-fns`: `format(parseISO(expiresAt), 'dd MMM yyyy')`
-  - [ ] 6.4: Keep "Manage Subscription" button (already opens native subscription management from Story 6.2)
+- [x] Task 6: Update PremiumStatusCard with real data (AC: #2, #4)
+  - [x] 6.1: Read `planType` and `expiresAt` from `usePremiumStore` instead of placeholder text
+  - [x] 6.2: Display plan type: "Monthly Plan" or "Yearly Plan"
+  - [x] 6.3: Display renewal date formatted with `date-fns`: `format(parseISO(expiresAt), 'dd MMM yyyy')`
+  - [x] 6.4: Keep "Manage Subscription" button (already opens native subscription management from Story 6.2)
 
-- [ ] Task 7: Handle subscription expiry/downgrade (AC: #4)
-  - [ ] 7.1: In `checkPremiumStatus()`, if `premium_expires_at` is in the past, call `validate-premium` Edge Function to re-verify with the store
-  - [ ] 7.2: If subscription expired: set `isPremium = false` in Supabase and local store
-  - [ ] 7.3: Subscriptions beyond limit 5 remain visible but add-subscription gate still enforced (existing logic from Story 6.1)
-  - [ ] 7.4: Show gentle re-subscribe prompt on PaywallScreen when expired (e.g., "Your premium has ended. Renew to keep unlimited access.")
+- [x] Task 7: Handle subscription expiry/downgrade (AC: #4)
+  - [x] 7.1: In `checkPremiumStatus()`, if `premium_expires_at` is in the past, call `validate-premium` Edge Function to re-verify with the store
+  - [x] 7.2: If subscription expired: set `isPremium = false` in Supabase and local store
+  - [x] 7.3: Subscriptions beyond limit 5 remain visible but add-subscription gate still enforced (existing logic from Story 6.1)
+  - [x] 7.4: Show gentle re-subscribe prompt on PaywallScreen when expired (e.g., "Your premium has ended. Renew to keep unlimited access.")
 
-- [ ] Task 8: Initialize IAP on app startup (AC: #1)
-  - [ ] 8.1: Call `initIAP()` in the app initialization flow (e.g., in `App.tsx` or a dedicated `useIAPSetup` hook)
-  - [ ] 8.2: Call `cleanupIAP()` on app unmount
-  - [ ] 8.3: Ensure IAP listeners are active before any purchase attempt
+- [x] Task 8: Initialize IAP on app startup (AC: #1)
+  - [x] 8.1: Call `initIAP()` in the app initialization flow (e.g., in `App.tsx` or a dedicated `useIAPSetup` hook)
+  - [x] 8.2: Call `cleanupIAP()` on app unmount
+  - [x] 8.3: Ensure IAP listeners are active before any purchase attempt
 
-- [ ] Task 9: Database migration (AC: #2, #4)
-  - [ ] 9.1: Create Supabase migration to add columns to `user_settings` table: `premium_plan_type TEXT`, `premium_expires_at TIMESTAMPTZ`, `premium_purchase_token TEXT`
-  - [ ] 9.2: Ensure RLS policies allow user to read their own premium fields
+- [x] Task 9: Database migration (AC: #2, #4)
+  - [x] 9.1: Create Supabase migration to add columns to `user_settings` table: `premium_plan_type TEXT`, `premium_expires_at TIMESTAMPTZ`, `premium_purchase_token TEXT`
+  - [x] 9.2: Ensure RLS policies allow user to read their own premium fields
 
-- [ ] Task 10: Tests (AC: #1, #2, #3, #4)
-  - [ ] 10.1: Unit test `purchaseService.ts` — mock `react-native-iap` module; test `initIAP`, `getSubscriptions`, `buySubscription`, `handlePurchaseUpdate`, error handling
-  - [ ] 10.2: Unit test `usePremiumStore` purchase actions — mock `purchaseService`; test success flow, failure flow, expiry check
-  - [ ] 10.3: Unit test PaywallScreen — purchase button triggers `purchaseSubscription`, loading state shown during purchase, success/failure messages displayed
-  - [ ] 10.4: Unit test PremiumStatusCard — renders real plan type and expiry date
-  - [ ] 10.5: Co-locate tests with source files per project convention
+- [x] Task 10: Tests (AC: #1, #2, #3, #4)
+  - [x] 10.1: Unit test `purchaseService.ts` — mock `react-native-iap` module; test `initIAP`, `getSubscriptions`, `buySubscription`, `handlePurchaseUpdate`, error handling
+  - [x] 10.2: Unit test `usePremiumStore` purchase actions — mock `purchaseService`; test success flow, failure flow, expiry check
+  - [x] 10.3: Unit test PaywallScreen — purchase button triggers `purchaseSubscription`, loading state shown during purchase, success/failure messages displayed
+  - [x] 10.4: Unit test PremiumStatusCard — renders real plan type and expiry date
+  - [x] 10.5: Co-locate tests with source files per project convention
 
 ## Dev Notes
 
@@ -200,10 +200,42 @@ Follow co-located test pattern established in Stories 6.1/6.2:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- ✅ Task 1: Installed `react-native-iap`, created IAP product config with MONTHLY_SKU and YEARLY_SKU, created purchaseService.ts with full IAP lifecycle management
+- ✅ Task 2: Implemented all purchaseService functions: initIAP, fetchSubscriptions, buySubscription (platform-aware), handlePurchaseUpdate (server-side validation + finishTransaction), handlePurchaseError (user-friendly messages), cleanupIAP
+- ✅ Task 3: Created `validate-premium` Supabase Edge Function with Apple/Google receipt validation, user_settings update, proper auth verification, and userId mismatch protection
+- ✅ Task 4: Extended usePremiumStore with planType, expiresAt, purchaseInProgress state; purchaseSubscription, handlePurchaseSuccess, handlePurchaseFailure actions; enhanced checkPremiumStatus with expiry re-verification
+- ✅ Task 5: Updated PaywallScreen with plan selection toggle, real purchase flow, store-fetched prices with fallbacks, loading state during purchase, success celebration snackbar, expired user prompt
+- ✅ Task 6: Updated PremiumStatusCard to display real planType ("Monthly Plan"/"Yearly Plan") and formatted renewal date using date-fns
+- ✅ Task 7: Implemented expiry handling in checkPremiumStatus (re-verifies with Edge Function when expired), downgrade flow, gentle re-subscribe prompt on PaywallScreen
+- ✅ Task 8: Created useIAPSetup hook, integrated in App.tsx for IAP initialization on startup and cleanup on unmount
+- ✅ Task 9: Created database migration adding premium_plan_type, premium_expires_at, premium_purchase_token columns to user_settings
+- ✅ Task 10: Full test coverage — 10 purchaseService tests, 14 usePremiumStore tests, 12 PaywallScreen tests, 10 PremiumStatusCard tests; all 593 tests pass with 0 failures
+
 ### File List
+
+- `src/features/premium/config/iapProducts.ts` (new)
+- `src/features/premium/services/purchaseService.ts` (new)
+- `src/features/premium/services/purchaseService.test.ts` (new)
+- `src/features/premium/hooks/useIAPSetup.ts` (new)
+- `supabase/functions/validate-premium/index.ts` (new)
+- `supabase/migrations/20260319000000_add_premium_purchase_fields.sql` (new)
+- `__mocks__/react-native-iap.js` (new)
+- `src/shared/stores/usePremiumStore.ts` (modified)
+- `src/shared/stores/usePremiumStore.test.ts` (modified)
+- `src/features/premium/screens/PaywallScreen.tsx` (modified)
+- `src/features/premium/screens/PaywallScreen.test.tsx` (modified)
+- `src/features/premium/components/PremiumStatusCard.tsx` (modified)
+- `src/features/premium/components/PremiumStatusCard.test.tsx` (modified)
+- `src/app/App.tsx` (modified)
+- `jest.config.js` (modified)
+- `package.json` (modified — react-native-iap dependency added)
+
+## Change Log
+
+- 2026-03-19: Story 6.3 implementation complete — full in-app purchase flow with react-native-iap, server-side receipt validation via Supabase Edge Function, extended premium store with purchase actions, updated PaywallScreen and PremiumStatusCard with real purchase flow and data, subscription expiry handling, database migration, comprehensive test coverage (593 tests passing)
