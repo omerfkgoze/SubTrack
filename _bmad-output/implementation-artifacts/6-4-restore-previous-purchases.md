@@ -1,6 +1,6 @@
 # Story 6.4: Restore Previous Purchases
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -82,6 +82,7 @@ So that I don't have to pay again.
 ### Critical: `getAvailablePurchases()` Behavior
 
 `react-native-iap`'s `getAvailablePurchases()`:
+
 - **iOS:** Queries the App Store for all non-consumable and auto-renewable subscription receipts associated with the user's Apple ID. May trigger a Sign-in to App Store prompt.
 - **Android:** Queries Google Play for purchases not yet acknowledged. Returns `purchaseToken` for each.
 - Returns `ProductPurchase[]` — filter by `productId` matching `MONTHLY_SKU` or `YEARLY_SKU`
@@ -89,16 +90,16 @@ So that I don't have to pay again.
 
 ### Existing Code to Reuse
 
-| Component | Location | How to Use |
-|-----------|----------|------------|
-| purchaseService | `src/features/premium/services/purchaseService.ts` | Add `restorePurchases()` function here |
-| usePremiumStore | `src/shared/stores/usePremiumStore.ts` | Add `restorePurchases` action and `restoreInProgress` state |
-| PaywallScreen | `src/features/premium/screens/PaywallScreen.tsx` | Wire existing "Restore Purchases" button (line ~195-197) |
-| handlePurchaseUpdate | `purchaseService.ts` | Reuse for validating restored purchases via Edge Function |
-| validate-premium Edge Function | `supabase/functions/validate-premium/index.ts` | Already handles receipt validation and premium status update — reuse as-is |
-| IAP product config | `src/features/premium/config/iapProducts.ts` | `MONTHLY_SKU`, `YEARLY_SKU`, `ALL_SKUS` for filtering |
-| IAP mock | `__mocks__/react-native-iap.js` | Add `getAvailablePurchases` mock |
-| Expo Go IAP mock | `src/mocks/react-native-iap.ts` | Add `getAvailablePurchases` no-op for Expo Go compatibility |
+| Component                      | Location                                           | How to Use                                                                 |
+| ------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------- |
+| purchaseService                | `src/features/premium/services/purchaseService.ts` | Add `restorePurchases()` function here                                     |
+| usePremiumStore                | `src/shared/stores/usePremiumStore.ts`             | Add `restorePurchases` action and `restoreInProgress` state                |
+| PaywallScreen                  | `src/features/premium/screens/PaywallScreen.tsx`   | Wire existing "Restore Purchases" button (line ~195-197)                   |
+| handlePurchaseUpdate           | `purchaseService.ts`                               | Reuse for validating restored purchases via Edge Function                  |
+| validate-premium Edge Function | `supabase/functions/validate-premium/index.ts`     | Already handles receipt validation and premium status update — reuse as-is |
+| IAP product config             | `src/features/premium/config/iapProducts.ts`       | `MONTHLY_SKU`, `YEARLY_SKU`, `ALL_SKUS` for filtering                      |
+| IAP mock                       | `__mocks__/react-native-iap.js`                    | Add `getAvailablePurchases` mock                                           |
+| Expo Go IAP mock               | `src/mocks/react-native-iap.ts`                    | Add `getAvailablePurchases` no-op for Expo Go compatibility                |
 
 ### What NOT to Do
 
@@ -112,11 +113,13 @@ So that I don't have to pay again.
 ### Platform-Specific Notes
 
 **iOS (StoreKit 2):**
+
 - `getAvailablePurchases()` returns all active subscriptions for the user's Apple ID
 - Receipt is in `transactionReceipt` field
 - May prompt user to sign in to their Apple ID
 
 **Android (Google Play Billing):**
+
 - `getAvailablePurchases()` returns acknowledged purchases
 - Receipt is in `purchaseToken` field
 - User must be signed into the same Google account that made the purchase
@@ -153,6 +156,7 @@ This handles auto-renewal correctly: the store knows the subscription renewed ev
 ### Testing Pattern
 
 Follow co-located test pattern from Stories 6.1/6.2/6.3:
+
 - Mock `react-native-iap` entirely (`getAvailablePurchases` returns configurable results)
 - Mock Supabase Edge Function calls for validation
 - Test state transitions in the Zustand store
@@ -200,7 +204,7 @@ claude-sonnet-4-6
 - src/shared/stores/usePremiumStore.test.ts
 - src/features/premium/screens/PaywallScreen.tsx
 - src/features/premium/screens/PaywallScreen.test.tsx
-- __mocks__/react-native-iap.js
+- **mocks**/react-native-iap.js
 - src/mocks/react-native-iap.ts
-- _bmad-output/implementation-artifacts/sprint-status.yaml
-- _bmad-output/implementation-artifacts/6-4-restore-previous-purchases.md
+- \_bmad-output/implementation-artifacts/sprint-status.yaml
+- \_bmad-output/implementation-artifacts/6-4-restore-previous-purchases.md
