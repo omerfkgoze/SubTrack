@@ -208,6 +208,7 @@ export const usePremiumStore = create<PremiumStore>()(
               isPremium: true,
               planType: (result.planType as 'monthly' | 'yearly') ?? null,
               expiresAt: result.expiresAt ?? null,
+              lastValidatedAt: new Date().toISOString(),
               restoreInProgress: false,
             });
             return 'success';

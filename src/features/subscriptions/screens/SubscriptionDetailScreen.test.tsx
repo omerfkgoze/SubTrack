@@ -564,6 +564,29 @@ describe('SubscriptionDetailScreen', () => {
     });
   });
 
+  describe('premium gating for calendar (Story 6.5)', () => {
+    it('free user sees lock icon on Add to Calendar button', () => {
+      usePremiumStore.setState({ isPremium: false });
+      renderWithProvider('sub-1');
+      expect(screen.getByLabelText('Add to Calendar')).toBeTruthy();
+    });
+
+    it('free user tapping Add to Calendar navigates to Settings > Premium', () => {
+      usePremiumStore.setState({ isPremium: false });
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByLabelText('Add to Calendar'));
+      expect(mockParentNavigate).toHaveBeenCalledWith('Settings', { screen: 'Premium' });
+    });
+
+    it('premium user tapping Add to Calendar shows permission dialog', () => {
+      usePremiumStore.setState({ isPremium: true });
+      renderWithProvider('sub-1');
+      fireEvent.press(screen.getByText('Add to Calendar'));
+      expect(screen.getByText('Add to Your Calendar')).toBeTruthy();
+      expect(mockParentNavigate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('calendar integration', () => {
     it('shows "Add to Calendar" button when no calendar_event_id', () => {
       renderWithProvider('sub-1');

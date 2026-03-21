@@ -1,6 +1,6 @@
 # Story 6.5: Premium Entitlement Enforcement
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -235,3 +235,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-03-21: Story implemented — premium feature gating for calendar sync, data export, calendar selection in SubscriptionDetailScreen; grace period fix for network failures in checkPremiumStatus with 7-day expiry and retry logic; 19 new tests added across 4 test files; all existing 608 tests pass.
+- 2026-03-21: Code review fixes — `restorePurchases()` store action now updates `lastValidatedAt` on success (grace period correctness); added 3 tests for SubscriptionDetailScreen free user calendar gating.
