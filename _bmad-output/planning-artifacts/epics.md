@@ -1187,7 +1187,7 @@ So that my subscriptions can be detected automatically from my transactions.
 
 **Given** the user taps "Connect Bank Account"
 **When** the connection flow starts
-**Then** the PSD2-compliant aggregator (Tink/Salt Edge) OAuth flow is initiated
+**Then** the PSD2-compliant aggregator (Tink — see `docs/epic-7-prep-aggregator-decision.md`) OAuth flow is initiated
 **And** explicit user consent is obtained before any data access (NFR19)
 **And** Strong Customer Authentication (SCA) is completed per PSD2 requirements (NFR18)
 
@@ -1373,7 +1373,7 @@ So that I can reconnect and maintain automatic detection.
 
 **Acceptance Criteria:**
 
-**Given** the user's bank connection is approaching expiry (typically 90 days for PSD2)
+**Given** the user's bank connection is approaching expiry (180 days per updated EBA rules — see `docs/epic-7-prep-psd2-sca-overview.md`)
 **When** the expiry is within 7 days
 **Then** a push notification is sent: "Your [Bank Name] connection expires in [X] days. Reconnect to keep auto-detection active."
 
