@@ -34,6 +34,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_connections: {
+        Row: {
+          id: string
+          user_id: string
+          provider: string
+          bank_name: string | null
+          status: string
+          connected_at: string
+          consent_granted_at: string | null
+          consent_expires_at: string | null
+          last_synced_at: string | null
+          tink_credentials_id: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          provider?: string
+          bank_name?: string | null
+          status?: string
+          connected_at?: string
+          consent_granted_at?: string | null
+          consent_expires_at?: string | null
+          last_synced_at?: string | null
+          tink_credentials_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          provider?: string
+          bank_name?: string | null
+          status?: string
+          connected_at?: string
+          consent_granted_at?: string | null
+          consent_expires_at?: string | null
+          last_synced_at?: string | null
+          tink_credentials_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_cycle: string

@@ -1,0 +1,324 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import {
+  Text,
+  Button,
+  Surface,
+  Snackbar,
+  ActivityIndicator,
+  useTheme,
+} from 'react-native-paper';
+import { WebView } from 'react-native-webview';
+import type { WebViewNavigation } from 'react-native-webview';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { SettingsStackParamList } from '@app/navigation/types';
+import { useBankStore } from '@shared/stores/useBankStore';
+import { BankConsentDialog } from '../components/BankConsentDialog';
+import {
+  buildTinkLinkUrl,
+  TINK_REDIRECT_URI,
+  parseAuthCodeFromUrl,
+  isTinkCallbackUrl,
+  parseTinkError,
+} from '../services/bankService';
+import { env } from '@config/env';
+
+type FlowState = 'info' | 'consent' | 'webview' | 'processing';
+
+export function BankConnectionScreen() {
+  const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const isConnecting = useBankStore((s) => s.isConnecting);
+  const connectionError = useBankStore((s) => s.connectionError);
+  const initiateConnection = useBankStore((s) => s.initiateConnection);
+  const clearConnectionError = useBankStore((s) => s.clearConnectionError);
+
+  const [flowState, setFlowState] = useState<FlowState>('info');
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
+  const [pendingAuthCode, setPendingAuthCode] = useState<string | null>(null);
+  const webViewRef = useRef<WebView>(null);
+
+  const tinkLinkUrl = buildTinkLinkUrl({
+    clientId: env.TINK_CLIENT_ID,
+    redirectUri: TINK_REDIRECT_URI,
+  });
+
+  // Process auth code AFTER WebView is unmounted (flowState === 'processing')
+  useEffect(() => {
+    if (flowState !== 'processing' || !pendingAuthCode) return;
+
+    let cancelled = false;
+
+    (async () => {
+      await initiateConnection(pendingAuthCode);
+      if (cancelled) return;
+
+      setPendingAuthCode(null);
+
+      const currentError = useBankStore.getState().connectionError;
+      if (currentError) {
+        setSnackbarType('error');
+        setSnackbarMessage(currentError.message);
+        setFlowState('info');
+      } else {
+        setSnackbarType('success');
+        setSnackbarMessage('Bank account connected successfully');
+        navigation.goBack();
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [flowState, pendingAuthCode, initiateConnection, navigation]);
+
+  const handleConnectPress = useCallback(() => {
+    clearConnectionError();
+    setFlowState('consent');
+  }, [clearConnectionError]);
+
+  const handleConsentConfirm = useCallback(() => {
+    setFlowState('webview');
+  }, []);
+
+  const handleConsentCancel = useCallback(() => {
+    setFlowState('info');
+  }, []);
+
+  const handleCallbackUrl = useCallback(
+    (url: string) => {
+      // Check for error in callback
+      const tinkError = parseTinkError(url);
+      if (tinkError) {
+        setSnackbarType('error');
+        setSnackbarMessage('Bank connection was cancelled or failed. Please try again.');
+        setFlowState('info');
+        return;
+      }
+
+      // Parse authorization code
+      const authCode = parseAuthCodeFromUrl(url);
+      if (!authCode) {
+        setSnackbarType('error');
+        setSnackbarMessage('Bank connection failed. Please try again.');
+        setFlowState('info');
+        return;
+      }
+
+      // Store auth code and switch to processing — WebView unmounts,
+      // then useEffect picks up the auth code and calls Edge Function
+      setPendingAuthCode(authCode);
+      setFlowState('processing');
+    },
+    [],
+  );
+
+  const handleWebViewShouldStartLoad = useCallback(
+    (request: { url: string }) => {
+      if (isTinkCallbackUrl(request.url)) {
+        handleCallbackUrl(request.url);
+        return false;
+      }
+      return true;
+    },
+    [handleCallbackUrl],
+  );
+
+  const handleNavigationStateChange = useCallback(
+    (navState: WebViewNavigation) => {
+      const { url } = navState;
+      if (url && isTinkCallbackUrl(url) && flowState === 'webview') {
+        handleCallbackUrl(url);
+      }
+    },
+    [handleCallbackUrl, flowState],
+  );
+
+  const handleRetry = useCallback(() => {
+    clearConnectionError();
+    setSnackbarMessage('');
+    setFlowState('consent');
+  }, [clearConnectionError]);
+
+  // WebView flow
+  if (flowState === 'webview') {
+    return (
+      <View style={styles.container}>
+        <WebView
+          ref={webViewRef}
+          source={{ uri: tinkLinkUrl }}
+          onNavigationStateChange={handleNavigationStateChange}
+          onShouldStartLoadWithRequest={handleWebViewShouldStartLoad}
+          originWhitelist={['https://*', 'subtrack://*']}
+          style={styles.webview}
+          startInLoadingState
+          renderLoading={() => (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" />
+              <Text variant="bodyMedium" style={styles.loadingText}>
+                Loading bank connection...
+              </Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  }
+
+  // Processing state
+  if (flowState === 'processing' || isConnecting) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" />
+        <Text variant="bodyLarge" style={styles.processingText}>
+          Setting up your bank connection...
+        </Text>
+      </View>
+    );
+  }
+
+  // Info screen (default)
+  return (
+    <View style={styles.container}>
+      <Surface style={styles.infoCard} elevation={1}>
+        <Text variant="headlineSmall" style={styles.title}>
+          Connect Your Bank
+        </Text>
+
+        <Text variant="bodyMedium" style={styles.description}>
+          Open Banking lets SubTrack securely detect your subscriptions by analyzing your bank
+          transactions. This uses Tink, a Visa-backed service trusted by millions.
+        </Text>
+
+        <Surface style={styles.securityCard} elevation={0}>
+          <Text variant="titleSmall" style={styles.securityTitle}>
+            How it works
+          </Text>
+          <Text variant="bodySmall" style={styles.securityItem}>
+            {'\u2022'} You authenticate directly with your bank — SubTrack never sees your credentials
+          </Text>
+          <Text variant="bodySmall" style={styles.securityItem}>
+            {'\u2022'} Only read access to accounts and transactions (last 90 days)
+          </Text>
+          <Text variant="bodySmall" style={styles.securityItem}>
+            {'\u2022'} No payments or transfers can be made
+          </Text>
+          <Text variant="bodySmall" style={styles.securityItem}>
+            {'\u2022'} You can disconnect at any time
+          </Text>
+          <Text variant="bodySmall" style={styles.securityItem}>
+            {'\u2022'} Raw transaction data deleted after 30 days
+          </Text>
+        </Surface>
+
+        <Button
+          mode="contained"
+          onPress={handleConnectPress}
+          disabled={isConnecting}
+          loading={isConnecting}
+          style={styles.connectButton}
+          contentStyle={styles.connectButtonContent}
+          accessibilityLabel="Connect Bank Account"
+          accessibilityRole="button"
+        >
+          Connect Bank Account
+        </Button>
+
+        {connectionError && (
+          <View style={styles.errorContainer}>
+            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+              {connectionError.message}
+            </Text>
+            <Button
+              mode="text"
+              onPress={handleRetry}
+              accessibilityLabel="Retry bank connection"
+              accessibilityRole="button"
+            >
+              Try Again
+            </Button>
+          </View>
+        )}
+      </Surface>
+
+      <BankConsentDialog
+        visible={flowState === 'consent'}
+        onConfirm={handleConsentConfirm}
+        onCancel={handleConsentCancel}
+      />
+
+      <Snackbar
+        visible={!!snackbarMessage}
+        onDismiss={() => setSnackbarMessage('')}
+        duration={3000}
+        accessibilityLiveRegion="polite"
+        style={snackbarType === 'error' ? { backgroundColor: theme.colors.error } : undefined}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoCard: {
+    margin: 16,
+    padding: 24,
+    borderRadius: 12,
+  },
+  title: {
+    marginBottom: 16,
+  },
+  description: {
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  securityCard: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+  },
+  securityTitle: {
+    marginBottom: 8,
+  },
+  securityItem: {
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  connectButton: {
+    marginBottom: 8,
+  },
+  connectButtonContent: {
+    minHeight: 48,
+  },
+  errorContainer: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  webview: {
+    flex: 1,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+  },
+  processingText: {
+    marginTop: 16,
+  },
+});

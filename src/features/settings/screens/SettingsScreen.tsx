@@ -264,6 +264,25 @@ export function SettingsScreen() {
         </List.Section>
 
         <List.Section>
+          <List.Subheader>Bank</List.Subheader>
+          <List.Item
+            title="Bank Connection"
+            description={isPremium ? 'Connect via Open Banking' : 'Premium feature'}
+            left={(props) => (
+              <List.Icon
+                {...props}
+                icon={isPremium ? 'bank' : 'lock'}
+              />
+            )}
+            right={(props) => <List.Icon {...props} icon={isPremium ? 'chevron-right' : 'lock'} />}
+            onPress={() => isPremium ? navigation.navigate('BankConnection') : navigation.navigate('Premium')}
+            style={styles.listItem}
+            accessibilityLabel="Bank Connection"
+            accessibilityRole="button"
+          />
+        </List.Section>
+
+        <List.Section>
           <List.Subheader>Calendar</List.Subheader>
           <List.Item
             title="Preferred Calendar"

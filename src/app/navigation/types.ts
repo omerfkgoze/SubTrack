@@ -17,6 +17,7 @@ export type SettingsStackParamList = {
   Notifications: undefined;
   NotificationHistory: undefined;
   Premium: { source?: 'settings' | 'upsell' } | undefined;
+  BankConnection: undefined;
   DataExport: undefined;
   MyData: undefined;
   Account: undefined;

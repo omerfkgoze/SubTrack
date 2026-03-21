@@ -7,6 +7,7 @@ import { NotificationHistoryScreen } from '@features/notifications/screens/Notif
 import { DataExportScreen } from '@features/settings/screens/DataExportScreen';
 import { MyDataScreen } from '@features/settings/screens/MyDataScreen';
 import { PaywallScreen } from '@features/premium/screens/PaywallScreen';
+import { BankConnectionScreen } from '@features/bank/screens/BankConnectionScreen';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -35,6 +36,11 @@ export function SettingsStack() {
         options={() => ({
           title: usePremiumStore.getState().isPremium ? 'Your Premium Plan' : 'Unlock Premium',
         })}
+      />
+      <Stack.Screen
+        name="BankConnection"
+        component={BankConnectionScreen}
+        options={{ title: 'Bank Connection' }}
       />
       <Stack.Screen
         name="DataExport"

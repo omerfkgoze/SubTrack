@@ -149,6 +149,39 @@ describe('SettingsScreen', () => {
     });
   });
 
+  describe('Bank Connection premium gating (Story 7.1)', () => {
+    it('renders Bank Connection entry for free users', () => {
+      renderWithProvider();
+      expect(screen.getByLabelText('Bank Connection')).toBeTruthy();
+      expect(screen.getByText('Premium feature')).toBeTruthy();
+    });
+
+    it('free user tapping Bank Connection navigates to Premium screen', () => {
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Bank Connection'));
+      expect(mockNavigate).toHaveBeenCalledWith('Premium');
+    });
+
+    it('premium user tapping Bank Connection navigates to BankConnection screen', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Bank Connection'));
+      expect(mockNavigate).toHaveBeenCalledWith('BankConnection');
+    });
+
+    it('premium user sees "Connect via Open Banking" description', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      renderWithProvider();
+      expect(screen.getByText('Connect via Open Banking')).toBeTruthy();
+    });
+  });
+
   describe('Premium feature gating (Story 6.5)', () => {
     it('shows lock icon on Data Export for free users', () => {
       renderWithProvider();
