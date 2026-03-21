@@ -90,28 +90,37 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          created_at: string | null
           id: string
-          user_id: string
-          preferred_calendar_id: string | null
           is_premium: boolean
-          created_at: string
-          updated_at: string
+          preferred_calendar_id: string | null
+          premium_expires_at: string | null
+          premium_plan_type: string | null
+          premium_purchase_token: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
-          user_id: string
-          preferred_calendar_id?: string | null
           is_premium?: boolean
-          created_at?: string
-          updated_at?: string
+          preferred_calendar_id?: string | null
+          premium_expires_at?: string | null
+          premium_plan_type?: string | null
+          premium_purchase_token?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
+          created_at?: string | null
           id?: string
-          user_id?: string
-          preferred_calendar_id?: string | null
           is_premium?: boolean
-          created_at?: string
-          updated_at?: string
+          preferred_calendar_id?: string | null
+          premium_expires_at?: string | null
+          premium_plan_type?: string | null
+          premium_purchase_token?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

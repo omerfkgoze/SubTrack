@@ -2,16 +2,6 @@ drop extension if exists "pg_net";
 
 create extension if not exists "pg_net" with schema "public";
 
-alter table "public"."user_settings" drop constraint "user_settings_premium_plan_type_check";
-
-alter table "public"."user_settings" drop column "is_premium";
-
-alter table "public"."user_settings" drop column "premium_expires_at";
-
-alter table "public"."user_settings" drop column "premium_plan_type";
-
-alter table "public"."user_settings" drop column "premium_purchase_token";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.rls_auto_enable()
