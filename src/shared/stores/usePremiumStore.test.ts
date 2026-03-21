@@ -1,5 +1,5 @@
 import { act } from '@testing-library/react-native';
-import { usePremiumStore, MAX_FREE_SUBSCRIPTIONS } from './usePremiumStore';
+import { usePremiumStore, MAX_FREE_SUBSCRIPTIONS, _resetSessionRetryCount } from './usePremiumStore';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -43,11 +43,13 @@ function buildSupabaseMock(data: unknown, error: unknown = null) {
 describe('usePremiumStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    _resetSessionRetryCount();
     usePremiumStore.setState({
       isPremium: false,
       isLoading: false,
       planType: null,
       expiresAt: null,
+      lastValidatedAt: null,
       purchaseInProgress: false,
       restoreInProgress: false,
       purchaseErrorMessage: null,
@@ -190,6 +192,73 @@ describe('usePremiumStore', () => {
       });
 
       expect(supabase.from).not.toHaveBeenCalled();
+    });
+
+    it('(AC3) keeps cached isPremium when Supabase query fails and lastValidatedAt is recent', async () => {
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 1); // 1 day ago
+      usePremiumStore.setState({ isPremium: true, lastValidatedAt: recentDate.toISOString() });
+      supabase.from.mockReturnValue(buildSupabaseMock(null, { message: 'Network error' }));
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().isLoading).toBe(false);
+    });
+
+    it('(AC3) keeps cached isPremium when restore throws and lastValidatedAt is recent', async () => {
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 1); // 1 day ago
+      usePremiumStore.setState({ isPremium: true, lastValidatedAt: recentDate.toISOString() });
+      supabase.from.mockReturnValue(buildSupabaseMock({
+        is_premium: true,
+        premium_plan_type: 'monthly',
+        premium_expires_at: '2020-01-01T00:00:00Z', // past date
+      }));
+      purchaseService.restorePurchases.mockRejectedValueOnce(new Error('Network error'));
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(usePremiumStore.getState().isLoading).toBe(false);
+    });
+
+    it('(AC3 grace expiry) downgrades isPremium when Supabase fails and lastValidatedAt is >7 days ago', async () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 8); // 8 days ago
+      usePremiumStore.setState({ isPremium: true, lastValidatedAt: oldDate.toISOString() });
+      supabase.from.mockReturnValue(buildSupabaseMock(null, { message: 'Network error' }));
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(false);
+      expect(usePremiumStore.getState().isLoading).toBe(false);
+    });
+
+    it('(AC3 retry) schedules a retry when grace period is active and network fails', async () => {
+      jest.useFakeTimers();
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
+
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 1);
+      usePremiumStore.setState({ isPremium: true, lastValidatedAt: recentDate.toISOString() });
+      supabase.from.mockReturnValue(buildSupabaseMock(null, { message: 'Network error' }));
+
+      await act(async () => {
+        await usePremiumStore.getState().checkPremiumStatus();
+      });
+
+      expect(usePremiumStore.getState().isPremium).toBe(true);
+      expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
+
+      setTimeoutSpy.mockRestore();
+      jest.useRealTimers();
     });
   });
 

@@ -269,8 +269,8 @@ export function SettingsScreen() {
             title="Preferred Calendar"
             description={preferredCalendarName ?? 'Default'}
             left={(props) => <List.Icon {...props} icon="calendar" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={handleCalendarPreference}
+            right={(props) => <List.Icon {...props} icon={isPremium ? 'chevron-right' : 'lock'} />}
+            onPress={isPremium ? handleCalendarPreference : () => navigation.navigate('Premium')}
             style={styles.listItem}
             accessibilityLabel="Preferred Calendar"
             accessibilityRole="button"
@@ -283,8 +283,8 @@ export function SettingsScreen() {
             title="Data Export"
             description="Export your subscriptions as JSON or CSV"
             left={(props) => <List.Icon {...props} icon="database-export" />}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => navigation.navigate('DataExport')}
+            right={(props) => <List.Icon {...props} icon={isPremium ? 'chevron-right' : 'lock'} />}
+            onPress={isPremium ? () => navigation.navigate('DataExport') : () => navigation.navigate('Premium')}
             style={styles.listItem}
             accessibilityLabel="Data Export"
             accessibilityRole="button"

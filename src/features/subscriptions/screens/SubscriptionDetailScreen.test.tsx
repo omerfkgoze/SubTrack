@@ -62,14 +62,18 @@ jest.mock('react-native-paper-dates', () => ({
 
 // Must import after mocks are set up
 const { SubscriptionDetailScreen } = require('./SubscriptionDetailScreen');
+const { usePremiumStore } = require('@shared/stores/usePremiumStore');
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
 const mockSetOptions = jest.fn();
+const mockParentNavigate = jest.fn();
+const mockGetParent = jest.fn().mockReturnValue({ navigate: mockParentNavigate });
 const mockNavigation = {
   goBack: mockGoBack,
   navigate: mockNavigate,
   setOptions: mockSetOptions,
+  getParent: mockGetParent,
 } as never;
 
 const mockSubscription: Subscription = {
@@ -118,6 +122,7 @@ function renderWithProvider(subscriptionId: string) {
 describe('SubscriptionDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetParent.mockReturnValue({ navigate: mockParentNavigate });
     useSubscriptionStore.setState({
       subscriptions: [mockSubscription, mockTrialSubscription, mockCancelledSubscription],
       isLoading: false,
@@ -125,6 +130,8 @@ describe('SubscriptionDetailScreen', () => {
       error: null,
       pendingDelete: null,
     });
+    // Calendar sync requires premium — set premium for all tests by default
+    usePremiumStore.setState({ isPremium: true });
   });
 
   it('renders all subscription details', () => {

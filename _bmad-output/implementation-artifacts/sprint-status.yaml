@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-19 # story 6-5 ready-for-dev
+last_updated: 2026-03-21 # story 6-5 review
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -98,7 +98,7 @@ development_status:
   6-2-premium-feature-benefits-display: done
   6-3-in-app-purchase-flow: done
   6-4-restore-previous-purchases: done
-  6-5-premium-entitlement-enforcement: ready-for-dev
+  6-5-premium-entitlement-enforcement: review
   epic-6-retrospective: optional
 
   # Epic 7: Bank Integration (Phase 2)

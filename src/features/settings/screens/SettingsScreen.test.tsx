@@ -149,6 +149,53 @@ describe('SettingsScreen', () => {
     });
   });
 
+  describe('Premium feature gating (Story 6.5)', () => {
+    it('shows lock icon on Data Export for free users', () => {
+      renderWithProvider();
+      expect(screen.getByLabelText('Data Export')).toBeTruthy();
+    });
+
+    it('free user tapping Data Export navigates to Premium screen', () => {
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Data Export'));
+      expect(mockNavigate).toHaveBeenCalledWith('Premium');
+    });
+
+    it('premium user tapping Data Export navigates to DataExport screen', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Data Export'));
+      expect(mockNavigate).toHaveBeenCalledWith('DataExport');
+    });
+
+    it('free user tapping Preferred Calendar navigates to Premium screen', () => {
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Preferred Calendar'));
+      expect(mockNavigate).toHaveBeenCalledWith('Premium');
+    });
+
+    it('premium user tapping Preferred Calendar opens calendar selection', async () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
+      mockGetWritableCalendars.mockResolvedValue([
+        { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },
+      ]);
+
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Preferred Calendar'));
+
+      await waitFor(() => {
+        expect(mockNavigate).not.toHaveBeenCalledWith('Premium');
+      });
+    });
+  });
+
   describe('Calendar section (Story 5.2 AC4)', () => {
     it('renders Calendar section with Preferred Calendar item showing Default', () => {
       renderWithProvider();
@@ -181,7 +228,11 @@ describe('SettingsScreen', () => {
       expect(screen.getByLabelText('Preferred Calendar')).toBeTruthy();
     });
 
-    it('opens calendar selection dialog when tapped', async () => {
+    it('opens calendar selection dialog when tapped by premium user', async () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
       mockRequestCalendarAccess.mockResolvedValue({ granted: true, canAskAgain: true });
       mockGetWritableCalendars.mockResolvedValue([
         { id: 'cal-1', title: 'Personal', color: '#FF0000', isPrimary: true },

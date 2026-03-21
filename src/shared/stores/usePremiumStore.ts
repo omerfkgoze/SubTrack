@@ -13,11 +13,42 @@ import type { ProductPurchase, PurchaseError, SubscriptionPurchase } from 'react
 
 export const MAX_FREE_SUBSCRIPTIONS = 5;
 
+export const GRACE_PERIOD_DAYS = 7;
+export const RETRY_DELAY_MS = 30_000;
+export const MAX_RETRIES_PER_SESSION = 3;
+
+export type PremiumFeature = 'calendar-sync' | 'data-export' | 'full-analytics';
+
+const FREE_FEATURES = new Set<PremiumFeature>([]); // No premium features in free tier
+
+let sessionRetryCount = 0;
+
+/** For testing only — resets the per-session retry counter. */
+export function _resetSessionRetryCount(): void {
+  sessionRetryCount = 0;
+}
+
+function isGraceExpired(lastValidatedAt: string | null): boolean {
+  if (!lastValidatedAt) return true; // never validated → grace expired
+  const diffMs = Date.now() - new Date(lastValidatedAt).getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  return diffDays > GRACE_PERIOD_DAYS;
+}
+
+function scheduleRetry(fn: () => Promise<void>): void {
+  if (sessionRetryCount >= MAX_RETRIES_PER_SESSION) return;
+  sessionRetryCount++;
+  setTimeout(() => {
+    fn().catch(() => {});
+  }, RETRY_DELAY_MS);
+}
+
 interface PremiumState {
   isPremium: boolean;
   isLoading: boolean;
   planType: 'monthly' | 'yearly' | null;
   expiresAt: string | null;
+  lastValidatedAt: string | null;
   purchaseInProgress: boolean;
   restoreInProgress: boolean;
   purchaseErrorMessage: string | null;
@@ -27,6 +58,7 @@ interface PremiumActions {
   checkPremiumStatus: () => Promise<void>;
   refreshPremiumStatus: () => Promise<void>;
   canAddSubscription: (activeCount: number) => boolean;
+  isFeatureAvailable: (feature: PremiumFeature) => boolean;
   purchaseSubscription: (sku: string, offerToken?: string) => Promise<void>;
   handlePurchaseSuccess: (purchase: ProductPurchase | SubscriptionPurchase) => Promise<void>;
   handlePurchaseFailure: (error: PurchaseError) => { isCancelled: boolean; message: string };
@@ -43,6 +75,7 @@ export const usePremiumStore = create<PremiumStore>()(
       isLoading: false,
       planType: null,
       expiresAt: null,
+      lastValidatedAt: null,
       purchaseInProgress: false,
       restoreInProgress: false,
       purchaseErrorMessage: null,
@@ -74,24 +107,42 @@ export const usePremiumStore = create<PremiumStore>()(
                   isPremium: true,
                   planType: (restoreResult.planType as 'monthly' | 'yearly') ?? null,
                   expiresAt: restoreResult.expiresAt ?? null,
+                  lastValidatedAt: new Date().toISOString(),
                   isLoading: false,
                 });
               } else {
                 set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
               }
             } catch {
-              // If restore fails, downgrade to free
-              set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
+              // Network failure: apply grace period logic
+              if (isGraceExpired(get().lastValidatedAt)) {
+                set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
+              } else {
+                set({ isLoading: false });
+                scheduleRetry(() => get().checkPremiumStatus());
+              }
             }
           } else {
             set({
               isPremium,
               planType: data.premium_plan_type ?? null,
               expiresAt,
+              ...(isPremium ? { lastValidatedAt: new Date().toISOString() } : {}),
               isLoading: false,
             });
           }
+        } else if (error) {
+          // Network/DB error: apply grace period logic
+          if (get().isPremium && isGraceExpired(get().lastValidatedAt)) {
+            set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
+          } else {
+            set({ isLoading: false });
+            if (get().isPremium) {
+              scheduleRetry(() => get().checkPremiumStatus());
+            }
+          }
         } else {
+          // data is null, no error — user has no settings row
           set({ isLoading: false });
         }
       },
@@ -103,6 +154,10 @@ export const usePremiumStore = create<PremiumStore>()(
       canAddSubscription: (activeCount: number) => {
         const { isPremium } = get();
         return isPremium || activeCount < MAX_FREE_SUBSCRIPTIONS;
+      },
+
+      isFeatureAvailable: (feature: PremiumFeature): boolean => {
+        return get().isPremium || FREE_FEATURES.has(feature);
       },
 
       purchaseSubscription: async (sku: string, offerToken?: string) => {
@@ -179,6 +234,7 @@ export const usePremiumStore = create<PremiumStore>()(
         isPremium: state.isPremium,
         planType: state.planType,
         expiresAt: state.expiresAt,
+        lastValidatedAt: state.lastValidatedAt,
       }),
     },
   ),

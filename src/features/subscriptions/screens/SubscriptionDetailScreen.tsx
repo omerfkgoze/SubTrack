@@ -47,6 +47,7 @@ import {
 import { CalendarSelectionDialog } from '@features/subscriptions/components/CalendarSelectionDialog';
 import { CalendarCleanupDialog } from '@features/subscriptions/components/CalendarCleanupDialog';
 import { supabase } from '@shared/services/supabase';
+import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const REMINDER_TIMING_OPTIONS = [
   { value: '1', label: '1 day' },
@@ -70,6 +71,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
   const subscription = useSubscriptionStore((s) =>
     s.subscriptions.find((sub) => sub.id === subscriptionId),
   );
+  const isPremium = usePremiumStore((s) => s.isPremium);
   const storeDelete = useSubscriptionStore((s) => s.deleteSubscription);
   const toggleSubscriptionStatus = useSubscriptionStore((s) => s.toggleSubscriptionStatus);
   const isSubmitting = useSubscriptionStore((s) => s.isSubmitting);
@@ -543,12 +545,14 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
           {!isInactive && (
             <Button
               mode="outlined"
-              onPress={handleAddToCalendar}
-              icon="calendar-plus"
+              onPress={isPremium
+                ? handleAddToCalendar
+                : () => (navigation.getParent() as any)?.navigate('Settings', { screen: 'Premium' })}
+              icon={isPremium ? 'calendar-plus' : 'lock'}
               style={styles.actionButton}
               contentStyle={styles.actionButtonContent}
-              disabled={isSubmitting || calendarLoading}
-              loading={calendarLoading}
+              disabled={isPremium && (isSubmitting || calendarLoading)}
+              loading={isPremium && calendarLoading}
               accessibilityLabel={subscription.calendar_event_id ? 'Update Calendar Event' : 'Add to Calendar'}
             >
               {subscription.calendar_event_id ? 'Update Calendar Event' : 'Add to Calendar'}
