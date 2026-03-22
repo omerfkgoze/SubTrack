@@ -79,6 +79,57 @@ export type Database = {
         }
         Relationships: []
       }
+      detected_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          bank_connection_id: string
+          tink_group_id: string
+          merchant_name: string
+          amount: number
+          currency: string
+          frequency: string
+          confidence_score: number
+          status: string
+          first_seen: string
+          last_seen: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          bank_connection_id: string
+          tink_group_id: string
+          merchant_name: string
+          amount: number
+          currency?: string
+          frequency?: string
+          confidence_score?: number
+          status?: string
+          first_seen: string
+          last_seen: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          bank_connection_id?: string
+          tink_group_id?: string
+          merchant_name?: string
+          amount?: number
+          currency?: string
+          frequency?: string
+          confidence_score?: number
+          status?: string
+          first_seen?: string
+          last_seen?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           billing_cycle: string

@@ -24,7 +24,7 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
   if (params.locale) {
     url.searchParams.set('locale', params.locale);
   }
-  url.searchParams.set('scope', 'accounts:read,transactions:read');
+  url.searchParams.set('scope', 'accounts:read,transactions:read,enrichment.transactions:readonly');
   return url.toString();
 }
 

@@ -54,6 +54,11 @@ describe('useBankStore', () => {
       supportedBanks: [],
       isFetchingBanks: false,
       fetchBanksError: null,
+      detectedSubscriptions: [],
+      isDetecting: false,
+      isFetchingDetected: false,
+      detectionError: null,
+      lastDetectionResult: null,
     });
   });
 
@@ -269,6 +274,206 @@ describe('useBankStore', () => {
       useBankStore.getState().clearConnectionError();
 
       expect(useBankStore.getState().connectionError).toBeNull();
+    });
+  });
+
+  describe('detectSubscriptions', () => {
+    it('calls tink-detect-subscriptions Edge Function and stores result on success', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: { success: true, detectedCount: 3, newCount: 2 },
+        error: null,
+      });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().detectSubscriptions('conn-1');
+      });
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith('tink-detect-subscriptions', {
+        body: { connectionId: 'conn-1' },
+      });
+
+      const { lastDetectionResult, isDetecting, detectionError } = useBankStore.getState();
+      expect(lastDetectionResult).toEqual({ success: true, detectedCount: 3, newCount: 2 });
+      expect(isDetecting).toBe(false);
+      expect(detectionError).toBeNull();
+    });
+
+    it('fetches detected subscriptions after successful detection', async () => {
+      const mockDetected = [{
+        id: 'det-1',
+        user_id: 'user-1',
+        bank_connection_id: 'conn-1',
+        tink_group_id: 'group-1',
+        merchant_name: 'Netflix',
+        amount: 12.99,
+        currency: 'EUR',
+        frequency: 'monthly',
+        confidence_score: 0.9,
+        status: 'detected',
+        first_seen: '2025-09-15',
+        last_seen: '2026-02-15',
+      }];
+
+      supabase.functions.invoke.mockResolvedValue({
+        data: { success: true, detectedCount: 1, newCount: 1 },
+        error: null,
+      });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: mockDetected, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().detectSubscriptions('conn-1');
+      });
+
+      const { detectedSubscriptions } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectedSubscriptions[0].merchantName).toBe('Netflix');
+      expect(detectedSubscriptions[0].confidenceScore).toBe(0.9);
+    });
+
+    it('sets detectionError on Edge Function failure', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: null,
+        error: { message: 'Function error' },
+      });
+
+      await act(async () => {
+        await useBankStore.getState().detectSubscriptions('conn-1');
+      });
+
+      const { detectionError, isDetecting, lastDetectionResult } = useBankStore.getState();
+      expect(detectionError).not.toBeNull();
+      expect(detectionError?.code).toBe('DETECTION_FAILED');
+      expect(isDetecting).toBe(false);
+      expect(lastDetectionResult).toBeNull();
+    });
+
+    it('updates local connection status to expired on TOKEN_REFRESH_FAILED', async () => {
+      // Pre-set an active connection
+      useBankStore.setState({
+        connections: [{
+          id: 'conn-1', userId: 'user-1', provider: 'tink', bankName: 'Demo Bank',
+          status: 'active', connectedAt: '2026-03-21T12:00:00Z',
+          consentGrantedAt: '2026-03-21T12:00:00Z', consentExpiresAt: '2026-09-17T12:00:00Z',
+          lastSyncedAt: null, tinkCredentialsId: 'cred-1',
+        }],
+      });
+
+      const mockContextJson = jest.fn().mockResolvedValue({ error: 'TOKEN_REFRESH_FAILED' });
+      supabase.functions.invoke.mockResolvedValue({
+        data: null,
+        error: {
+          message: 'Token refresh failed',
+          context: { json: mockContextJson },
+        },
+      });
+
+      await act(async () => {
+        await useBankStore.getState().detectSubscriptions('conn-1');
+      });
+
+      const { connections, detectionError } = useBankStore.getState();
+      expect(connections[0].status).toBe('expired');
+      expect(detectionError?.code).toBe('TOKEN_REFRESH_FAILED');
+      expect(detectionError?.message).toContain('expired');
+    });
+
+    it('sets NETWORK_ERROR on exception', async () => {
+      supabase.functions.invoke.mockRejectedValue(new Error('Network down'));
+
+      await act(async () => {
+        await useBankStore.getState().detectSubscriptions('conn-1');
+      });
+
+      const { detectionError, isDetecting } = useBankStore.getState();
+      expect(detectionError?.code).toBe('NETWORK_ERROR');
+      expect(isDetecting).toBe(false);
+    });
+  });
+
+  describe('fetchDetectedSubscriptions', () => {
+    it('fetches and maps detected subscriptions from DB', async () => {
+      const mockRows = [
+        {
+          id: 'det-1',
+          user_id: 'user-1',
+          bank_connection_id: 'conn-1',
+          tink_group_id: 'group-1',
+          merchant_name: 'Netflix',
+          amount: 12.99,
+          currency: 'EUR',
+          frequency: 'monthly',
+          confidence_score: 0.9,
+          status: 'detected',
+          first_seen: '2025-09-15',
+          last_seen: '2026-02-15',
+        },
+        {
+          id: 'det-2',
+          user_id: 'user-1',
+          bank_connection_id: 'conn-1',
+          tink_group_id: 'group-2',
+          merchant_name: 'Spotify',
+          amount: 9.99,
+          currency: 'EUR',
+          frequency: 'monthly',
+          confidence_score: 0.75,
+          status: 'detected',
+          first_seen: '2025-10-01',
+          last_seen: '2026-03-01',
+        },
+      ];
+
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: mockRows, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDetectedSubscriptions();
+      });
+
+      const { detectedSubscriptions, isFetchingDetected } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(2);
+      expect(detectedSubscriptions[0].merchantName).toBe('Netflix');
+      expect(detectedSubscriptions[1].merchantName).toBe('Spotify');
+      expect(detectedSubscriptions[0].confidenceScore).toBe(0.9);
+      expect(isFetchingDetected).toBe(false);
+    });
+
+    it('handles empty detected subscriptions', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDetectedSubscriptions();
+      });
+
+      const { detectedSubscriptions } = useBankStore.getState();
+      expect(detectedSubscriptions).toEqual([]);
+    });
+
+    it('does NOT persist detectedSubscriptions to storage', () => {
+      useBankStore.setState({
+        connections: [{ id: 'c1', userId: 'u1', provider: 'tink', bankName: '', status: 'active', connectedAt: '', consentGrantedAt: '', consentExpiresAt: '', lastSyncedAt: null, tinkCredentialsId: '' }],
+        detectedSubscriptions: [{ id: 'det-1', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g1', merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '2025-09-15', lastSeen: '2026-02-15' }],
+        lastDetectionResult: { success: true, detectedCount: 1, newCount: 1 },
+      });
+
+      const store = useBankStore as unknown as { persist: { getOptions: () => { partialize: (s: Record<string, unknown>) => Record<string, unknown> } } };
+      const partialize = store.persist.getOptions().partialize;
+      const persisted = partialize(useBankStore.getState());
+      expect(persisted).toHaveProperty('connections');
+      expect(persisted).not.toHaveProperty('detectedSubscriptions');
+      expect(persisted).not.toHaveProperty('lastDetectionResult');
     });
   });
 });

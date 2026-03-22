@@ -1,3 +1,27 @@
+export type DetectedSubscriptionStatus = 'detected' | 'approved' | 'dismissed' | 'matched';
+
+export interface DetectedSubscription {
+  id: string;
+  userId: string;
+  bankConnectionId: string;
+  tinkGroupId: string;
+  merchantName: string;
+  amount: number;
+  currency: string;
+  frequency: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  confidenceScore: number; // 0.0 - 1.0
+  status: DetectedSubscriptionStatus;
+  firstSeen: string; // ISO date
+  lastSeen: string; // ISO date
+}
+
+export interface DetectionResult {
+  success: boolean;
+  detectedCount: number;
+  newCount: number;
+  error?: string;
+}
+
 export interface SupportedBank {
   id: string; // Tink financialInstitutionId
   displayName: string; // Tink displayName

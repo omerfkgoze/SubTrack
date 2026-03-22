@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
-import type { BankConnection, SupportedBank } from '@features/bank/types';
+import type { BankConnection, SupportedBank, DetectedSubscription, DetectionResult } from '@features/bank/types';
 import type { AppError } from '@features/subscriptions/types';
 
 interface BankState {
@@ -14,6 +14,11 @@ interface BankState {
   supportedBanks: SupportedBank[];
   isFetchingBanks: boolean;
   fetchBanksError: AppError | null;
+  detectedSubscriptions: DetectedSubscription[];
+  isDetecting: boolean;
+  isFetchingDetected: boolean;
+  detectionError: AppError | null;
+  lastDetectionResult: DetectionResult | null;
 }
 
 interface BankActions {
@@ -21,6 +26,8 @@ interface BankActions {
   initiateConnection: (authCode: string, credentialsId?: string | null) => Promise<void>;
   clearConnectionError: () => void;
   fetchSupportedBanks: (market?: string) => Promise<void>;
+  detectSubscriptions: (connectionId: string) => Promise<void>;
+  fetchDetectedSubscriptions: () => Promise<void>;
 }
 
 export type BankStore = BankState & BankActions;
@@ -40,6 +47,23 @@ function mapRowToConnection(row: Record<string, unknown>): BankConnection {
   };
 }
 
+function mapRowToDetectedSubscription(row: Record<string, unknown>): DetectedSubscription {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    bankConnectionId: row.bank_connection_id as string,
+    tinkGroupId: row.tink_group_id as string,
+    merchantName: row.merchant_name as string,
+    amount: row.amount as number,
+    currency: row.currency as string,
+    frequency: row.frequency as DetectedSubscription['frequency'],
+    confidenceScore: row.confidence_score as number,
+    status: row.status as DetectedSubscription['status'],
+    firstSeen: row.first_seen as string,
+    lastSeen: row.last_seen as string,
+  };
+}
+
 export const useBankStore = create<BankStore>()(
   persist(
     (set) => ({
@@ -50,6 +74,11 @@ export const useBankStore = create<BankStore>()(
       supportedBanks: [],
       isFetchingBanks: false,
       fetchBanksError: null,
+      detectedSubscriptions: [],
+      isDetecting: false,
+      isFetchingDetected: false,
+      detectionError: null,
+      lastDetectionResult: null,
 
       fetchConnections: async () => {
         const user = useAuthStore.getState().user;
@@ -157,6 +186,101 @@ export const useBankStore = create<BankStore>()(
 
       clearConnectionError: () => set({ connectionError: null }),
 
+      detectSubscriptions: async (connectionId: string) => {
+        set({ isDetecting: true, detectionError: null, lastDetectionResult: null });
+
+        try {
+          const { data, error } = await supabase.functions.invoke('tink-detect-subscriptions', {
+            body: { connectionId },
+          });
+
+          if (error) {
+            let detail = 'Subscription detection failed. Please try again.';
+            let errorCode = 'DETECTION_FAILED';
+            try {
+              if (error.context && typeof error.context.json === 'function') {
+                const body = await error.context.json();
+                const errorField = body?.error ?? '';
+                if (errorField === 'TOKEN_REFRESH_FAILED') {
+                  // Update local connection status to expired (AC9)
+                  set((state) => ({
+                    connections: state.connections.map((c) =>
+                      c.id === connectionId ? { ...c, status: 'expired' as const } : c,
+                    ),
+                  }));
+                  detail = 'Bank connection expired. Please reconnect.';
+                  errorCode = 'TOKEN_REFRESH_FAILED';
+                } else if (errorField === 'ENRICHMENT_SCOPE_MISSING') {
+                  detail = 'Your bank connection needs updated permissions. Please reconnect to enable subscription detection.';
+                  errorCode = 'ENRICHMENT_SCOPE_MISSING';
+                } else if (errorField === 'CONNECTION_NOT_ACTIVE') {
+                  detail = 'Bank connection is not active. Please reconnect your bank.';
+                  errorCode = 'CONNECTION_NOT_ACTIVE';
+                } else {
+                  detail = body?.detail ?? body?.error ?? detail;
+                }
+              } else if (error.message) {
+                detail = error.message;
+              }
+            } catch {
+              if (error.message) detail = error.message;
+            }
+            set({
+              detectionError: { code: errorCode, message: detail },
+              isDetecting: false,
+            });
+            return;
+          }
+
+          if (data?.success) {
+            const result: DetectionResult = {
+              success: true,
+              detectedCount: data.detectedCount ?? 0,
+              newCount: data.newCount ?? 0,
+            };
+            set({ lastDetectionResult: result, isDetecting: false });
+            // Refresh detected subscriptions from DB
+            const { fetchDetectedSubscriptions } = useBankStore.getState();
+            await fetchDetectedSubscriptions();
+          } else {
+            const detail = data?.error ?? 'Subscription detection failed. Please try again.';
+            set({
+              detectionError: { code: 'DETECTION_FAILED', message: detail },
+              isDetecting: false,
+            });
+          }
+        } catch {
+          set({
+            detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please check your connection.' },
+            isDetecting: false,
+          });
+        }
+      },
+
+      fetchDetectedSubscriptions: async () => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+
+        set({ isFetchingDetected: true });
+
+        try {
+          const { data, error } = await supabase
+            .from('detected_subscriptions')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (error) {
+            set({ isFetchingDetected: false });
+            return;
+          }
+
+          const detectedSubscriptions = (data ?? []).map(mapRowToDetectedSubscription);
+          set({ detectedSubscriptions, isFetchingDetected: false });
+        } catch {
+          set({ isFetchingDetected: false });
+        }
+      },
+
       fetchSupportedBanks: async (market?: string) => {
         set({ isFetchingBanks: true, fetchBanksError: null });
 
@@ -199,7 +323,10 @@ export const useBankStore = create<BankStore>()(
     {
       name: 'bank-store',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ connections: state.connections }),
+      partialize: (state) => ({
+        connections: state.connections,
+        // detectedSubscriptions and lastDetectionResult are NOT persisted — transient server data
+      }),
     },
   ),
 );

@@ -38,7 +38,12 @@ export function BankConnectionScreen() {
   const initiateConnection = useBankStore((s) => s.initiateConnection);
   const clearConnectionError = useBankStore((s) => s.clearConnectionError);
   const fetchConnections = useBankStore((s) => s.fetchConnections);
+  const isDetecting = useBankStore((s) => s.isDetecting);
+  const detectionError = useBankStore((s) => s.detectionError);
+  const lastDetectionResult = useBankStore((s) => s.lastDetectionResult);
+  const detectSubscriptions = useBankStore((s) => s.detectSubscriptions);
   const isBankConnected = connections.length > 0;
+  const activeConnection = connections.find((c) => c.status === 'active') ?? null;
 
   useFocusEffect(
     useCallback(() => {
@@ -178,6 +183,34 @@ export function BankConnectionScreen() {
     setFlowState('consent');
   }, [clearConnectionError]);
 
+  const handleScanPress = useCallback(async () => {
+    if (!activeConnection) return;
+    await detectSubscriptions(activeConnection.id);
+  }, [activeConnection, detectSubscriptions]);
+
+  // Show snackbar on detection result or error
+  useEffect(() => {
+    if (isDetecting) return;
+    if (lastDetectionResult) {
+      const count = lastDetectionResult.detectedCount;
+      if (count === 0) {
+        setSnackbarType('success');
+        setSnackbarMessage('No recurring subscriptions detected yet. We\'ll keep checking as more transaction data becomes available.');
+      } else {
+        setSnackbarType('success');
+        setSnackbarMessage(`${count} subscription${count === 1 ? '' : 's'} detected!`);
+      }
+    }
+  }, [isDetecting, lastDetectionResult]);
+
+  useEffect(() => {
+    if (isDetecting) return;
+    if (detectionError) {
+      setSnackbarType('error');
+      setSnackbarMessage(detectionError.message);
+    }
+  }, [isDetecting, detectionError]);
+
   // WebView flow
   if (flowState === 'webview') {
     return (
@@ -231,6 +264,42 @@ export function BankConnectionScreen() {
           <Text variant="bodySmall" style={styles.connectedDetail}>
             Connected {new Date(connections[0].connectedAt).toLocaleDateString()}
           </Text>
+
+          {activeConnection ? (
+            <>
+              {isDetecting ? (
+                <View style={styles.scanLoadingContainer}>
+                  <ActivityIndicator size="small" />
+                  <Text variant="bodySmall" style={styles.scanLoadingText}>
+                    Scanning your transactions...
+                  </Text>
+                </View>
+              ) : (
+                <Button
+                  mode="contained"
+                  onPress={handleScanPress}
+                  style={styles.scanButton}
+                  accessibilityLabel="Scan for Subscriptions"
+                  accessibilityRole="button"
+                >
+                  Scan for Subscriptions
+                </Button>
+              )}
+              <Text variant="bodySmall" style={styles.lastSyncedText}>
+                {connections[0].lastSyncedAt
+                  ? `Last scanned: ${new Date(connections[0].lastSyncedAt).toLocaleDateString()}`
+                  : 'Never scanned'}
+              </Text>
+            </>
+          ) : (
+            <Text
+              variant="bodySmall"
+              style={[styles.connectedDetail, { color: theme.colors.error }]}
+              accessibilityLabel="Reconnect required"
+            >
+              Reconnect required
+            </Text>
+          )}
         </Surface>
       )}
 
@@ -348,6 +417,22 @@ const styles = StyleSheet.create({
   connectedDetail: {
     marginTop: 4,
     opacity: 0.7,
+  },
+  scanButton: {
+    marginTop: 12,
+  },
+  scanLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  scanLoadingText: {
+    marginLeft: 8,
+    opacity: 0.7,
+  },
+  lastSyncedText: {
+    marginTop: 6,
+    opacity: 0.6,
   },
   infoCard: {
     margin: 16,
