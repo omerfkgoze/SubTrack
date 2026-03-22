@@ -499,18 +499,13 @@ claude-opus-4-6
 
 - **Symptom:** Tink Link WebView flow completes successfully (demo user authenticates), callback URL is intercepted correctly, auth code is parsed, but `supabase.functions.invoke('tink-connect')` returns `FunctionsHttpError` (non-2xx).
 - **Client-side error:** `Edge Function returned a non-2xx status code` — the response body (`error.context`) comes through as empty `{}`, so the actual server-side error is not visible to the client.
-- **Root cause:** Unknown — the Edge Function is deployed and ACTIVE, but the Tink API call inside it is failing. The actual error is only visible in **Supabase Dashboard > Edge Functions > tink-connect > Logs**.
-- **Most likely causes (for next developer to investigate):**
-  1. `TINK_CLIENT_ID` and/or `TINK_CLIENT_SECRET` not set in Edge Function secrets (`supabase secrets set ...`) — function returns 500 with `"Server configuration error"`.
-  2. Tink API token exchange endpoint (`POST https://api.tink.com/api/v1/oauth/token`) rejecting the request — wrong credentials, expired auth code, or incorrect request format for sandbox.
-  3. Tink credentials fetch (`GET https://api.tink.com/api/v1/credentials/list`) failing after token exchange — endpoint may require different path or auth header format.
-  4. Sandbox vs production API differences not accounted for.
-- **How to debug:**
-  1. Check Edge Function logs: `supabase functions logs tink-connect --project-ref <ref>` or Supabase Dashboard
-  2. Verify secrets are set: `supabase secrets list`
-  3. Test the Edge Function manually: `curl -X POST https://<project>.supabase.co/functions/v1/tink-connect -H "Authorization: Bearer <anon-key>" -H "Content-Type: application/json" -d '{"authorizationCode":"test","userId":"test"}'`
-  4. Compare Tink sandbox API docs with the request format in `supabase/functions/tink-connect/index.ts`
-- **Additional fix applied during testing:** WebView callback timing issue — `onShouldStartLoadWithRequest` was calling the Edge Function while WebView was still mounted, causing `FunctionsFetchError: Network request failed`. Fixed by deferring the Edge Function call to a `useEffect` that runs after WebView unmounts (auth code stored in state, processed when `flowState === 'processing'`).
+- **Root cause (RESOLVED):** Multiple cascading issues discovered and fixed during 2026-03-22 debugging session:
+  1. **Supabase gateway JWT rejection (401):** Default Edge Function deployment verifies JWT at gateway level before function code runs — no function logs appeared because code never executed. Fix: deploy with `--no-verify-jwt` flag; function has its own `getUser()` auth check internally.
+  2. **Missing Supabase secrets:** `TINK_CLIENT_ID` and `TINK_CLIENT_SECRET` were not set in Edge Function secrets despite being configured elsewhere. Fix: `supabase secrets set TINK_CLIENT_ID=... TINK_CLIENT_SECRET=...`
+  3. **Wrong Tink API endpoint:** `/api/v1/credentials/list` does not exist — correct endpoint is `/api/v1/credentials`.
+  4. **Tink credentials endpoint scope (403):** Token scopes `accounts:read,transactions:read` do not grant access to `/api/v1/credentials`. Fix: removed `fetchCredentials()` call entirely — `credentialsId` is parsed from Tink Link callback URL query parameter instead.
+  5. **iOS post-WebView network failure:** `FunctionsFetchError: Network request failed` when calling Edge Function immediately after WebView OAuth redirect on iOS. Fix: 500ms delay before Edge Function call + retry logic (2 retries, 1s interval) for transient `TypeError` network failures.
+  6. **Security: `EXPO_PUBLIC_TINK_CLIENT_SECRET` in `.env`:** Client secret was exposed in `.env` with `EXPO_PUBLIC_` prefix, meaning it would be bundled into the app. Removed immediately.
 
 ### Implementation Plan
 
@@ -537,6 +532,7 @@ claude-opus-4-6
 ### Change Log
 
 - 2026-03-21: Story 7.1 implemented — Bank Account Connection via Open Banking (Tink WebView integration)
+- 2026-03-22: Debugging session — resolved 6 cascading issues preventing Edge Function from working (gateway JWT, missing secrets, wrong Tink endpoint, scope issue, iOS timing, security leak). Removed `fetchCredentials()` — `credentialsId` now parsed from callback URL. Added connected state UI to Settings and BankConnectionScreen.
 
 ### File List
 
@@ -566,3 +562,4 @@ claude-opus-4-6
 - jest.config.js (added react-native-webview mock mapping, excluded supabase/functions from Jest)
 - package.json (added react-native-webview dependency)
 - package-lock.json (updated)
+- .env (removed EXPO_PUBLIC_TINK_CLIENT_SECRET — security fix)

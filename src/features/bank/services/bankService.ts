@@ -35,20 +35,40 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
 export const TINK_REDIRECT_URI = 'subtrack://tink/callback';
 
 /**
- * Parses the authorization code from a Tink callback URL.
- * Returns the code if found, null otherwise.
+ * Parsed result from a Tink callback URL.
  */
-export function parseAuthCodeFromUrl(url: string): string | null {
+export interface TinkCallbackResult {
+  authorizationCode: string;
+  credentialsId: string | null;
+}
+
+/**
+ * Parses the authorization code and credentialsId from a Tink callback URL.
+ * Returns the parsed result if code is found, null otherwise.
+ */
+export function parseCallbackFromUrl(url: string): TinkCallbackResult | null {
   try {
     const parsed = Linking.parse(url);
     const code = parsed.queryParams?.code;
     if (typeof code === 'string' && code.length > 0) {
-      return code;
+      const credentialsId = parsed.queryParams?.credentialsId;
+      return {
+        authorizationCode: code,
+        credentialsId: typeof credentialsId === 'string' ? credentialsId : null,
+      };
     }
     return null;
   } catch {
     return null;
   }
+}
+
+/**
+ * @deprecated Use parseCallbackFromUrl instead
+ */
+export function parseAuthCodeFromUrl(url: string): string | null {
+  const result = parseCallbackFromUrl(url);
+  return result?.authorizationCode ?? null;
 }
 
 /**

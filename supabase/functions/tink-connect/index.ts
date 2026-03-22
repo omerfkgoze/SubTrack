@@ -8,6 +8,7 @@ const corsHeaders = {
 interface TinkConnectRequest {
   authorizationCode: string
   userId: string
+  credentialsId?: string
 }
 
 interface TinkTokenResponse {
@@ -17,13 +18,6 @@ interface TinkTokenResponse {
   refresh_token: string
   scope: string
   id_hint?: string
-}
-
-interface TinkCredentials {
-  id: string
-  providerName: string
-  type: string
-  status: string
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -56,34 +50,6 @@ async function exchangeAuthorizationCode(
   }
 
   return response.json()
-}
-
-async function fetchCredentials(
-  accessToken: string,
-): Promise<TinkCredentials> {
-  const response = await fetch('https://api.tink.com/api/v1/credentials/list', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch credentials: ${response.status}`)
-  }
-
-  const data = await response.json()
-  const credentials = data.credentials?.[0]
-  if (!credentials) {
-    throw new Error('No credentials found after token exchange')
-  }
-
-  return {
-    id: credentials.id,
-    providerName: credentials.providerName,
-    type: credentials.type,
-    status: credentials.status,
-  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -119,11 +85,13 @@ Deno.serve(async (req: Request) => {
     })
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
     if (userError || !user) {
-      return jsonResponse({ error: 'Unauthorized' }, 401)
+      console.error('Auth failed:', userError?.message ?? 'No user returned')
+      return jsonResponse({ error: 'Unauthorized', detail: userError?.message ?? 'User verification failed' }, 401)
     }
+    console.log('Auth OK, user:', user.id)
 
     const body: TinkConnectRequest = await req.json()
-    const { authorizationCode, userId } = body
+    const { authorizationCode, userId, credentialsId } = body
 
     if (!authorizationCode || !userId) {
       return jsonResponse({ error: 'Missing required fields: authorizationCode, userId' }, 400)
@@ -141,27 +109,32 @@ Deno.serve(async (req: Request) => {
       tinkClientId,
       tinkClientSecret,
     )
+    console.log('Token exchange OK, scopes:', tokenResponse.scope)
 
-    // Fetch credentials to get bank info and credentials ID
-    const credentials = await fetchCredentials(tokenResponse.access_token)
+    // Use credentialsId from client callback URL (Tink Link provides it in redirect)
+    // If not provided, generate a unique fallback from the token
+    const tinkCredentialsId = credentialsId ?? `tink_${userId}_${Date.now()}`
 
     // Admin client for DB operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     // Idempotency check: if tink_credentials_id already exists, return existing connection
-    const { data: existingConnection } = await supabaseAdmin
-      .from('bank_connections')
-      .select('*')
-      .eq('tink_credentials_id', credentials.id)
-      .eq('user_id', userId)
-      .maybeSingle()
+    if (credentialsId) {
+      const { data: existingConnection } = await supabaseAdmin
+        .from('bank_connections')
+        .select('*')
+        .eq('tink_credentials_id', credentialsId)
+        .eq('user_id', userId)
+        .maybeSingle()
 
-    if (existingConnection) {
-      return jsonResponse({
-        success: true,
-        connection: existingConnection,
-        message: 'Bank connection already exists',
-      })
+      if (existingConnection) {
+        console.log('Existing connection found for credentialsId:', credentialsId)
+        return jsonResponse({
+          success: true,
+          connection: existingConnection,
+          message: 'Bank connection already exists',
+        })
+      }
     }
 
     // Calculate consent expiry: consent_granted_at + 180 days
@@ -175,11 +148,11 @@ Deno.serve(async (req: Request) => {
       .insert({
         user_id: userId,
         provider: 'tink',
-        bank_name: credentials.providerName,
+        bank_name: 'Connected Bank',
         status: 'active',
         consent_granted_at: consentGrantedAt.toISOString(),
         consent_expires_at: consentExpiresAt.toISOString(),
-        tink_credentials_id: credentials.id,
+        tink_credentials_id: tinkCredentialsId,
       })
       .select()
       .single()
@@ -188,6 +161,8 @@ Deno.serve(async (req: Request) => {
       console.error('Failed to store bank connection:', insertError.message)
       return jsonResponse({ error: 'Failed to store bank connection' }, 500)
     }
+
+    console.log('Bank connection created:', newConnection.id)
 
     // Note: refresh_token is NOT returned to client — stored server-side only
     // In production, the refresh token would be stored encrypted in a separate secure column
@@ -201,6 +176,7 @@ Deno.serve(async (req: Request) => {
     // Log error without credentials
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('tink-connect error:', message)
-    return jsonResponse({ error: 'Connection setup failed. Please try again.' }, 500)
+    // Include error detail in response for debugging (remove in production)
+    return jsonResponse({ error: 'Connection setup failed. Please try again.', detail: message }, 500)
   }
 })

@@ -71,6 +71,10 @@ jest.mock('@shared/stores/usePremiumStore', () => ({
   usePremiumStore: jest.fn(),
 }));
 
+jest.mock('@shared/stores/useBankStore', () => ({
+  useBankStore: jest.fn(() => []),
+}));
+
 const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePremiumStore>;
 
 function renderWithProvider() {
@@ -172,13 +176,13 @@ describe('SettingsScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('BankConnection');
     });
 
-    it('premium user sees "Connect via Open Banking" description', () => {
+    it('premium user sees "Not connected yet" description when no bank connected', () => {
       mockUsePremiumStore.mockImplementation(
         (selector: (s: { isPremium: boolean }) => unknown) =>
           selector({ isPremium: true }) as never,
       );
       renderWithProvider();
-      expect(screen.getByText('Connect via Open Banking')).toBeTruthy();
+      expect(screen.getByText('Not connected yet')).toBeTruthy();
     });
   });
 

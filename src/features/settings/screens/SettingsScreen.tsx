@@ -18,6 +18,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
+import { useBankStore } from '@shared/stores/useBankStore';
 import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
 import {
   getUserSettings,
@@ -35,6 +36,8 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const user = useAuthStore((s) => s.user);
   const isPremium = usePremiumStore((s) => s.isPremium);
+  const bankConnections = useBankStore((s) => s.connections);
+  const isBankConnected = bankConnections.length > 0;
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const biometryType = useAuthStore((s) => s.biometryType);
@@ -267,11 +270,19 @@ export function SettingsScreen() {
           <List.Subheader>Bank</List.Subheader>
           <List.Item
             title="Bank Connection"
-            description={isPremium ? 'Connect via Open Banking' : 'Premium feature'}
+            description={
+              !isPremium
+                ? 'Premium feature'
+                : isBankConnected
+                  ? 'Connected'
+                  : 'Not connected yet'
+            }
+            descriptionStyle={isBankConnected ? { color: theme.colors.secondary } : undefined}
             left={(props) => (
               <List.Icon
                 {...props}
-                icon={isPremium ? 'bank' : 'lock'}
+                icon={!isPremium ? 'lock' : isBankConnected ? 'bank-check' : 'bank'}
+                color={isBankConnected ? theme.colors.secondary : undefined}
               />
             )}
             right={(props) => <List.Icon {...props} icon={isPremium ? 'chevron-right' : 'lock'} />}

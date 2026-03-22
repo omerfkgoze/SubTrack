@@ -14,7 +14,7 @@ interface BankState {
 
 interface BankActions {
   fetchConnections: () => Promise<void>;
-  initiateConnection: (authCode: string) => Promise<void>;
+  initiateConnection: (authCode: string, credentialsId?: string | null) => Promise<void>;
   clearConnectionError: () => void;
 }
 
@@ -72,19 +72,33 @@ export const useBankStore = create<BankStore>()(
         }
       },
 
-      initiateConnection: async (authCode: string) => {
+      initiateConnection: async (authCode: string, credentialsId?: string | null) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
         set({ isConnecting: true, connectionError: null });
 
+        // Retry helper for transient network failures (e.g. iOS post-WebView)
+        const invokeWithRetry = async (retries = 2): Promise<{ data: unknown; error: unknown }> => {
+          try {
+            return await supabase.functions.invoke('tink-connect', {
+              body: {
+                authorizationCode: authCode,
+                userId: user.id,
+                credentialsId: credentialsId ?? undefined,
+              },
+            });
+          } catch (err) {
+            if (retries > 0 && err instanceof TypeError) {
+              await new Promise((r) => setTimeout(r, 1000));
+              return invokeWithRetry(retries - 1);
+            }
+            throw err;
+          }
+        };
+
         try {
-          const { data, error } = await supabase.functions.invoke('tink-connect', {
-            body: {
-              authorizationCode: authCode,
-              userId: user.id,
-            },
-          });
+          const { data, error } = await invokeWithRetry();
 
           if (error) {
             // Extract the actual error detail from the Edge Function response

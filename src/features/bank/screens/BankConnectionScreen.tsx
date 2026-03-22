@@ -18,7 +18,7 @@ import { BankConsentDialog } from '../components/BankConsentDialog';
 import {
   buildTinkLinkUrl,
   TINK_REDIRECT_URI,
-  parseAuthCodeFromUrl,
+  parseCallbackFromUrl,
   isTinkCallbackUrl,
   parseTinkError,
 } from '../services/bankService';
@@ -29,15 +29,18 @@ type FlowState = 'info' | 'consent' | 'webview' | 'processing';
 export function BankConnectionScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const connections = useBankStore((s) => s.connections);
   const isConnecting = useBankStore((s) => s.isConnecting);
   const connectionError = useBankStore((s) => s.connectionError);
   const initiateConnection = useBankStore((s) => s.initiateConnection);
   const clearConnectionError = useBankStore((s) => s.clearConnectionError);
+  const isBankConnected = connections.length > 0;
 
   const [flowState, setFlowState] = useState<FlowState>('info');
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
   const [pendingAuthCode, setPendingAuthCode] = useState<string | null>(null);
+  const [pendingCredentialsId, setPendingCredentialsId] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
 
   const tinkLinkUrl = buildTinkLinkUrl({
@@ -46,13 +49,16 @@ export function BankConnectionScreen() {
   });
 
   // Process auth code AFTER WebView is unmounted (flowState === 'processing')
+  // Delay ensures iOS network session is ready after WebView/OAuth redirect
   useEffect(() => {
     if (flowState !== 'processing' || !pendingAuthCode) return;
 
     let cancelled = false;
 
-    (async () => {
-      await initiateConnection(pendingAuthCode);
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+
+      await initiateConnection(pendingAuthCode, pendingCredentialsId);
       if (cancelled) return;
 
       setPendingAuthCode(null);
@@ -67,9 +73,12 @@ export function BankConnectionScreen() {
         setSnackbarMessage('Bank account connected successfully');
         navigation.goBack();
       }
-    })();
+    }, 500);
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [flowState, pendingAuthCode, initiateConnection, navigation]);
 
   const handleConnectPress = useCallback(() => {
@@ -96,18 +105,19 @@ export function BankConnectionScreen() {
         return;
       }
 
-      // Parse authorization code
-      const authCode = parseAuthCodeFromUrl(url);
-      if (!authCode) {
+      // Parse authorization code and credentialsId from callback
+      const callbackResult = parseCallbackFromUrl(url);
+      if (!callbackResult) {
         setSnackbarType('error');
         setSnackbarMessage('Bank connection failed. Please try again.');
         setFlowState('info');
         return;
       }
 
-      // Store auth code and switch to processing — WebView unmounts,
-      // then useEffect picks up the auth code and calls Edge Function
-      setPendingAuthCode(authCode);
+      // Store auth code and credentialsId, switch to processing — WebView unmounts,
+      // then useEffect picks up and calls Edge Function
+      setPendingAuthCode(callbackResult.authorizationCode);
+      setPendingCredentialsId(callbackResult.credentialsId);
       setFlowState('processing');
     },
     [],
@@ -180,9 +190,25 @@ export function BankConnectionScreen() {
   // Info screen (default)
   return (
     <View style={styles.container}>
+      {isBankConnected && (
+        <Surface style={styles.connectedCard} elevation={1}>
+          <View style={styles.connectedRow}>
+            <Text variant="titleMedium" style={{ color: theme.colors.secondary }}>
+              Bank Connected
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.secondary }}>
+              {connections[0].bankName || 'Open Banking'}
+            </Text>
+          </View>
+          <Text variant="bodySmall" style={styles.connectedDetail}>
+            Connected {new Date(connections[0].connectedAt).toLocaleDateString()}
+          </Text>
+        </Surface>
+      )}
+
       <Surface style={styles.infoCard} elevation={1}>
         <Text variant="headlineSmall" style={styles.title}>
-          Connect Your Bank
+          {isBankConnected ? 'Bank Connection' : 'Connect Your Bank'}
         </Text>
 
         <Text variant="bodyMedium" style={styles.description}>
@@ -211,18 +237,20 @@ export function BankConnectionScreen() {
           </Text>
         </Surface>
 
-        <Button
-          mode="contained"
-          onPress={handleConnectPress}
-          disabled={isConnecting}
-          loading={isConnecting}
-          style={styles.connectButton}
-          contentStyle={styles.connectButtonContent}
-          accessibilityLabel="Connect Bank Account"
-          accessibilityRole="button"
-        >
-          Connect Bank Account
-        </Button>
+        {!isBankConnected && (
+          <Button
+            mode="contained"
+            onPress={handleConnectPress}
+            disabled={isConnecting}
+            loading={isConnecting}
+            style={styles.connectButton}
+            contentStyle={styles.connectButtonContent}
+            accessibilityLabel="Connect Bank Account"
+            accessibilityRole="button"
+          >
+            Connect Bank Account
+          </Button>
+        )}
 
         {connectionError && (
           <View style={styles.errorContainer}>
@@ -267,6 +295,21 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  connectedCard: {
+    margin: 16,
+    marginBottom: 0,
+    padding: 16,
+    borderRadius: 12,
+  },
+  connectedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  connectedDetail: {
+    marginTop: 4,
+    opacity: 0.7,
   },
   infoCard: {
     margin: 16,
