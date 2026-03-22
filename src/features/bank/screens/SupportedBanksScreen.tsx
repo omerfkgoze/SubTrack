@@ -77,8 +77,8 @@ export function SupportedBanksScreen() {
   );
 
   const handleRetry = useCallback(() => {
-    fetchSupportedBanks(selectedMarket !== 'ALL' ? selectedMarket : undefined);
-  }, [fetchSupportedBanks, selectedMarket]);
+    fetchSupportedBanks();
+  }, [fetchSupportedBanks]);
 
   const handleMarketSelect = useCallback((marketCode: string) => {
     setSelectedMarket(marketCode);

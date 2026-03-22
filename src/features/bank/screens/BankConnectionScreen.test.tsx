@@ -177,6 +177,19 @@ describe('BankConnectionScreen', () => {
       fireEvent.press(screen.getByLabelText('View Supported Banks'));
       expect(mockNavigate).toHaveBeenCalledWith('SupportedBanks');
     });
+
+    it('shows View Supported Banks button even when bank is connected', () => {
+      setupStoreMock({
+        connections: [{
+          id: 'conn-1', userId: 'u1', provider: 'tink', bankName: 'Demo Bank',
+          status: 'active', connectedAt: '2026-03-21T12:00:00Z',
+          consentGrantedAt: '2026-03-21T12:00:00Z', consentExpiresAt: '2026-09-17T12:00:00Z',
+          lastSyncedAt: null, tinkCredentialsId: 'cred-1',
+        }],
+      });
+      renderWithProvider();
+      expect(screen.getByLabelText('View Supported Banks')).toBeTruthy();
+    });
   });
 
   describe('autoConnect param', () => {

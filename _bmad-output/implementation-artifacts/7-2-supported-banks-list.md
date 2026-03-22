@@ -1,6 +1,6 @@
 # Story 7.2: Supported Banks List
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -490,6 +490,7 @@ No debug issues encountered.
 ### Change Log
 
 - 2026-03-22: Story 7.2 implementation complete — all 8 tasks implemented with full test coverage.
+- 2026-03-22: Code review fixes applied — H1: `includeTestProviders` now controlled by `TINK_ENVIRONMENT` env var (defaults to `production`/false, only `sandbox` enables test providers). M2: "View Supported Banks" button now visible regardless of connection status. M3: Retry fetches all markets consistently (no market param leak).
 
 ### File List
 

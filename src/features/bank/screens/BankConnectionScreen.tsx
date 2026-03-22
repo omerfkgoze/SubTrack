@@ -280,17 +280,15 @@ export function BankConnectionScreen() {
           </Button>
         )}
 
-        {!isBankConnected && (
-          <Button
-            mode="outlined"
-            onPress={() => navigation.navigate('SupportedBanks')}
-            style={styles.supportedBanksButton}
-            accessibilityLabel="View Supported Banks"
-            accessibilityRole="button"
-          >
-            View Supported Banks
-          </Button>
-        )}
+        <Button
+          mode="outlined"
+          onPress={() => navigation.navigate('SupportedBanks')}
+          style={styles.supportedBanksButton}
+          accessibilityLabel="View Supported Banks"
+          accessibilityRole="button"
+        >
+          View Supported Banks
+        </Button>
 
         {connectionError && (
           <View style={styles.errorContainer}>

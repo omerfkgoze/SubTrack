@@ -38,6 +38,8 @@ Deno.serve(async (req: Request) => {
     const tinkClientId = Deno.env.get('TINK_CLIENT_ID');
     const tinkClientSecret = Deno.env.get('TINK_CLIENT_SECRET');
 
+    const tinkEnvironment = Deno.env.get('TINK_ENVIRONMENT') ?? 'production';
+
     if (!tinkClientId || !tinkClientSecret) {
       console.error('TINK_CLIENT_ID or TINK_CLIENT_SECRET not configured');
       return jsonResponse({ error: 'Server configuration error' }, 500);
@@ -102,8 +104,8 @@ Deno.serve(async (req: Request) => {
       let allProviders: TinkProvider[] = [];
 
       for (const m of marketsToFetch) {
-        // Include test providers in sandbox so we get demo banks for development
-        const tinkUrl = `https://api.tink.com/api/v1/providers/${m}?capability=CHECKING_ACCOUNTS&includeTestProviders=true`; // TODO: revert includeTestProviders to false for production once we have real providers in all markets
+        const includeTestProviders = tinkEnvironment === 'sandbox';
+        const tinkUrl = `https://api.tink.com/api/v1/providers/${m}?capability=CHECKING_ACCOUNTS&includeTestProviders=${includeTestProviders}`;
         console.log(`Fetching providers for market: ${m}`);
 
         const tinkResponse = await fetch(tinkUrl, {
