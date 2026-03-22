@@ -36,10 +36,24 @@ const mockBanks = [
 
 function setupStoreMock(overrides: Record<string, unknown> = {}) {
   const defaultState = {
+    connections: [],
+    isConnecting: false,
+    isFetchingConnections: false,
+    connectionError: null,
     supportedBanks: mockBanks,
     isFetchingBanks: false,
     fetchBanksError: null,
+    detectedSubscriptions: [],
+    isDetecting: false,
+    isFetchingDetected: false,
+    detectionError: null,
+    lastDetectionResult: null,
     fetchSupportedBanks: mockFetchSupportedBanks,
+    fetchConnections: jest.fn(),
+    initiateConnection: jest.fn(),
+    clearConnectionError: jest.fn(),
+    detectSubscriptions: jest.fn(),
+    fetchDetectedSubscriptions: jest.fn(),
     ...overrides,
   };
 

@@ -301,6 +301,15 @@ enabled = false
 # Obtain from https://clerk.com/setup/supabase
 # domain = "example.clerk.accounts.dev"
 
+[functions.tink-connect]
+verify_jwt = false
+
+[functions.tink-providers]
+verify_jwt = false
+
+[functions.tink-detect-subscriptions]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
