@@ -35,6 +35,7 @@ const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useFocusEffect: (cb: () => void) => { cb(); },
 }));
 
 jest.mock('@shared/stores/useBankStore', () => ({

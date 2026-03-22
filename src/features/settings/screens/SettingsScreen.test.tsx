@@ -65,14 +65,18 @@ jest.mock('@features/subscriptions/services/calendarService', () => ({
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
+  useFocusEffect: (cb: () => void) => { cb(); },
 }));
 
 jest.mock('@shared/stores/usePremiumStore', () => ({
   usePremiumStore: jest.fn(),
 }));
 
+const mockFetchBankConnections = jest.fn();
 jest.mock('@shared/stores/useBankStore', () => ({
-  useBankStore: jest.fn(() => []),
+  useBankStore: jest.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ connections: [], fetchConnections: mockFetchBankConnections }),
+  ),
 }));
 
 const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePremiumStore>;

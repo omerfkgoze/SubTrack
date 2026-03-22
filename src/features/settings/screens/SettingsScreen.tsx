@@ -13,7 +13,7 @@ import {
   Divider,
   useTheme,
 } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useAuthStore } from '@shared/stores/useAuthStore';
@@ -38,6 +38,7 @@ export function SettingsScreen() {
   const isPremium = usePremiumStore((s) => s.isPremium);
   const bankConnections = useBankStore((s) => s.connections);
   const isBankConnected = bankConnections.length > 0;
+  const fetchBankConnections = useBankStore((s) => s.fetchConnections);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const biometryType = useAuthStore((s) => s.biometryType);
@@ -63,6 +64,12 @@ export function SettingsScreen() {
   const [calendarSelectionVisible, setCalendarSelectionVisible] = useState(false);
   const [writableCalendars, setWritableCalendars] = useState<Array<{ id: string; title: string; color: string; isPrimary: boolean }>>([]);
   const [preferredCalendarId, setPreferredCalendarId] = useState<string | undefined>(undefined);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBankConnections();
+    }, [fetchBankConnections]),
+  );
 
   useEffect(() => {
     checkBiometricAvailability();

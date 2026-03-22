@@ -10,7 +10,7 @@ import {
 } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import type { WebViewNavigation } from 'react-native-webview';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useBankStore } from '@shared/stores/useBankStore';
@@ -34,7 +34,14 @@ export function BankConnectionScreen() {
   const connectionError = useBankStore((s) => s.connectionError);
   const initiateConnection = useBankStore((s) => s.initiateConnection);
   const clearConnectionError = useBankStore((s) => s.clearConnectionError);
+  const fetchConnections = useBankStore((s) => s.fetchConnections);
   const isBankConnected = connections.length > 0;
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchConnections();
+    }, [fetchConnections]),
+  );
 
   const [flowState, setFlowState] = useState<FlowState>('info');
   const [snackbarMessage, setSnackbarMessage] = useState('');

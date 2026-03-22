@@ -533,6 +533,7 @@ claude-opus-4-6
 
 - 2026-03-21: Story 7.1 implemented — Bank Account Connection via Open Banking (Tink WebView integration)
 - 2026-03-22: Debugging session — resolved 6 cascading issues preventing Edge Function from working (gateway JWT, missing secrets, wrong Tink endpoint, scope issue, iOS timing, security leak). Removed `fetchCredentials()` — `credentialsId` now parsed from callback URL. Added connected state UI to Settings and BankConnectionScreen.
+- 2026-03-22: Bug fix — added `useFocusEffect` + `fetchConnections` to `BankConnectionScreen` and `SettingsScreen`. Root cause: Zustand persist middleware hydrates `connections` from AsyncStorage on app start; without a DB fetch on screen focus, stale connection state persisted even after DB record deletion. Fix ensures real DB state is always reflected when screens are visited.
 
 ### File List
 
