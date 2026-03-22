@@ -9,6 +9,7 @@ import type { AppError } from '@features/subscriptions/types';
 interface BankState {
   connections: BankConnection[];
   isConnecting: boolean;
+  isFetchingConnections: boolean;
   connectionError: AppError | null;
 }
 
@@ -25,13 +26,13 @@ function mapRowToConnection(row: Record<string, unknown>): BankConnection {
     id: row.id as string,
     userId: row.user_id as string,
     provider: 'tink',
-    bankName: (row.bank_name as string) ?? '',
+    bankName: (row.bank_name as string | null) ?? '',
     status: row.status as BankConnection['status'],
     connectedAt: row.connected_at as string,
-    consentGrantedAt: row.consent_granted_at as string,
-    consentExpiresAt: row.consent_expires_at as string,
-    lastSyncedAt: (row.last_synced_at as string) ?? null,
-    tinkCredentialsId: row.tink_credentials_id as string,
+    consentGrantedAt: (row.consent_granted_at as string | null) ?? '',
+    consentExpiresAt: (row.consent_expires_at as string | null) ?? '',
+    lastSyncedAt: (row.last_synced_at as string | null) ?? null,
+    tinkCredentialsId: (row.tink_credentials_id as string | null) ?? '',
   };
 }
 
@@ -40,13 +41,14 @@ export const useBankStore = create<BankStore>()(
     (set) => ({
       connections: [],
       isConnecting: false,
+      isFetchingConnections: false,
       connectionError: null,
 
       fetchConnections: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
-        set({ isConnecting: true, connectionError: null });
+        set({ isFetchingConnections: true, connectionError: null });
 
         try {
           const { data, error } = await supabase
@@ -57,17 +59,17 @@ export const useBankStore = create<BankStore>()(
           if (error) {
             set({
               connectionError: { code: 'FETCH_FAILED', message: 'Failed to load bank connections' },
-              isConnecting: false,
+              isFetchingConnections: false,
             });
             return;
           }
 
           const connections = (data ?? []).map(mapRowToConnection);
-          set({ connections, isConnecting: false });
+          set({ connections, isFetchingConnections: false });
         } catch {
           set({
             connectionError: { code: 'NETWORK_ERROR', message: 'Network error loading bank connections' },
-            isConnecting: false,
+            isFetchingConnections: false,
           });
         }
       },

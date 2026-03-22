@@ -1,4 +1,5 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { exchangeAuthorizationCode, buildConsentDates } from './utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,45 +12,11 @@ interface TinkConnectRequest {
   credentialsId?: string
 }
 
-interface TinkTokenResponse {
-  access_token: string
-  token_type: string
-  expires_in: number
-  refresh_token: string
-  scope: string
-  id_hint?: string
-}
-
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
-}
-
-async function exchangeAuthorizationCode(
-  authorizationCode: string,
-  clientId: string,
-  clientSecret: string,
-): Promise<TinkTokenResponse> {
-  const response = await fetch('https://api.tink.com/api/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      code: authorizationCode,
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: 'authorization_code',
-    }),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`Tink token exchange failed: ${response.status}`, errorText)
-    throw new Error(`Tink API error: ${response.status}`)
-  }
-
-  return response.json()
 }
 
 Deno.serve(async (req: Request) => {
@@ -137,22 +104,23 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Calculate consent expiry: consent_granted_at + 180 days
-    const consentGrantedAt = new Date()
-    const consentExpiresAt = new Date(consentGrantedAt)
-    consentExpiresAt.setDate(consentExpiresAt.getDate() + 180)
+    // Calculate consent expiry: consent_granted_at + 180 days (EBA rules)
+    const { consentGrantedAt, consentExpiresAt } = buildConsentDates()
 
     // Store connection record
+    // bank_name is null until Story 7.3 fetches account details via transactions:read scope
+    // tink_refresh_token: stored server-side only, never returned to client (NFR17)
     const { data: newConnection, error: insertError } = await supabaseAdmin
       .from('bank_connections')
       .insert({
         user_id: userId,
         provider: 'tink',
-        bank_name: 'Connected Bank',
+        bank_name: null,
         status: 'active',
         consent_granted_at: consentGrantedAt.toISOString(),
         consent_expires_at: consentExpiresAt.toISOString(),
         tink_credentials_id: tinkCredentialsId,
+        tink_refresh_token: tokenResponse.refresh_token,
       })
       .select()
       .single()
@@ -163,10 +131,8 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('Bank connection created:', newConnection.id)
-
-    // Note: refresh_token is NOT returned to client — stored server-side only
-    // In production, the refresh token would be stored encrypted in a separate secure column
-    // Access token is already discarded (request-scoped, in-memory only)
+    // access_token is request-scoped (in-memory only, never persisted)
+    // refresh_token is stored in tink_refresh_token column — server-side only, not returned to client
 
     return jsonResponse({
       success: true,
@@ -176,7 +142,6 @@ Deno.serve(async (req: Request) => {
     // Log error without credentials
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('tink-connect error:', message)
-    // Include error detail in response for debugging (remove in production)
-    return jsonResponse({ error: 'Connection setup failed. Please try again.', detail: message }, 500)
+    return jsonResponse({ error: 'Connection setup failed. Please try again.' }, 500)
   }
 })

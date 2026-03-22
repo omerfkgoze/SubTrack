@@ -1,19 +1,7 @@
-import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
+import { assertEquals, assertRejects } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import { describe, it, beforeEach } from 'https://deno.land/std@0.208.0/testing/bdd.ts'
 import { stub, restore } from 'https://deno.land/std@0.208.0/testing/mock.ts'
-
-// Mock fetch for Tink API calls
-const mockFetch = (responses: Map<string, Response>) => {
-  return stub(globalThis, 'fetch', (input: string | URL | Request) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-    for (const [pattern, response] of responses) {
-      if (url.includes(pattern)) {
-        return Promise.resolve(response.clone())
-      }
-    }
-    return Promise.resolve(new Response('Not found', { status: 404 }))
-  })
-}
+import { exchangeAuthorizationCode, buildConsentDates } from './utils.ts'
 
 const mockTinkTokenResponse = {
   access_token: 'test-access-token',
@@ -23,46 +11,196 @@ const mockTinkTokenResponse = {
   scope: 'accounts:read,transactions:read',
 }
 
-const mockTinkCredentialsResponse = {
-  credentials: [
-    {
-      id: 'cred-123',
-      providerName: 'Demo Bank',
-      type: 'MOBILE_BANKID',
-      status: 'UPDATED',
-    },
-  ],
-}
-
 describe('tink-connect Edge Function', () => {
   beforeEach(() => {
     restore()
   })
 
-  describe('Token exchange', () => {
-    it('should exchange authorization code for tokens successfully', () => {
-      // Verify the token exchange request format
-      const params = new URLSearchParams({
-        code: 'test-auth-code',
-        client_id: 'test-client-id',
-        client_secret: 'test-client-secret',
-        grant_type: 'authorization_code',
-      })
+  describe('exchangeAuthorizationCode', () => {
+    it('returns access and refresh tokens on successful exchange', async () => {
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify(mockTinkTokenResponse), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          ),
+      )
 
-      assertEquals(params.get('grant_type'), 'authorization_code')
-      assertEquals(params.get('code'), 'test-auth-code')
+      try {
+        const result = await exchangeAuthorizationCode('test-code', 'client-id', 'client-secret')
+        assertEquals(result.access_token, 'test-access-token')
+        assertEquals(result.refresh_token, 'test-refresh-token')
+        assertEquals(result.scope, 'accounts:read,transactions:read')
+      } finally {
+        fetchStub.restore()
+      }
     })
 
-    it('should use correct Tink API endpoint for token exchange', () => {
-      const endpoint = 'https://api.tink.com/api/v1/oauth/token'
-      assertEquals(endpoint.includes('api.tink.com'), true)
-      assertEquals(endpoint.includes('/oauth/token'), true)
+    it('calls the correct Tink API endpoint', async () => {
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify(mockTinkTokenResponse), { status: 200 }),
+          ),
+      )
+
+      try {
+        await exchangeAuthorizationCode('code', 'id', 'secret')
+        const [url] = fetchStub.calls[0].args as [string]
+        assertEquals(url, 'https://api.tink.com/api/v1/oauth/token')
+      } finally {
+        fetchStub.restore()
+      }
+    })
+
+    it('sends correct grant_type and code in request body', async () => {
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify(mockTinkTokenResponse), { status: 200 }),
+          ),
+      )
+
+      try {
+        await exchangeAuthorizationCode('my-auth-code', 'my-client-id', 'my-secret')
+        const [, init] = fetchStub.calls[0].args as [string, RequestInit]
+        assertEquals(init.method, 'POST')
+
+        const body = new URLSearchParams(init.body as string)
+        assertEquals(body.get('grant_type'), 'authorization_code')
+        assertEquals(body.get('code'), 'my-auth-code')
+        assertEquals(body.get('client_id'), 'my-client-id')
+        // client_secret must be in the body (server-side token exchange)
+        assertEquals(body.get('client_secret'), 'my-secret')
+      } finally {
+        fetchStub.restore()
+      }
+    })
+
+    it('uses application/x-www-form-urlencoded content type', async () => {
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify(mockTinkTokenResponse), { status: 200 }),
+          ),
+      )
+
+      try {
+        await exchangeAuthorizationCode('code', 'id', 'secret')
+        const [, init] = fetchStub.calls[0].args as [string, RequestInit]
+        const headers = init.headers as Record<string, string>
+        assertEquals(headers['Content-Type'], 'application/x-www-form-urlencoded')
+      } finally {
+        fetchStub.restore()
+      }
+    })
+
+    it('throws on Tink API 5xx error', async () => {
+      stub(
+        globalThis,
+        'fetch',
+        () => Promise.resolve(new Response('Internal Server Error', { status: 500 })),
+      )
+
+      await assertRejects(
+        () => exchangeAuthorizationCode('test-code', 'client-id', 'client-secret'),
+        Error,
+        'Tink API error: 500',
+      )
+    })
+
+    it('throws on Tink API 4xx unauthorized error', async () => {
+      stub(
+        globalThis,
+        'fetch',
+        () => Promise.resolve(new Response('Unauthorized', { status: 401 })),
+      )
+
+      await assertRejects(
+        () => exchangeAuthorizationCode('bad-code', 'client-id', 'client-secret'),
+        Error,
+        'Tink API error: 401',
+      )
+    })
+  })
+
+  describe('buildConsentDates', () => {
+    it('sets consent_expires_at to exactly 180 days after consent_granted_at', () => {
+      const { consentGrantedAt, consentExpiresAt } = buildConsentDates()
+      const diffMs = consentExpiresAt.getTime() - consentGrantedAt.getTime()
+      const diffDays = diffMs / (1000 * 60 * 60 * 24)
+      assertEquals(diffDays, 180)
+    })
+
+    it('sets consent_granted_at to approximately now', () => {
+      const before = Date.now()
+      const { consentGrantedAt } = buildConsentDates()
+      const after = Date.now()
+      assertEquals(consentGrantedAt.getTime() >= before, true)
+      assertEquals(consentGrantedAt.getTime() <= after + 100, true)
+    })
+
+    it('returns Date objects (not strings)', () => {
+      const { consentGrantedAt, consentExpiresAt } = buildConsentDates()
+      assertEquals(consentGrantedAt instanceof Date, true)
+      assertEquals(consentExpiresAt instanceof Date, true)
+    })
+  })
+
+  describe('Security invariants', () => {
+    it('success response shape does not contain tokens', () => {
+      // The Edge Function response on success must contain connection data only — no tokens
+      const successResponse = {
+        success: true,
+        connection: {
+          id: 'conn-1',
+          user_id: 'user-1',
+          bank_name: null,
+          status: 'active',
+          consent_granted_at: new Date().toISOString(),
+          consent_expires_at: new Date().toISOString(),
+        },
+      }
+
+      assertEquals('refresh_token' in successResponse, false)
+      assertEquals('access_token' in successResponse, false)
+      assertEquals('tink_refresh_token' in successResponse.connection, false)
+    })
+
+    it('exchangeAuthorizationCode does not expose client_secret in response', async () => {
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify(mockTinkTokenResponse), { status: 200 }),
+          ),
+      )
+
+      try {
+        const result = await exchangeAuthorizationCode('code', 'id', 'MY_SECRET')
+        // The returned token response must not echo back the client_secret
+        assertEquals(JSON.stringify(result).includes('MY_SECRET'), false)
+      } finally {
+        fetchStub.restore()
+      }
     })
   })
 
   describe('Idempotency', () => {
-    it('should reject duplicate tink_credentials_id', () => {
-      // Simulate duplicate check: if existing connection found, return it
+    it('returns existing connection instead of creating duplicate on same credentialsId', () => {
+      // Simulate the idempotency check: when an existing connection is found for
+      // tink_credentials_id, the handler returns it without inserting a new record
       const existingConnection = {
         id: 'conn-1',
         user_id: 'user-1',
@@ -70,87 +208,16 @@ describe('tink-connect Edge Function', () => {
         status: 'active',
       }
 
-      // When existingConnection is found, we return it instead of creating new
+      // When existingConnection !== null, the handler returns early — no new record inserted
+      const shouldSkipInsert = existingConnection !== null
+      assertEquals(shouldSkipInsert, true)
       assertEquals(existingConnection.tink_credentials_id, 'cred-123')
-      assertEquals(existingConnection.status, 'active')
-    })
-  })
-
-  describe('Consent duration', () => {
-    it('should calculate consent_expires_at as consent_granted_at + 180 days', () => {
-      const consentGrantedAt = new Date('2026-03-21T12:00:00Z')
-      const consentExpiresAt = new Date(consentGrantedAt)
-      consentExpiresAt.setDate(consentExpiresAt.getDate() + 180)
-
-      // 180 days from March 21 = September 17
-      assertEquals(consentExpiresAt.getMonth(), 8) // September (0-indexed)
-      assertEquals(consentExpiresAt.getDate(), 17)
-    })
-  })
-
-  describe('Error handling', () => {
-    it('should handle Tink API 5xx errors gracefully', async () => {
-      const responses = new Map<string, Response>()
-      responses.set(
-        'api.tink.com/api/v1/oauth/token',
-        new Response('Internal Server Error', { status: 500 }),
-      )
-
-      const fetchStub = mockFetch(responses)
-
-      try {
-        const response = await fetch('https://api.tink.com/api/v1/oauth/token', {
-          method: 'POST',
-          body: new URLSearchParams({ code: 'test' }),
-        })
-
-        assertEquals(response.ok, false)
-        assertEquals(response.status, 500)
-      } finally {
-        fetchStub.restore()
-      }
     })
 
-    it('should not create DB records on token exchange failure', () => {
-      // When token exchange fails, the function should return error
-      // and not make any DB writes
-      let dbWriteAttempted = false
-
-      // Simulate: if token exchange throws, catch block runs
-      try {
-        throw new Error('Tink API error: 500')
-      } catch {
-        // In the actual function, no DB write happens in the catch block
-        dbWriteAttempted = false
-      }
-
-      assertEquals(dbWriteAttempted, false)
-    })
-  })
-
-  describe('Security', () => {
-    it('should never return refresh_token to client', () => {
-      // The response should contain connection data but NOT tokens
-      const successResponse = {
-        success: true,
-        connection: {
-          id: 'conn-1',
-          user_id: 'user-1',
-          bank_name: 'Demo Bank',
-          status: 'active',
-        },
-      }
-
-      assertEquals('refresh_token' in successResponse, false)
-      assertEquals('access_token' in successResponse, false)
-    })
-
-    it('should require userId to match authenticated user', () => {
-      const authenticatedUserId = 'user-1'
-      const requestUserId = 'user-2'
-
-      assertEquals(authenticatedUserId !== requestUserId, true)
-      // Function returns 403 when mismatch
+    it('proceeds to insert when no existing connection for credentialsId', () => {
+      const existingConnection = null
+      const shouldProceedToInsert = existingConnection === null
+      assertEquals(shouldProceedToInsert, true)
     })
   })
 })

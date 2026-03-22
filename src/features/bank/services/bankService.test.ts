@@ -1,7 +1,7 @@
 import {
   buildTinkLinkUrl,
   TINK_REDIRECT_URI,
-  parseAuthCodeFromUrl,
+  parseCallbackFromUrl,
   isTinkCallbackUrl,
   parseTinkError,
 } from './bankService';
@@ -75,23 +75,36 @@ describe('bankService', () => {
     });
   });
 
-  describe('parseAuthCodeFromUrl', () => {
+  describe('parseCallbackFromUrl', () => {
     it('extracts authorization code from callback URL', () => {
       const url = 'subtrack://tink/callback?code=test-auth-code-123';
-      const code = parseAuthCodeFromUrl(url);
-      expect(code).toBe('test-auth-code-123');
+      const result = parseCallbackFromUrl(url);
+      expect(result?.authorizationCode).toBe('test-auth-code-123');
+    });
+
+    it('also extracts credentialsId when present', () => {
+      const url = 'subtrack://tink/callback?code=test-code&credentialsId=cred-456';
+      const result = parseCallbackFromUrl(url);
+      expect(result?.authorizationCode).toBe('test-code');
+      expect(result?.credentialsId).toBe('cred-456');
+    });
+
+    it('returns null credentialsId when not in URL', () => {
+      const url = 'subtrack://tink/callback?code=test-code';
+      const result = parseCallbackFromUrl(url);
+      expect(result?.credentialsId).toBeNull();
     });
 
     it('returns null when no code parameter', () => {
       const url = 'subtrack://tink/callback?error=cancelled';
-      const code = parseAuthCodeFromUrl(url);
-      expect(code).toBeNull();
+      const result = parseCallbackFromUrl(url);
+      expect(result).toBeNull();
     });
 
     it('returns null for empty code', () => {
       const url = 'subtrack://tink/callback?code=';
-      const code = parseAuthCodeFromUrl(url);
-      expect(code).toBeNull();
+      const result = parseCallbackFromUrl(url);
+      expect(result).toBeNull();
     });
   });
 

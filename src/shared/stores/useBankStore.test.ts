@@ -49,6 +49,7 @@ describe('useBankStore', () => {
     useBankStore.setState({
       connections: [],
       isConnecting: false,
+      isFetchingConnections: false,
       connectionError: null,
     });
   });
@@ -81,12 +82,13 @@ describe('useBankStore', () => {
         await useBankStore.getState().fetchConnections();
       });
 
-      const { connections, isConnecting } = useBankStore.getState();
+      const { connections, isConnecting, isFetchingConnections } = useBankStore.getState();
       expect(connections).toHaveLength(1);
       expect(connections[0].id).toBe('conn-1');
       expect(connections[0].bankName).toBe('Demo Bank');
       expect(connections[0].status).toBe('active');
       expect(isConnecting).toBe(false);
+      expect(isFetchingConnections).toBe(false);
     });
 
     it('handles empty connections list', async () => {
@@ -99,9 +101,10 @@ describe('useBankStore', () => {
         await useBankStore.getState().fetchConnections();
       });
 
-      const { connections, isConnecting } = useBankStore.getState();
+      const { connections, isConnecting, isFetchingConnections } = useBankStore.getState();
       expect(connections).toEqual([]);
       expect(isConnecting).toBe(false);
+      expect(isFetchingConnections).toBe(false);
     });
 
     it('sets error on fetch failure', async () => {
@@ -114,12 +117,13 @@ describe('useBankStore', () => {
         await useBankStore.getState().fetchConnections();
       });
 
-      const { connectionError, isConnecting } = useBankStore.getState();
+      const { connectionError, isConnecting, isFetchingConnections } = useBankStore.getState();
       expect(connectionError).toEqual({
         code: 'FETCH_FAILED',
         message: 'Failed to load bank connections',
       });
       expect(isConnecting).toBe(false);
+      expect(isFetchingConnections).toBe(false);
     });
   });
 

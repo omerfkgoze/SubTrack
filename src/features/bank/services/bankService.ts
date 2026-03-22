@@ -64,14 +64,6 @@ export function parseCallbackFromUrl(url: string): TinkCallbackResult | null {
 }
 
 /**
- * @deprecated Use parseCallbackFromUrl instead
- */
-export function parseAuthCodeFromUrl(url: string): string | null {
-  const result = parseCallbackFromUrl(url);
-  return result?.authorizationCode ?? null;
-}
-
-/**
  * Checks if a URL is a Tink callback URL.
  */
 export function isTinkCallbackUrl(url: string): boolean {

@@ -49,6 +49,16 @@ export function BankConnectionScreen() {
   const [pendingAuthCode, setPendingAuthCode] = useState<string | null>(null);
   const [pendingCredentialsId, setPendingCredentialsId] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
+  // navTimerRef is intentionally NOT cleared in the processing effect's cleanup.
+  // Clearing it there would cancel navigation when setPendingAuthCode(null) triggers
+  // a dependency change and re-runs cleanup mid-flight. Cleared only on unmount.
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    };
+  }, []);
 
   const tinkLinkUrl = buildTinkLinkUrl({
     clientId: env.TINK_CLIENT_ID,
@@ -68,23 +78,31 @@ export function BankConnectionScreen() {
       await initiateConnection(pendingAuthCode, pendingCredentialsId);
       if (cancelled) return;
 
-      setPendingAuthCode(null);
-
       const currentError = useBankStore.getState().connectionError;
       if (currentError) {
         setSnackbarType('error');
         setSnackbarMessage(currentError.message);
+        setPendingAuthCode(null);
         setFlowState('info');
       } else {
+        // Switch to info state BEFORE setting navTimer so:
+        // 1. Snackbar renders (it lives in the info screen JSX)
+        // 2. setPendingAuthCode(null) triggers effect cleanup which would cancel a
+        //    local navTimer — using navTimerRef avoids that race condition
         setSnackbarType('success');
         setSnackbarMessage('Bank account connected successfully');
-        navigation.goBack();
+        setFlowState('info');
+        setPendingAuthCode(null);
+        navTimerRef.current = setTimeout(() => {
+          navigation.goBack();
+        }, 2000);
       }
     }, 500);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      // navTimerRef is intentionally NOT cleared here — see comment above
     };
   }, [flowState, pendingAuthCode, initiateConnection, navigation]);
 

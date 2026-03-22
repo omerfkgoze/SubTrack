@@ -1,6 +1,6 @@
 # Story 7.1: Bank Account Connection via Open Banking
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -534,11 +534,15 @@ claude-opus-4-6
 - 2026-03-21: Story 7.1 implemented — Bank Account Connection via Open Banking (Tink WebView integration)
 - 2026-03-22: Debugging session — resolved 6 cascading issues preventing Edge Function from working (gateway JWT, missing secrets, wrong Tink endpoint, scope issue, iOS timing, security leak). Removed `fetchCredentials()` — `credentialsId` now parsed from callback URL. Added connected state UI to Settings and BankConnectionScreen.
 - 2026-03-22: Bug fix — added `useFocusEffect` + `fetchConnections` to `BankConnectionScreen` and `SettingsScreen`. Root cause: Zustand persist middleware hydrates `connections` from AsyncStorage on app start; without a DB fetch on screen focus, stale connection state persisted even after DB record deletion. Fix ensures real DB state is always reflected when screens are visited.
+- 2026-03-22: Code review fixes — H1: extracted pure functions to `utils.ts`, rewrote Deno tests with real assertions (previously placeholder); H2: added `tink_refresh_token` column and storage (new migration); H3: fixed success snackbar visibility — delayed `navigation.goBack()` 2s so snackbar renders before unmount; M1: separated `isFetchingConnections` from `isConnecting` to prevent spurious processing UI during background refresh; M2: fixed null safety in `mapRowToConnection` for nullable DB fields; M3: removed debug error detail from production error response; L1: removed deprecated `parseAuthCodeFromUrl` export.
+- 2026-03-22: Bug fix — processing screen stuck after successful Tink OAuth. Root cause: `setPendingAuthCode(null)` inside the processing useEffect's timer callback changed the `pendingAuthCode` dependency, triggering effect cleanup which set `cancelled = true` and `clearTimeout(navTimer)`. Navigation timer was cancelled before firing, `flowState` stayed 'processing' forever. Fix: moved `navTimer` to a `useRef` (not cleared in effect cleanup, only on unmount), changed `flowState` to 'info' before navigation delay so snackbar renders in the info screen JSX, reordered state updates to avoid the race condition.
 
 ### File List
 
 **New files:**
 - supabase/migrations/20260321300000_create_bank_connections.sql
+- supabase/migrations/20260322000001_add_refresh_token_to_bank_connections.sql
+- supabase/functions/tink-connect/utils.ts
 - supabase/functions/tink-connect/index.ts
 - supabase/functions/tink-connect/index.test.ts
 - src/features/bank/types/index.ts
