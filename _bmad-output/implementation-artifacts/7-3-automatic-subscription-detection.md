@@ -1,6 +1,6 @@
 # Story 7.3: Automatic Subscription Detection
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -563,6 +563,7 @@ claude-sonnet-4-6
 ### Change Log
 
 - Date: 2026-03-22 — Story 7.3 implementation: automatic subscription detection via Tink Data Enrichment API
+- Date: 2026-03-22 — Code review fixes: replaced `connections[0]` with `displayConnection`/`activeConnection` for safe display, added Retry action to detection error snackbar, removed unnecessary Content-Type header on GET request, updated File List with missing files
 
 ### File List
 
@@ -577,3 +578,5 @@ claude-sonnet-4-6
 - `src/features/bank/screens/BankConnectionScreen.tsx` (modified)
 - `src/features/bank/screens/BankConnectionScreen.test.tsx` (modified)
 - `src/features/bank/services/bankService.ts` (modified)
+- `src/features/bank/screens/SupportedBanksScreen.test.tsx` (modified — type fix)
+- `supabase/config.toml` (modified — config update)

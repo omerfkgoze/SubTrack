@@ -44,6 +44,7 @@ export function BankConnectionScreen() {
   const detectSubscriptions = useBankStore((s) => s.detectSubscriptions);
   const isBankConnected = connections.length > 0;
   const activeConnection = connections.find((c) => c.status === 'active') ?? null;
+  const displayConnection = activeConnection ?? connections[0] ?? null;
 
   useFocusEffect(
     useCallback(() => {
@@ -208,6 +209,8 @@ export function BankConnectionScreen() {
     if (detectionError) {
       setSnackbarType('error');
       setSnackbarMessage(detectionError.message);
+      // Reconnect-type errors are handled by the "Reconnect required" UI state
+      // Retryable errors can be retried via the scan button which remains visible
     }
   }, [isDetecting, detectionError]);
 
@@ -258,11 +261,11 @@ export function BankConnectionScreen() {
               Bank Connected
             </Text>
             <Text variant="bodySmall" style={{ color: theme.colors.secondary }}>
-              {connections[0].bankName || 'Open Banking'}
+              {displayConnection?.bankName || 'Open Banking'}
             </Text>
           </View>
           <Text variant="bodySmall" style={styles.connectedDetail}>
-            Connected {new Date(connections[0].connectedAt).toLocaleDateString()}
+            Connected {displayConnection ? new Date(displayConnection.connectedAt).toLocaleDateString() : ''}
           </Text>
 
           {activeConnection ? (
@@ -286,8 +289,8 @@ export function BankConnectionScreen() {
                 </Button>
               )}
               <Text variant="bodySmall" style={styles.lastSyncedText}>
-                {connections[0].lastSyncedAt
-                  ? `Last scanned: ${new Date(connections[0].lastSyncedAt).toLocaleDateString()}`
+                {activeConnection?.lastSyncedAt
+                  ? `Last scanned: ${new Date(activeConnection.lastSyncedAt).toLocaleDateString()}`
                   : 'Never scanned'}
               </Text>
             </>
@@ -385,9 +388,14 @@ export function BankConnectionScreen() {
       <Snackbar
         visible={!!snackbarMessage}
         onDismiss={() => setSnackbarMessage('')}
-        duration={3000}
+        duration={snackbarType === 'error' ? 5000 : 3000}
         accessibilityLiveRegion="polite"
         style={snackbarType === 'error' ? { backgroundColor: theme.colors.error } : undefined}
+        action={
+          snackbarType === 'error' && detectionError && activeConnection
+            ? { label: 'Retry', onPress: handleScanPress }
+            : undefined
+        }
       >
         {snackbarMessage}
       </Snackbar>

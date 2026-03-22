@@ -189,7 +189,6 @@ export async function fetchRecurringGroups(accessToken: string): Promise<TinkRec
     const response = await fetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
       },
     })
 
