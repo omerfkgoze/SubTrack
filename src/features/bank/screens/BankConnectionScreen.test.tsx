@@ -33,9 +33,11 @@ jest.mock('expo-linking', () => ({
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
+const mockRouteParams: { autoConnect?: boolean } = {};
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
   useFocusEffect: (cb: () => void) => { cb(); },
+  useRoute: () => ({ params: mockRouteParams }),
 }));
 
 jest.mock('@shared/stores/useBankStore', () => ({
@@ -82,6 +84,7 @@ function renderWithProvider() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRouteParams.autoConnect = undefined;
   setupStoreMock();
 });
 
@@ -160,6 +163,27 @@ describe('BankConnectionScreen', () => {
       fireEvent.press(screen.getByLabelText('Retry bank connection'));
 
       expect(mockClearConnectionError).toHaveBeenCalled();
+    });
+  });
+
+  describe('View Supported Banks', () => {
+    it('renders View Supported Banks button', () => {
+      renderWithProvider();
+      expect(screen.getByLabelText('View Supported Banks')).toBeTruthy();
+    });
+
+    it('navigates to SupportedBanks screen on press', () => {
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('View Supported Banks'));
+      expect(mockNavigate).toHaveBeenCalledWith('SupportedBanks');
+    });
+  });
+
+  describe('autoConnect param', () => {
+    it('shows consent dialog immediately when autoConnect is true', () => {
+      mockRouteParams.autoConnect = true;
+      renderWithProvider();
+      expect(screen.getByText('Bank Connection Consent')).toBeTruthy();
     });
   });
 

@@ -51,6 +51,9 @@ describe('useBankStore', () => {
       isConnecting: false,
       isFetchingConnections: false,
       connectionError: null,
+      supportedBanks: [],
+      isFetchingBanks: false,
+      fetchBanksError: null,
     });
   });
 
@@ -185,6 +188,75 @@ describe('useBankStore', () => {
       const { isConnecting, connections } = useBankStore.getState();
       expect(isConnecting).toBe(false);
       expect(connections).toEqual([]);
+    });
+  });
+
+  describe('fetchSupportedBanks', () => {
+    const mockProviders = [
+      { id: 'bank-1', displayName: 'Test Bank', market: 'SE', iconUrl: 'https://cdn.tink.se/icon.png', popular: true, rank: 1 },
+      { id: 'bank-2', displayName: 'Another Bank', market: 'DE', iconUrl: null, popular: false, rank: 5 },
+    ];
+
+    it('fetches supported banks successfully', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: { providers: mockProviders },
+        error: null,
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchSupportedBanks();
+      });
+
+      const { supportedBanks, isFetchingBanks, fetchBanksError } = useBankStore.getState();
+      expect(supportedBanks).toHaveLength(2);
+      expect(supportedBanks[0].displayName).toBe('Test Bank');
+      expect(isFetchingBanks).toBe(false);
+      expect(fetchBanksError).toBeNull();
+    });
+
+    it('calls tink-providers with market param', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: { providers: [] },
+        error: null,
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchSupportedBanks('SE');
+      });
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith('tink-providers', {
+        body: { market: 'SE' },
+      });
+    });
+
+    it('sets error on failure', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: null,
+        error: { message: 'Function error' },
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchSupportedBanks();
+      });
+
+      const { supportedBanks, isFetchingBanks, fetchBanksError } = useBankStore.getState();
+      expect(supportedBanks).toEqual([]);
+      expect(isFetchingBanks).toBe(false);
+      expect(fetchBanksError?.code).toBe('FETCH_BANKS_FAILED');
+    });
+
+    it('does NOT persist supportedBanks to storage', () => {
+      useBankStore.setState({
+        connections: [{ id: 'c1', userId: 'u1', provider: 'tink', bankName: '', status: 'active', connectedAt: '', consentGrantedAt: '', consentExpiresAt: '', lastSyncedAt: null, tinkCredentialsId: '' }],
+        supportedBanks: mockProviders,
+      });
+
+      // partialize should only include connections
+      const store = useBankStore as unknown as { persist: { getOptions: () => { partialize: (s: Record<string, unknown>) => Record<string, unknown> } } };
+      const partialize = store.persist.getOptions().partialize;
+      const persisted = partialize(useBankStore.getState());
+      expect(persisted).toHaveProperty('connections');
+      expect(persisted).not.toHaveProperty('supportedBanks');
     });
   });
 

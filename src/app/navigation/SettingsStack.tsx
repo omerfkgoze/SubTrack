@@ -8,6 +8,7 @@ import { DataExportScreen } from '@features/settings/screens/DataExportScreen';
 import { MyDataScreen } from '@features/settings/screens/MyDataScreen';
 import { PaywallScreen } from '@features/premium/screens/PaywallScreen';
 import { BankConnectionScreen } from '@features/bank/screens/BankConnectionScreen';
+import { SupportedBanksScreen } from '@features/bank/screens/SupportedBanksScreen';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -41,6 +42,11 @@ export function SettingsStack() {
         name="BankConnection"
         component={BankConnectionScreen}
         options={{ title: 'Bank Connection' }}
+      />
+      <Stack.Screen
+        name="SupportedBanks"
+        component={SupportedBanksScreen}
+        options={{ title: 'Supported Banks' }}
       />
       <Stack.Screen
         name="DataExport"

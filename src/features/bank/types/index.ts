@@ -1,3 +1,12 @@
+export interface SupportedBank {
+  id: string; // Tink financialInstitutionId
+  displayName: string; // Tink displayName
+  market: string; // ISO 3166-1 alpha-2 (e.g., "SE", "DE")
+  iconUrl: string | null; // Tink images.icon CDN URL
+  popular: boolean; // Tink popular flag
+  rank: number; // Tink rank (lower = more prominent)
+}
+
 export type BankConnectionStatus = 'active' | 'expiring_soon' | 'expired' | 'error' | 'disconnected';
 
 export interface BankConnection {

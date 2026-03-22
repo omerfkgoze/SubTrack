@@ -10,8 +10,9 @@ import {
 } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import type { WebViewNavigation } from 'react-native-webview';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import type { SettingsStackParamList } from '@app/navigation/types';
 import { useBankStore } from '@shared/stores/useBankStore';
 import { BankConsentDialog } from '../components/BankConsentDialog';
@@ -29,6 +30,8 @@ type FlowState = 'info' | 'consent' | 'webview' | 'processing';
 export function BankConnectionScreen() {
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
+  const route = useRoute<RouteProp<SettingsStackParamList, 'BankConnection'>>();
+  const autoConnect = route.params?.autoConnect;
   const connections = useBankStore((s) => s.connections);
   const isConnecting = useBankStore((s) => s.isConnecting);
   const connectionError = useBankStore((s) => s.connectionError);
@@ -43,7 +46,7 @@ export function BankConnectionScreen() {
     }, [fetchConnections]),
   );
 
-  const [flowState, setFlowState] = useState<FlowState>('info');
+  const [flowState, setFlowState] = useState<FlowState>(autoConnect ? 'consent' : 'info');
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
   const [pendingAuthCode, setPendingAuthCode] = useState<string | null>(null);
@@ -277,6 +280,18 @@ export function BankConnectionScreen() {
           </Button>
         )}
 
+        {!isBankConnected && (
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('SupportedBanks')}
+            style={styles.supportedBanksButton}
+            accessibilityLabel="View Supported Banks"
+            accessibilityRole="button"
+          >
+            View Supported Banks
+          </Button>
+        )}
+
         {connectionError && (
           <View style={styles.errorContainer}>
             <Text variant="bodySmall" style={{ color: theme.colors.error }}>
@@ -362,6 +377,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   connectButton: {
+    marginBottom: 8,
+  },
+  supportedBanksButton: {
     marginBottom: 8,
   },
   connectButtonContent: {

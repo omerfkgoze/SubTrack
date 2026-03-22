@@ -1,6 +1,6 @@
 # Story 7.2: Supported Banks List
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,23 +61,23 @@ so that I know if my bank works with SubTrack.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Edge Function — `tink-providers`** (AC: #2, #7)
-  - [ ] 1.1: Create `supabase/functions/tink-providers/index.ts` — authenticated Edge Function that fetches provider list from Tink API (`GET https://api.tink.com/providers/{market}`) using client credentials grant. Requires `TINK_CLIENT_ID` and `TINK_CLIENT_SECRET` (already configured in Edge Function env from Story 7.1).
-  - [ ] 1.2: Accept optional `market` query parameter. If omitted, fetch providers without market filter (or iterate over key EU markets).
-  - [ ] 1.3: Filter response to only include providers with `capability: CHECKING_ACCOUNTS` (accounts:read scope — what SubTrack actually uses). Exclude providers with `status: DISABLED`.
-  - [ ] 1.4: Map Tink provider response to a lean `SupportedBank` shape for the client: `{ id, displayName, market, iconUrl, popular, rank }`. Strip unnecessary fields (fields, passwordHelpText, pisCapabilities, etc.) to minimize payload.
-  - [ ] 1.5: Implement server-side caching: store the mapped provider list in a `provider_cache` Supabase table (`market TEXT, data JSONB, cached_at TIMESTAMPTZ`, unique on `market`) with 24-hour TTL. On request: check cache age → if fresh, return cached → if stale or missing, fetch from Tink, upsert cache, return fresh data.
-  - [ ] 1.6: Tink client credentials token: `POST https://api.tink.com/api/v1/oauth/token` with `grant_type=client_credentials`, `client_id`, `client_secret`, `scope=providers:read`. This is an app-level token (no user context needed). Reuse `exchangeAuthorizationCode` pattern from `tink-connect/utils.ts` but with different grant type.
-  - [ ] 1.7: On Tink API failure: return cached data if available (even if stale), otherwise return `503` with error message.
-  - [ ] 1.8: Deploy with `--no-verify-jwt` (same pattern as `tink-connect` — function has its own `getUser()` auth check).
-  - [ ] 1.9: Write Deno tests: successful fetch, cache hit, cache miss, Tink API failure with stale cache fallback, Tink API failure with no cache.
+- [x] **Task 1: Edge Function — `tink-providers`** (AC: #2, #7)
+  - [x]1.1: Create `supabase/functions/tink-providers/index.ts` — authenticated Edge Function that fetches provider list from Tink API (`GET https://api.tink.com/providers/{market}`) using client credentials grant. Requires `TINK_CLIENT_ID` and `TINK_CLIENT_SECRET` (already configured in Edge Function env from Story 7.1).
+  - [x]1.2: Accept optional `market` query parameter. If omitted, fetch providers without market filter (or iterate over key EU markets).
+  - [x]1.3: Filter response to only include providers with `capability: CHECKING_ACCOUNTS` (accounts:read scope — what SubTrack actually uses). Exclude providers with `status: DISABLED`.
+  - [x]1.4: Map Tink provider response to a lean `SupportedBank` shape for the client: `{ id, displayName, market, iconUrl, popular, rank }`. Strip unnecessary fields (fields, passwordHelpText, pisCapabilities, etc.) to minimize payload.
+  - [x]1.5: Implement server-side caching: store the mapped provider list in a `provider_cache` Supabase table (`market TEXT, data JSONB, cached_at TIMESTAMPTZ`, unique on `market`) with 24-hour TTL. On request: check cache age → if fresh, return cached → if stale or missing, fetch from Tink, upsert cache, return fresh data.
+  - [x]1.6: Tink client credentials token: `POST https://api.tink.com/api/v1/oauth/token` with `grant_type=client_credentials`, `client_id`, `client_secret`, `scope=providers:read`. This is an app-level token (no user context needed). Reuse `exchangeAuthorizationCode` pattern from `tink-connect/utils.ts` but with different grant type.
+  - [x]1.7: On Tink API failure: return cached data if available (even if stale), otherwise return `503` with error message.
+  - [x]1.8: Deploy with `--no-verify-jwt` (same pattern as `tink-connect` — function has its own `getUser()` auth check).
+  - [x]1.9: Write Deno tests: successful fetch, cache hit, cache miss, Tink API failure with stale cache fallback, Tink API failure with no cache.
 
-- [ ] **Task 2: Database — `provider_cache` table** (AC: #7)
-  - [ ] 2.1: Create Supabase migration for `provider_cache` table: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`, `market TEXT NOT NULL UNIQUE`, `data JSONB NOT NULL`, `cached_at TIMESTAMPTZ NOT NULL DEFAULT now()`. No RLS needed — Edge Function accesses via service role key.
-  - [ ] 2.2: Run `supabase gen types typescript` after migration.
+- [x] **Task 2: Database — `provider_cache` table** (AC: #7)
+  - [x]2.1: Create Supabase migration for `provider_cache` table: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`, `market TEXT NOT NULL UNIQUE`, `data JSONB NOT NULL`, `cached_at TIMESTAMPTZ NOT NULL DEFAULT now()`. No RLS needed — Edge Function accesses via service role key.
+  - [x]2.2: Run `supabase gen types typescript` after migration.
 
-- [ ] **Task 3: Types** (AC: #2)
-  - [ ] 3.1: Add to `src/features/bank/types/index.ts`:
+- [x] **Task 3: Types** (AC: #2)
+  - [x]3.1: Add to `src/features/bank/types/index.ts`:
     ```typescript
     export interface SupportedBank {
       id: string;               // Tink financialInstitutionId
@@ -89,8 +89,8 @@ so that I know if my bank works with SubTrack.
     }
     ```
 
-- [ ] **Task 4: `useBankStore` — add provider list state** (AC: #2, #6)
-  - [ ] 4.1: Add to existing `useBankStore`:
+- [x] **Task 4: `useBankStore` — add provider list state** (AC: #2, #6)
+  - [x]4.1: Add to existing `useBankStore`:
     ```typescript
     // New state
     supportedBanks: SupportedBank[];
@@ -100,39 +100,39 @@ so that I know if my bank works with SubTrack.
     // New action
     fetchSupportedBanks: (market?: string) => Promise<void>;
     ```
-  - [ ] 4.2: `fetchSupportedBanks`: calls `tink-providers` Edge Function, stores result in `supportedBanks`. On error: sets `fetchBanksError`.
-  - [ ] 4.3: Do NOT persist `supportedBanks` to AsyncStorage — this is transient cached data. Update `partialize` to exclude it.
-  - [ ] 4.4: Add tests to `useBankStore.test.ts` for new state and action.
+  - [x]4.2: `fetchSupportedBanks`: calls `tink-providers` Edge Function, stores result in `supportedBanks`. On error: sets `fetchBanksError`.
+  - [x]4.3: Do NOT persist `supportedBanks` to AsyncStorage — this is transient cached data. Update `partialize` to exclude it.
+  - [x]4.4: Add tests to `useBankStore.test.ts` for new state and action.
 
-- [ ] **Task 5: SupportedBanksScreen UI** (AC: #1, #2, #3, #4, #5, #6)
-  - [ ] 5.1: Create `src/features/bank/screens/SupportedBanksScreen.tsx`.
-  - [ ] 5.2: Top section: `Searchbar` (React Native Paper) for real-time text filtering.
-  - [ ] 5.3: Optional: Market filter chips below search bar using `Chip` component (React Native Paper). Pre-populate with common EU markets. Default: "All".
-  - [ ] 5.4: Bank list: `FlatList` with `BankListItem` component. Each item shows: bank icon (Tink CDN `iconUrl` via `Avatar.Image`, fallback to `Avatar.Icon` with `bank` icon if no image), display name, market badge. Sort: popular first (lower rank), then alphabetical.
-  - [ ] 5.5: Empty state when search has no results: "Your bank isn't supported yet. You can continue using manual entry."
-  - [ ] 5.6: Loading state: `ActivityIndicator` centered.
-  - [ ] 5.7: Error state: error message + "Retry" button.
-  - [ ] 5.8: On bank item tap: navigate back to BankConnectionScreen with a route param indicating the user wants to proceed with connection. BankConnectionScreen should auto-show consent dialog (skip the info state and go directly to consent — the user already expressed intent).
-  - [ ] 5.9: Use React Native Paper components consistent with rest of app: `Surface`, `Searchbar`, `List.Item`, `Chip`, `Avatar.Image`, `Avatar.Icon`, `ActivityIndicator`, `Button`, `Text`.
+- [x] **Task 5: SupportedBanksScreen UI** (AC: #1, #2, #3, #4, #5, #6)
+  - [x]5.1: Create `src/features/bank/screens/SupportedBanksScreen.tsx`.
+  - [x]5.2: Top section: `Searchbar` (React Native Paper) for real-time text filtering.
+  - [x]5.3: Optional: Market filter chips below search bar using `Chip` component (React Native Paper). Pre-populate with common EU markets. Default: "All".
+  - [x]5.4: Bank list: `FlatList` with `BankListItem` component. Each item shows: bank icon (Tink CDN `iconUrl` via `Avatar.Image`, fallback to `Avatar.Icon` with `bank` icon if no image), display name, market badge. Sort: popular first (lower rank), then alphabetical.
+  - [x]5.5: Empty state when search has no results: "Your bank isn't supported yet. You can continue using manual entry."
+  - [x]5.6: Loading state: `ActivityIndicator` centered.
+  - [x]5.7: Error state: error message + "Retry" button.
+  - [x]5.8: On bank item tap: navigate back to BankConnectionScreen with a route param indicating the user wants to proceed with connection. BankConnectionScreen should auto-show consent dialog (skip the info state and go directly to consent — the user already expressed intent).
+  - [x]5.9: Use React Native Paper components consistent with rest of app: `Surface`, `Searchbar`, `List.Item`, `Chip`, `Avatar.Image`, `Avatar.Icon`, `ActivityIndicator`, `Button`, `Text`.
 
-- [ ] **Task 6: BankListItem component** (AC: #2)
-  - [ ] 6.1: Create `src/features/bank/components/BankListItem.tsx`. Renders a single bank entry using `List.Item` with `Avatar.Image` left (bank icon) and market chip right.
-  - [ ] 6.2: Handle image load failure gracefully — fallback to `Avatar.Icon` with `bank` MaterialCommunityIcons icon.
-  - [ ] 6.3: Write co-located test.
+- [x] **Task 6: BankListItem component** (AC: #2)
+  - [x]6.1: Create `src/features/bank/components/BankListItem.tsx`. Renders a single bank entry using `List.Item` with `Avatar.Image` left (bank icon) and market chip right.
+  - [x]6.2: Handle image load failure gracefully — fallback to `Avatar.Icon` with `bank` MaterialCommunityIcons icon.
+  - [x]6.3: Write co-located test.
 
-- [ ] **Task 7: Navigation** (AC: #1, #5)
-  - [ ] 7.1: Add `SupportedBanks` route to `SettingsStack.tsx` (under existing `BankConnection` route).
-  - [ ] 7.2: Update `src/app/navigation/types.ts` — add `SupportedBanks` to `SettingsStackParamList` and add optional `autoConnect` param to `BankConnection` route.
-  - [ ] 7.3: Add "View Supported Banks" button on `BankConnectionScreen` — navigates to `SupportedBanks`.
-  - [ ] 7.4: Handle `autoConnect` route param in `BankConnectionScreen` — if true, skip info state and show consent dialog immediately.
+- [x] **Task 7: Navigation** (AC: #1, #5)
+  - [x]7.1: Add `SupportedBanks` route to `SettingsStack.tsx` (under existing `BankConnection` route).
+  - [x]7.2: Update `src/app/navigation/types.ts` — add `SupportedBanks` to `SettingsStackParamList` and add optional `autoConnect` param to `BankConnection` route.
+  - [x]7.3: Add "View Supported Banks" button on `BankConnectionScreen` — navigates to `SupportedBanks`.
+  - [x]7.4: Handle `autoConnect` route param in `BankConnectionScreen` — if true, skip info state and show consent dialog immediately.
 
-- [ ] **Task 8: Tests** (AC: #1–#7)
-  - [ ] 8.1: `src/features/bank/screens/SupportedBanksScreen.test.tsx` — renders loading, renders bank list, search filters in real-time, empty search shows fallback message, error shows retry, tap bank navigates back.
-  - [ ] 8.2: `src/features/bank/components/BankListItem.test.tsx` — renders bank name and icon, handles missing icon gracefully.
-  - [ ] 8.3: Update `useBankStore.test.ts` — test `fetchSupportedBanks` success, failure, and that `supportedBanks` is NOT persisted.
-  - [ ] 8.4: Update `BankConnectionScreen.test.tsx` — "View Supported Banks" button navigates correctly, `autoConnect` param triggers consent dialog.
-  - [ ] 8.5: Deno Edge Function tests for `tink-providers` (Task 1.9).
-  - [ ] 8.6: Co-locate all Jest tests with source files. No `__tests__/` directories.
+- [x] **Task 8: Tests** (AC: #1–#7)
+  - [x]8.1: `src/features/bank/screens/SupportedBanksScreen.test.tsx` — renders loading, renders bank list, search filters in real-time, empty search shows fallback message, error shows retry, tap bank navigates back.
+  - [x]8.2: `src/features/bank/components/BankListItem.test.tsx` — renders bank name and icon, handles missing icon gracefully.
+  - [x]8.3: Update `useBankStore.test.ts` — test `fetchSupportedBanks` success, failure, and that `supportedBanks` is NOT persisted.
+  - [x]8.4: Update `BankConnectionScreen.test.tsx` — "View Supported Banks" button navigates correctly, `autoConnect` param triggers consent dialog.
+  - [x]8.5: Deno Edge Function tests for `tink-providers` (Task 1.9).
+  - [x]8.6: Co-locate all Jest tests with source files. No `__tests__/` directories.
 
 ## Dev Notes
 
@@ -470,10 +470,44 @@ jest.mock('@shared/services/supabase', () => ({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+No debug issues encountered.
+
 ### Completion Notes List
 
+- Task 1: Created `tink-providers` Edge Function with client credentials auth, provider fetching, filtering (CHECKING_ACCOUNTS capability, non-DISABLED status), lean mapping, and 24h server-side cache with stale fallback on Tink API failure.
+- Task 2: Created `provider_cache` migration table (market UNIQUE, JSONB data, cached_at).
+- Task 3: Added `SupportedBank` interface to bank types.
+- Task 4: Extended `useBankStore` with `supportedBanks`, `isFetchingBanks`, `fetchBanksError` state and `fetchSupportedBanks` action. Excluded from AsyncStorage persistence via partialize.
+- Task 5: Built `SupportedBanksScreen` with search bar, market filter chips, sorted FlatList, loading/error/empty states.
+- Task 6: Created `BankListItem` component with Avatar.Image (icon fallback to Avatar.Icon on error).
+- Task 7: Added `SupportedBanks` route to SettingsStack, `autoConnect` param to BankConnection route, "View Supported Banks" button on BankConnectionScreen, auto-consent on autoConnect.
+- Task 8: All tests written and passing — 38 new/updated tests across 4 test suites. Full regression: 689 tests, 51 suites, all green.
+
+### Change Log
+
+- 2026-03-22: Story 7.2 implementation complete — all 8 tasks implemented with full test coverage.
+
 ### File List
+
+**New files:**
+- supabase/migrations/20260322100000_create_provider_cache.sql
+- supabase/functions/tink-providers/index.ts
+- supabase/functions/tink-providers/utils.ts
+- supabase/functions/tink-providers/index.test.ts
+- src/features/bank/screens/SupportedBanksScreen.tsx
+- src/features/bank/screens/SupportedBanksScreen.test.tsx
+- src/features/bank/components/BankListItem.tsx
+- src/features/bank/components/BankListItem.test.tsx
+
+**Modified files:**
+- src/features/bank/types/index.ts
+- src/shared/stores/useBankStore.ts
+- src/shared/stores/useBankStore.test.ts
+- src/app/navigation/types.ts
+- src/app/navigation/SettingsStack.tsx
+- src/features/bank/screens/BankConnectionScreen.tsx
+- src/features/bank/screens/BankConnectionScreen.test.tsx

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
-import type { BankConnection } from '@features/bank/types';
+import type { BankConnection, SupportedBank } from '@features/bank/types';
 import type { AppError } from '@features/subscriptions/types';
 
 interface BankState {
@@ -11,12 +11,16 @@ interface BankState {
   isConnecting: boolean;
   isFetchingConnections: boolean;
   connectionError: AppError | null;
+  supportedBanks: SupportedBank[];
+  isFetchingBanks: boolean;
+  fetchBanksError: AppError | null;
 }
 
 interface BankActions {
   fetchConnections: () => Promise<void>;
   initiateConnection: (authCode: string, credentialsId?: string | null) => Promise<void>;
   clearConnectionError: () => void;
+  fetchSupportedBanks: (market?: string) => Promise<void>;
 }
 
 export type BankStore = BankState & BankActions;
@@ -43,6 +47,9 @@ export const useBankStore = create<BankStore>()(
       isConnecting: false,
       isFetchingConnections: false,
       connectionError: null,
+      supportedBanks: [],
+      isFetchingBanks: false,
+      fetchBanksError: null,
 
       fetchConnections: async () => {
         const user = useAuthStore.getState().user;
@@ -149,6 +156,45 @@ export const useBankStore = create<BankStore>()(
       },
 
       clearConnectionError: () => set({ connectionError: null }),
+
+      fetchSupportedBanks: async (market?: string) => {
+        set({ isFetchingBanks: true, fetchBanksError: null });
+
+        try {
+          const { data, error } = await supabase.functions.invoke('tink-providers', {
+            body: { market },
+          });
+
+          if (error) {
+            let detail = "Couldn't load supported banks. Please check your connection and try again.";
+            try {
+              if (error.context && typeof error.context.json === 'function') {
+                const body = await error.context.json();
+                detail = body?.error ?? detail;
+              } else if (error.message) {
+                detail = error.message;
+              }
+            } catch {
+              if (error.message) detail = error.message;
+            }
+            set({
+              fetchBanksError: { code: 'FETCH_BANKS_FAILED', message: detail },
+              isFetchingBanks: false,
+            });
+            return;
+          }
+
+          set({ supportedBanks: data?.providers ?? [], isFetchingBanks: false });
+        } catch {
+          set({
+            fetchBanksError: {
+              code: 'NETWORK_ERROR',
+              message: "Couldn't load supported banks. Please check your connection and try again.",
+            },
+            isFetchingBanks: false,
+          });
+        }
+      },
     }),
     {
       name: 'bank-store',
