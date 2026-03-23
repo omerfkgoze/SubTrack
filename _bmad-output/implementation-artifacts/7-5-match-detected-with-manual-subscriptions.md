@@ -1,6 +1,6 @@
 # Story 7.5: Match Detected with Manual Subscriptions
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -59,8 +59,8 @@ so that I avoid duplicates and can verify my tracking is accurate.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Matching Algorithm Utility** (AC: #1, #6)
-  - [ ] 1.1: Create `src/features/bank/utils/matchingUtils.ts` with:
+- [x] **Task 1: Matching Algorithm Utility** (AC: #1, #6)
+  - [x] 1.1: Create `src/features/bank/utils/matchingUtils.ts` with:
     ```typescript
     export interface MatchResult {
       detectedId: string;
@@ -76,124 +76,50 @@ so that I avoid duplicates and can verify my tracking is accurate.
     ): Map<string, MatchResult>
     // Returns Map keyed by detectedId -> best match
     ```
-  - [ ] 1.2: Implement matching logic:
+  - [x] 1.2: Implement matching logic:
     - **Name similarity**: Normalize both names (lowercase, trim, remove common suffixes like "subscription", "premium", "monthly"). Use simple substring/includes check — if either name contains the other, or Levenshtein-like similarity. Keep it simple: `normalizedDetected.includes(normalizedManual) || normalizedManual.includes(normalizedDetected)`. Score: 0.5 if name matches.
     - **Amount proximity**: `Math.abs(detected.amount - subscription.price) / Math.max(detected.amount, subscription.price) <= 0.10`. Score: 0.3 if amount within ±10%.
     - **Billing cycle match**: `detected.frequency === subscription.billing_cycle`. Score: 0.2 if cycles match.
     - **Total score**: Sum of matched criteria scores. Threshold for suggesting a match: ≥ 0.5 (at minimum name must match).
     - Only return the best match per detected subscription (highest score).
-  - [ ] 1.3: Create `src/features/bank/utils/matchingUtils.test.ts` with tests for: exact name match, partial name match (e.g. "Netflix" vs "Netflix Premium"), amount within tolerance, amount outside tolerance, cycle match/mismatch, combined scoring, no match found, multiple subscriptions with best match selection.
+  - [x] 1.3: Create `src/features/bank/utils/matchingUtils.test.ts` with tests for: exact name match, partial name match (e.g. "Netflix" vs "Netflix Premium"), amount within tolerance, amount outside tolerance, cycle match/mismatch, combined scoring, no match found, multiple subscriptions with best match selection.
 
-- [ ] **Task 2: `useBankStore` — Add Match State and Actions** (AC: #1, #3, #4, #5)
-  - [ ] 2.1: Add new state to `useBankStore`:
+- [x] **Task 2: `useBankStore` — Add Match State and Actions** (AC: #1, #3, #4, #5)
+  - [x] 2.1: Add new state to `useBankStore`:
     ```typescript
     // New state
     matchResults: Map<string, MatchResult>; // detectedId -> match info
     isMatching: boolean;
     ```
-  - [ ] 2.2: Add `computeMatches()` action:
-    ```typescript
-    computeMatches: () => void;
-    // 1. Get current detectedSubscriptions from own state
-    // 2. Get subscriptions from useSubscriptionStore.getState().subscriptions
-    // 3. Call findMatches() utility
-    // 4. Set matchResults map
-    ```
-  - [ ] 2.3: Add `confirmMatch(detectedId: string)` action:
-    ```typescript
-    confirmMatch: (detectedId: string) => Promise<void>;
-    // 1. Get matchResult from matchResults map
-    // 2. Get detected subscription data from detectedSubscriptions array
-    // 3. Update the manual subscription via useSubscriptionStore.getState().updateSubscription(matchResult.subscriptionId, { price: detected.amount, currency: detected.currency })
-    // 4. Update detected_subscriptions row: status = 'matched'
-    // 5. Remove from local detectedSubscriptions array
-    // 6. Remove from matchResults map
-    ```
-  - [ ] 2.4: Add `replaceWithDetected(detectedId: string)` action:
-    ```typescript
-    replaceWithDetected: (detectedId: string) => Promise<void>;
-    // 1. Get matchResult from matchResults map
-    // 2. Get detected subscription data
-    // 3. Update the manual subscription with ALL detected data: name, price, billing_cycle, currency
-    //    via useSubscriptionStore.getState().updateSubscription(matchResult.subscriptionId, {
-    //      name: detected.merchantName,
-    //      price: detected.amount,
-    //      billing_cycle: detected.frequency,
-    //      currency: detected.currency,
-    //    })
-    // 4. Update detected_subscriptions row: status = 'matched'
-    // 5. Remove from local detectedSubscriptions array
-    // 6. Remove from matchResults map
-    ```
-  - [ ] 2.5: Add `dismissMatch(detectedId: string)` action:
-    ```typescript
-    dismissMatch: (detectedId: string) => void;
-    // 1. Remove detectedId from matchResults map
-    // 2. The detected subscription remains in detectedSubscriptions array (user can still Add/Ignore/NotSub)
-    ```
-  - [ ] 2.6: Call `computeMatches()` at the end of `fetchDetectedSubscriptions()` — after detected subs are loaded, automatically compute matches.
-  - [ ] 2.7: Add `matchResults` and `isMatching` to `partialize` exclusion list (transient data, not persisted to AsyncStorage).
+  - [x] 2.2: Add `computeMatches()` action
+  - [x] 2.3: Add `confirmMatch(detectedId: string)` action
+  - [x] 2.4: Add `replaceWithDetected(detectedId: string)` action
+  - [x] 2.5: Add `dismissMatch(detectedId: string)` action
+  - [x] 2.6: Call `computeMatches()` at the end of `fetchDetectedSubscriptions()`
+  - [x] 2.7: Add `matchResults` and `isMatching` to `partialize` exclusion list
 
-- [ ] **Task 3: MatchSuggestionCard Component** (AC: #2)
-  - [ ] 3.1: Create `src/features/bank/components/MatchSuggestionCard.tsx`:
-    - Props: `detected: DetectedSubscription`, `match: MatchResult`, `onConfirm: () => void`, `onDismiss: () => void`, `onReplace: () => void`
-    - Layout: React Native Paper `Card` (mode="elevated") with a "Possible Match" `Chip` (icon: `link`) at the top
-    - **Side-by-side comparison** using two columns:
-      - Left: "Detected" — merchantName, amount, currency, frequency
-      - Right: "Your Subscription" — match.subscriptionName, subscription.price, subscription.billing_cycle
-      - Highlight differences in **bold** or use `theme.colors.error` color for differing values
-    - **Match reasons** displayed as small `Chip` components (e.g. "Name Match", "Amount Close", "Same Cycle")
-    - **Actions** row: "Confirm Match" (`Button` mode="contained"), "Not a Match" (`Button` mode="outlined"), "Replace" (`Button` mode="text")
-    - Accessibility: `accessibilityLabel` on card, touch targets ≥44x44
-  - [ ] 3.2: Create `src/features/bank/components/MatchSuggestionCard.test.tsx` — renders detected and manual data side-by-side, highlights differences, action buttons trigger callbacks, match reason chips displayed.
+- [x] **Task 3: MatchSuggestionCard Component** (AC: #2)
+  - [x] 3.1: Create `src/features/bank/components/MatchSuggestionCard.tsx`
+  - [x] 3.2: Create `src/features/bank/components/MatchSuggestionCard.test.tsx`
 
-- [ ] **Task 4: Update DetectedReviewScreen** (AC: #1, #2, #3, #4, #5, #6, #7)
-  - [ ] 4.1: Import `MatchSuggestionCard` and `matchResults` from `useBankStore`.
-  - [ ] 4.2: In the FlatList `renderItem`, check if `matchResults.has(item.id)`:
-    - If match exists → render `MatchSuggestionCard` instead of `DetectedReviewCard`
-    - If no match → render `DetectedReviewCard` as before (Story 7.4 behavior)
-  - [ ] 4.3: Sort order: matched items first (highest match score), then unmatched items by confidence score descending.
-  - [ ] 4.4: Wire up MatchSuggestionCard actions:
-    - "Confirm Match" → call `confirmMatch(detectedId)` + show success Snackbar
-    - "Not a Match" → call `dismissMatch(detectedId)` (card reverts to normal DetectedReviewCard)
-    - "Replace" → call `replaceWithDetected(detectedId)` + show success Snackbar
-  - [ ] 4.5: Handle errors from confirmMatch/replaceWithDetected with error Snackbar.
-  - [ ] 4.6: Update header count to show: "{matchCount} matches, {unmatchedCount} to review" when matches exist.
+- [x] **Task 4: Update DetectedReviewScreen** (AC: #1, #2, #3, #4, #5, #6, #7)
+  - [x] 4.1: Import `MatchSuggestionCard` and `matchResults` from `useBankStore`.
+  - [x] 4.2: Conditional renderItem: MatchSuggestionCard for matches, DetectedReviewCard for unmatched
+  - [x] 4.3: Sort order: matched items first (highest match score), then unmatched by confidence score desc
+  - [x] 4.4: Wire up MatchSuggestionCard actions with success Snackbars
+  - [x] 4.5: Error Snackbar handling for confirmMatch/replaceWithDetected failures
+  - [x] 4.6: Header count: "{matchCount} matches, {unmatchedCount} to review" when matches exist
 
-- [ ] **Task 5: Update DetectedReviewScreen to Fetch Subscriptions** (AC: #1, #7)
-  - [ ] 5.1: In the `useFocusEffect`, also call `useSubscriptionStore.getState().fetchSubscriptions()` before `computeMatches()` to ensure the subscription list is fresh.
-  - [ ] 5.2: Ensure `computeMatches()` is called after both `fetchDetectedSubscriptions()` and `fetchSubscriptions()` complete. Use sequential awaits:
-    ```typescript
-    useFocusEffect(
-      useCallback(() => {
-        const load = async () => {
-          await fetchDetectedSubscriptions();
-          await useSubscriptionStore.getState().fetchSubscriptions();
-          computeMatches();
-        };
-        load();
-      }, [])
-    );
-    ```
+- [x] **Task 5: Update DetectedReviewScreen to Fetch Subscriptions** (AC: #1, #7)
+  - [x] 5.1: In the `useFocusEffect`, also call `useSubscriptionStore.getState().fetchSubscriptions()` before `computeMatches()`
+  - [x] 5.2: Sequential awaits: fetchDetectedSubscriptions → fetchSubscriptions → computeMatches
 
-- [ ] **Task 6: Tests** (AC: #1–#7)
-  - [ ] 6.1: `src/features/bank/utils/matchingUtils.test.ts` — matching algorithm unit tests (see Task 1.3).
-  - [ ] 6.2: `src/features/bank/components/MatchSuggestionCard.test.tsx` — component render and action tests (see Task 3.2).
-  - [ ] 6.3: Update `src/shared/stores/useBankStore.test.ts`:
-    - Test `computeMatches()` — finds matches between detected and manual subscriptions
-    - Test `confirmMatch()` — updates manual subscription + sets detected status to 'matched' + removes from arrays
-    - Test `replaceWithDetected()` — updates manual subscription with all detected data + sets status to 'matched'
-    - Test `dismissMatch()` — removes from matchResults but keeps detected sub in list
-    - Test error handling for confirmMatch/replaceWithDetected failures
-  - [ ] 6.4: Update `src/features/bank/screens/DetectedReviewScreen.test.tsx`:
-    - Test matched item renders MatchSuggestionCard
-    - Test unmatched item renders DetectedReviewCard
-    - Test "Confirm Match" action flow
-    - Test "Not a Match" reverts to normal card
-    - Test "Replace" action flow
-    - Test sort order (matched first, then by confidence)
-    - Test header shows match count
-  - [ ] 6.5: Co-locate all tests with source files. No `__tests__/` directories.
+- [x] **Task 6: Tests** (AC: #1–#7)
+  - [x] 6.1: `src/features/bank/utils/matchingUtils.test.ts` — 24 tests passing
+  - [x] 6.2: `src/features/bank/components/MatchSuggestionCard.test.tsx` — 16 tests passing
+  - [x] 6.3: Updated `src/shared/stores/useBankStore.test.ts` — 48 tests passing (19 new)
+  - [x] 6.4: Updated `src/features/bank/screens/DetectedReviewScreen.test.tsx` — 25 tests passing (13 new)
+  - [x] 6.5: All tests co-located with source files. No `__tests__/` directories.
 
 ## Dev Notes
 
@@ -386,7 +312,7 @@ jest.mock('@shared/stores/useSubscriptionStore', () => ({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
@@ -422,4 +348,25 @@ jest.mock('@shared/stores/useSubscriptionStore', () => ({
 
 ### Completion Notes List
 
+- ✅ Implemented client-side matching algorithm (`matchingUtils.ts`) with name normalization, amount ±10% check, cycle match scoring (name=0.5, amount=0.3, cycle=0.2, threshold ≥0.5 with name required)
+- ✅ Extended `useBankStore` with `matchResults: Map<string, MatchResult>`, `isMatching`, `computeMatches()`, `confirmMatch()`, `replaceWithDetected()`, `dismissMatch()` — all with demo mode support
+- ✅ Created `MatchSuggestionCard` component with side-by-side comparison, difference highlighting via `theme.colors.tertiary`, match reason chips, and accessible action buttons (≥44px)
+- ✅ Updated `DetectedReviewScreen`: sequential `fetchDetectedSubscriptions → fetchSubscriptions → computeMatches` on focus, conditional rendering (MatchSuggestionCard vs DetectedReviewCard), matched-first sort order, updated header count
+- ✅ 821/821 tests passing (72 new tests added, 0 regressions from 749 baseline)
+- ✅ `matchResults` and `isMatching` excluded from AsyncStorage persist (transient data)
+- ✅ No new screens, routes, edge functions, or store created — all within existing `src/features/bank/`
+
 ### File List
+
+- `src/features/bank/utils/matchingUtils.ts` — NEW
+- `src/features/bank/utils/matchingUtils.test.ts` — NEW
+- `src/features/bank/components/MatchSuggestionCard.tsx` — NEW
+- `src/features/bank/components/MatchSuggestionCard.test.tsx` — NEW
+- `src/shared/stores/useBankStore.ts` — MODIFIED (new state, 4 new actions, computeMatches call in fetchDetectedSubscriptions)
+- `src/shared/stores/useBankStore.test.ts` — MODIFIED (19 new tests, mock setup for useSubscriptionStore + matchingUtils)
+- `src/features/bank/screens/DetectedReviewScreen.tsx` — MODIFIED (match rendering, sort order, header, new handlers, sequential focus effect)
+- `src/features/bank/screens/DetectedReviewScreen.test.tsx` — MODIFIED (13 new tests for match flows)
+
+## Change Log
+
+- 2026-03-23: Implemented Story 7.5 — Match Detected with Manual Subscriptions. Added client-side matching algorithm, MatchSuggestionCard component, extended useBankStore with match state/actions, updated DetectedReviewScreen with conditional rendering and match action flows. 72 new tests (821 total, 0 regressions).

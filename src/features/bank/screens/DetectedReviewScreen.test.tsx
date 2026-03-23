@@ -6,6 +6,7 @@ import { useBankStore } from '@shared/stores/useBankStore';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { DetectedReviewScreen } from './DetectedReviewScreen';
+import type { MatchResult } from '@shared/stores/useBankStore';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -41,9 +42,14 @@ const mockUseBankStore = useBankStore as jest.MockedFunction<typeof useBankStore
 const mockUsePremiumStore = usePremiumStore as jest.MockedFunction<typeof usePremiumStore>;
 const mockUseSubscriptionStore = useSubscriptionStore as jest.MockedFunction<typeof useSubscriptionStore>;
 
-const mockFetchDetectedSubscriptions = jest.fn();
+const mockFetchDetectedSubscriptions = jest.fn().mockResolvedValue(undefined);
 const mockDismissDetectedSubscription = jest.fn();
 const mockApproveDetectedSubscription = jest.fn();
+const mockComputeMatches = jest.fn();
+const mockConfirmMatch = jest.fn().mockResolvedValue(undefined);
+const mockReplaceWithDetected = jest.fn().mockResolvedValue(undefined);
+const mockDismissMatch = jest.fn();
+const mockFetchSubscriptions = jest.fn().mockResolvedValue(undefined);
 
 const mockDetected = [
   {
@@ -58,10 +64,25 @@ const mockDetected = [
   },
 ];
 
-function setupMocks(overrides: {
+const mockMatchResult: MatchResult = {
+  detectedId: 'det-1',
+  subscriptionId: 'sub-1',
+  subscriptionName: 'Netflix Premium',
+  subscriptionPrice: 12.99,
+  subscriptionBillingCycle: 'monthly',
+  subscriptionCurrency: 'EUR',
+  matchScore: 0.7,
+  matchReasons: ['name_similar', 'cycle_match'],
+};
+
+type BankStateOverride = {
   detectedSubscriptions?: typeof mockDetected;
   isFetchingDetected?: boolean;
   detectionError?: { code: string; message: string } | null;
+  matchResults?: Map<string, MatchResult>;
+};
+
+function setupMocks(overrides: BankStateOverride & {
   canAddSubscription?: boolean;
   activeCount?: number;
 } = {}) {
@@ -71,15 +92,21 @@ function setupMocks(overrides: {
     detectionError = null,
     canAddSubscription = true,
     activeCount = 2,
+    matchResults = new Map(),
   } = overrides;
 
   const bankState = {
     detectedSubscriptions,
     isFetchingDetected,
     detectionError,
+    matchResults,
     fetchDetectedSubscriptions: mockFetchDetectedSubscriptions,
     dismissDetectedSubscription: mockDismissDetectedSubscription,
     approveDetectedSubscription: mockApproveDetectedSubscription,
+    computeMatches: mockComputeMatches,
+    confirmMatch: mockConfirmMatch,
+    replaceWithDetected: mockReplaceWithDetected,
+    dismissMatch: mockDismissMatch,
   };
 
   mockUseBankStore.mockImplementation(
@@ -99,10 +126,13 @@ function setupMocks(overrides: {
     subscriptions: Array.from({ length: activeCount }, (_, i) => ({
       id: `sub-${i}`, is_active: true,
     })),
+    fetchSubscriptions: mockFetchSubscriptions,
   };
   mockUseSubscriptionStore.mockImplementation(
     (selector: (s: typeof subscriptionState) => unknown) => selector(subscriptionState) as never,
   );
+  (useSubscriptionStore as jest.MockedFunction<typeof useSubscriptionStore> & { getState: () => typeof subscriptionState }).getState =
+    jest.fn().mockReturnValue(subscriptionState);
 }
 
 function renderWithProvider() {
@@ -150,26 +180,78 @@ describe('DetectedReviewScreen', () => {
   });
 
   describe('List rendering', () => {
-    it('renders list of detected subscription cards', () => {
+    it('renders list of detected subscription cards when no matches', () => {
       renderWithProvider();
       expect(screen.getByText('Netflix')).toBeTruthy();
       expect(screen.getByText('Spotify')).toBeTruthy();
     });
 
-    it('shows subscription count header', () => {
-      renderWithProvider();
-      expect(screen.getByText('2 subscriptions to review')).toBeTruthy();
-    });
-
-    it('shows singular count when only one item', () => {
+    it('shows singular subscription count header when no matches', () => {
       setupMocks({ detectedSubscriptions: [mockDetected[0]] });
       renderWithProvider();
       expect(screen.getByText('1 subscription to review')).toBeTruthy();
     });
 
+    it('shows plural subscription count header when no matches', () => {
+      renderWithProvider();
+      expect(screen.getByText('2 subscriptions to review')).toBeTruthy();
+    });
+
     it('calls fetchDetectedSubscriptions on focus', () => {
       renderWithProvider();
       expect(mockFetchDetectedSubscriptions).toHaveBeenCalled();
+    });
+
+    it('calls fetchSubscriptions on focus', async () => {
+      renderWithProvider();
+      await waitFor(() => {
+        expect(mockFetchSubscriptions).toHaveBeenCalled();
+      });
+    });
+
+    it('calls computeMatches on focus', async () => {
+      renderWithProvider();
+      await waitFor(() => {
+        expect(mockComputeMatches).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Match rendering', () => {
+    it('renders MatchSuggestionCard for matched item', () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      expect(screen.getByText('Possible Match')).toBeTruthy();
+    });
+
+    it('renders DetectedReviewCard for unmatched item', () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      // det-2 (Spotify) has no match → renders as DetectedReviewCard
+      expect(screen.getByText('Spotify')).toBeTruthy();
+      expect(screen.getByLabelText('Ignore Spotify')).toBeTruthy();
+    });
+
+    it('shows match count header when matches exist', () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      expect(screen.getByText('1 match, 1 to review')).toBeTruthy();
+    });
+
+    it('shows plural matches in header', () => {
+      const match2: MatchResult = { ...mockMatchResult, detectedId: 'det-2', subscriptionId: 'sub-2' };
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult], ['det-2', match2]]) });
+      renderWithProvider();
+      expect(screen.getByText('2 matches, 0 to review')).toBeTruthy();
+    });
+  });
+
+  describe('Sort order', () => {
+    it('renders matched items before unmatched items', () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      // Possible Match chip indicates det-1 is rendered first
+      expect(screen.getByText('Possible Match')).toBeTruthy();
     });
   });
 
@@ -213,6 +295,84 @@ describe('DetectedReviewScreen', () => {
       fireEvent.press(screen.getByLabelText('Netflix is not a subscription'));
       await waitFor(() => {
         expect(mockDismissDetectedSubscription).toHaveBeenCalledWith('det-1');
+      });
+    });
+  });
+
+  describe('Confirm Match action', () => {
+    it('calls confirmMatch when Confirm Match is pressed', async () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Confirm match between Netflix and Netflix Premium'));
+      await waitFor(() => {
+        expect(mockConfirmMatch).toHaveBeenCalledWith('det-1');
+      });
+    });
+
+    it('shows success snackbar after confirm match', async () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Confirm match between Netflix and Netflix Premium'));
+      await waitFor(() => {
+        expect(screen.getByText('Subscription matched successfully!')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Not a Match action', () => {
+    it('calls dismissMatch when Not a Match is pressed', () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Not a match: Netflix'));
+      expect(mockDismissMatch).toHaveBeenCalledWith('det-1');
+    });
+  });
+
+  describe('Replace action', () => {
+    it('calls replaceWithDetected when Replace is pressed', async () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Replace Netflix Premium with detected data'));
+      await waitFor(() => {
+        expect(mockReplaceWithDetected).toHaveBeenCalledWith('det-1');
+      });
+    });
+
+    it('shows success snackbar after replace', async () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Replace Netflix Premium with detected data'));
+      await waitFor(() => {
+        expect(screen.getByText('Subscription updated with bank data!')).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Error handling', () => {
+    it('shows error snackbar when confirmMatch fails', async () => {
+      setupMocks({ matchResults: new Map([['det-1', mockMatchResult]]) });
+      renderWithProvider();
+
+      // Simulate error state after confirmMatch
+      const bankStateWithError = {
+        detectedSubscriptions: mockDetected,
+        isFetchingDetected: false,
+        detectionError: { code: 'CONFIRM_MATCH_FAILED', message: 'Failed to confirm match. Please try again.' },
+        matchResults: new Map([['det-1', mockMatchResult]]),
+        fetchDetectedSubscriptions: mockFetchDetectedSubscriptions,
+        dismissDetectedSubscription: mockDismissDetectedSubscription,
+        approveDetectedSubscription: mockApproveDetectedSubscription,
+        computeMatches: mockComputeMatches,
+        confirmMatch: mockConfirmMatch,
+        replaceWithDetected: mockReplaceWithDetected,
+        dismissMatch: mockDismissMatch,
+      };
+      (useBankStore as jest.MockedFunction<typeof useBankStore> & { getState: () => typeof bankStateWithError }).getState =
+        jest.fn().mockReturnValue(bankStateWithError);
+
+      fireEvent.press(screen.getByLabelText('Confirm match between Netflix and Netflix Premium'));
+      await waitFor(() => {
+        expect(mockConfirmMatch).toHaveBeenCalled();
       });
     });
   });

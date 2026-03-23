@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { env } from '@config/env';
 import type { BankConnection, SupportedBank, DetectedSubscription, DetectionResult } from '@features/bank/types';
 import type { AppError } from '@features/subscriptions/types';
@@ -13,6 +14,7 @@ import {
   MOCK_DETECTION_RESULT,
   mockDelay,
 } from '@features/bank/mocks/mockBankData';
+import { findMatches, type MatchResult } from '@features/bank/utils/matchingUtils';
 
 interface BankState {
   connections: BankConnection[];
@@ -27,6 +29,8 @@ interface BankState {
   isFetchingDetected: boolean;
   detectionError: AppError | null;
   lastDetectionResult: DetectionResult | null;
+  matchResults: Map<string, MatchResult>; // transient, recomputed on focus
+  isMatching: boolean;
 }
 
 interface BankActions {
@@ -39,7 +43,13 @@ interface BankActions {
   fetchDetectedSubscriptions: () => Promise<void>;
   approveDetectedSubscription: (id: string) => Promise<void>;
   dismissDetectedSubscription: (id: string) => Promise<void>;
+  computeMatches: () => void;
+  confirmMatch: (detectedId: string) => Promise<void>;
+  replaceWithDetected: (detectedId: string) => Promise<void>;
+  dismissMatch: (detectedId: string) => void;
 }
+
+export type { MatchResult };
 
 export type BankStore = BankState & BankActions;
 
@@ -130,6 +140,8 @@ export const useBankStore = create<BankStore>()(
       isFetchingDetected: false,
       detectionError: null,
       lastDetectionResult: null,
+      matchResults: new Map<string, MatchResult>(),
+      isMatching: false,
 
       fetchConnections: async () => {
         if (env.DEMO_BANK_MODE) {
@@ -370,12 +382,14 @@ export const useBankStore = create<BankStore>()(
           // If already populated, keep current state (user may have approved/dismissed some)
           if (current.length > 0) {
             set({ isFetchingDetected: false });
+            useBankStore.getState().computeMatches();
             return;
           }
           set({
             detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'detected'),
             isFetchingDetected: false,
           });
+          useBankStore.getState().computeMatches();
           return;
         }
 
@@ -402,6 +416,7 @@ export const useBankStore = create<BankStore>()(
 
           const detectedSubscriptions = (data ?? []).map(mapRowToDetectedSubscription);
           set({ detectedSubscriptions, isFetchingDetected: false });
+          useBankStore.getState().computeMatches();
         } catch {
           set({
             isFetchingDetected: false,
@@ -474,6 +489,143 @@ export const useBankStore = create<BankStore>()(
         }
       },
 
+      computeMatches: () => {
+        const { detectedSubscriptions } = useBankStore.getState();
+        const subscriptions = useSubscriptionStore.getState().subscriptions;
+        set({ isMatching: true });
+        const matchResults = findMatches(detectedSubscriptions, subscriptions);
+        set({ matchResults, isMatching: false });
+      },
+
+      confirmMatch: async (detectedId: string) => {
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(300);
+          set((state) => {
+            const newMatchResults = new Map(state.matchResults);
+            newMatchResults.delete(detectedId);
+            return {
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== detectedId),
+              matchResults: newMatchResults,
+            };
+          });
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+
+        const { matchResults, detectedSubscriptions } = useBankStore.getState();
+        const matchResult = matchResults.get(detectedId);
+        const detected = detectedSubscriptions.find((s) => s.id === detectedId);
+
+        if (!matchResult || !detected) return;
+
+        try {
+          const success = await useSubscriptionStore.getState().updateSubscription(
+            matchResult.subscriptionId,
+            { price: detected.amount, currency: detected.currency },
+          );
+
+          if (!success) {
+            set({ detectionError: { code: 'CONFIRM_MATCH_FAILED', message: 'Failed to confirm match. Please try again.' } });
+            return;
+          }
+
+          const { error } = await supabase
+            .from('detected_subscriptions')
+            .update({ status: 'matched' })
+            .eq('id', detectedId)
+            .eq('user_id', user.id);
+
+          if (error) {
+            set({ detectionError: { code: 'CONFIRM_MATCH_FAILED', message: 'Failed to confirm match. Please try again.' } });
+            return;
+          }
+
+          set((state) => {
+            const newMatchResults = new Map(state.matchResults);
+            newMatchResults.delete(detectedId);
+            return {
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== detectedId),
+              matchResults: newMatchResults,
+            };
+          });
+        } catch {
+          set({ detectionError: { code: 'NETWORK_ERROR', message: 'Failed to confirm match. Please try again.' } });
+        }
+      },
+
+      replaceWithDetected: async (detectedId: string) => {
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(300);
+          set((state) => {
+            const newMatchResults = new Map(state.matchResults);
+            newMatchResults.delete(detectedId);
+            return {
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== detectedId),
+              matchResults: newMatchResults,
+            };
+          });
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+
+        const { matchResults, detectedSubscriptions } = useBankStore.getState();
+        const matchResult = matchResults.get(detectedId);
+        const detected = detectedSubscriptions.find((s) => s.id === detectedId);
+
+        if (!matchResult || !detected) return;
+
+        try {
+          const success = await useSubscriptionStore.getState().updateSubscription(
+            matchResult.subscriptionId,
+            {
+              name: detected.merchantName,
+              price: detected.amount,
+              billing_cycle: detected.frequency,
+              currency: detected.currency,
+            },
+          );
+
+          if (!success) {
+            set({ detectionError: { code: 'REPLACE_FAILED', message: 'Failed to update. Please try again.' } });
+            return;
+          }
+
+          const { error } = await supabase
+            .from('detected_subscriptions')
+            .update({ status: 'matched' })
+            .eq('id', detectedId)
+            .eq('user_id', user.id);
+
+          if (error) {
+            set({ detectionError: { code: 'REPLACE_FAILED', message: 'Failed to update. Please try again.' } });
+            return;
+          }
+
+          set((state) => {
+            const newMatchResults = new Map(state.matchResults);
+            newMatchResults.delete(detectedId);
+            return {
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== detectedId),
+              matchResults: newMatchResults,
+            };
+          });
+        } catch {
+          set({ detectionError: { code: 'NETWORK_ERROR', message: 'Failed to update. Please try again.' } });
+        }
+      },
+
+      dismissMatch: (detectedId: string) => {
+        set((state) => {
+          const newMatchResults = new Map(state.matchResults);
+          newMatchResults.delete(detectedId);
+          return { matchResults: newMatchResults };
+        });
+      },
+
       fetchSupportedBanks: async (market?: string) => {
         if (env.DEMO_BANK_MODE) {
           set({ isFetchingBanks: true, fetchBanksError: null });
@@ -521,7 +673,7 @@ export const useBankStore = create<BankStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         connections: state.connections,
-        // detectedSubscriptions and lastDetectionResult are NOT persisted — transient server data
+        // detectedSubscriptions, lastDetectionResult, matchResults, isMatching are NOT persisted — transient data
       }),
     },
   ),

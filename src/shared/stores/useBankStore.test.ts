@@ -1,5 +1,6 @@
 import { act } from '@testing-library/react-native';
 import { useBankStore } from './useBankStore';
+import type { MatchResult } from './useBankStore';
 
 jest.mock('@config/env', () => ({
   env: {
@@ -35,6 +36,23 @@ jest.mock('@shared/stores/useAuthStore', () => ({
   useAuthStore: {
     getState: jest.fn().mockReturnValue({ user: { id: 'user-1' } }),
   },
+}));
+
+const mockUpdateSubscription = jest.fn().mockResolvedValue(true);
+const mockFetchSubscriptions = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('@shared/stores/useSubscriptionStore', () => ({
+  useSubscriptionStore: {
+    getState: jest.fn(() => ({
+      subscriptions: [],
+      updateSubscription: mockUpdateSubscription,
+      fetchSubscriptions: mockFetchSubscriptions,
+    })),
+  },
+}));
+
+jest.mock('@features/bank/utils/matchingUtils', () => ({
+  findMatches: jest.fn().mockReturnValue(new Map()),
 }));
 
 const { supabase } = jest.requireMock('@shared/services/supabase');
@@ -76,7 +94,10 @@ describe('useBankStore', () => {
       isFetchingDetected: false,
       detectionError: null,
       lastDetectionResult: null,
+      matchResults: new Map(),
+      isMatching: false,
     });
+    mockUpdateSubscription.mockResolvedValue(true);
   });
 
   describe('initial state', () => {
@@ -618,6 +639,301 @@ describe('useBankStore', () => {
       const { detectedSubscriptions, detectionError } = useBankStore.getState();
       expect(detectedSubscriptions).toHaveLength(1);
       expect(detectionError?.code).toBe('DISMISS_FAILED');
+    });
+  });
+
+  describe('computeMatches', () => {
+    const { findMatches } = jest.requireMock('@features/bank/utils/matchingUtils');
+    const { useSubscriptionStore } = jest.requireMock('@shared/stores/useSubscriptionStore');
+
+    const mockDetectedSub = {
+      id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g1',
+      merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.9, status: 'detected' as const, firstSeen: '2025-09-15', lastSeen: '2026-02-15',
+    };
+
+    const mockManualSub = {
+      id: 'sub-1', user_id: 'user-1', name: 'Netflix', price: 12.99, currency: 'EUR',
+      billing_cycle: 'monthly', renewal_date: '2026-04-01', is_active: true,
+      is_trial: false, trial_expiry_date: null, category: null, notes: null,
+      calendar_event_id: null, created_at: '2025-09-01', updated_at: '2025-09-01',
+    };
+
+    const mockMatchResult: MatchResult = {
+      detectedId: 'det-1', subscriptionId: 'sub-1', subscriptionName: 'Netflix',
+      subscriptionPrice: 12.99, subscriptionBillingCycle: 'monthly', subscriptionCurrency: 'EUR',
+      matchScore: 1.0, matchReasons: ['name_similar', 'amount_close', 'cycle_match'],
+    };
+
+    it('calls findMatches with detected subs and subscription store subs', () => {
+      useBankStore.setState({ detectedSubscriptions: [mockDetectedSub] });
+      useSubscriptionStore.getState.mockReturnValue({
+        subscriptions: [mockManualSub],
+        updateSubscription: mockUpdateSubscription,
+        fetchSubscriptions: mockFetchSubscriptions,
+      });
+      findMatches.mockReturnValue(new Map([['det-1', mockMatchResult]]));
+
+      useBankStore.getState().computeMatches();
+
+      expect(findMatches).toHaveBeenCalledWith([mockDetectedSub], [mockManualSub]);
+    });
+
+    it('sets matchResults in store', () => {
+      useBankStore.setState({ detectedSubscriptions: [mockDetectedSub] });
+      findMatches.mockReturnValue(new Map([['det-1', mockMatchResult]]));
+
+      useBankStore.getState().computeMatches();
+
+      const { matchResults } = useBankStore.getState();
+      expect(matchResults.size).toBe(1);
+      expect(matchResults.get('det-1')).toEqual(mockMatchResult);
+    });
+
+    it('sets empty matchResults when no matches found', () => {
+      useBankStore.setState({ detectedSubscriptions: [mockDetectedSub] });
+      findMatches.mockReturnValue(new Map());
+
+      useBankStore.getState().computeMatches();
+
+      expect(useBankStore.getState().matchResults.size).toBe(0);
+    });
+  });
+
+  describe('confirmMatch', () => {
+    const mockDetectedSub = {
+      id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g1',
+      merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.9, status: 'detected' as const, firstSeen: '2025-09-15', lastSeen: '2026-02-15',
+    };
+
+    const mockMatchResult: MatchResult = {
+      detectedId: 'det-1', subscriptionId: 'sub-1', subscriptionName: 'Netflix',
+      subscriptionPrice: 12.99, subscriptionBillingCycle: 'monthly', subscriptionCurrency: 'EUR',
+      matchScore: 1.0, matchReasons: ['name_similar', 'amount_close', 'cycle_match'],
+    };
+
+    beforeEach(() => {
+      useBankStore.setState({
+        detectedSubscriptions: [mockDetectedSub],
+        matchResults: new Map([['det-1', mockMatchResult]]),
+      });
+
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: null });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+    });
+
+    it('calls updateSubscription with detected price and currency', async () => {
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(mockUpdateSubscription).toHaveBeenCalledWith('sub-1', {
+        price: 12.99,
+        currency: 'EUR',
+      });
+    });
+
+    it('updates detected status to matched in DB', async () => {
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith('detected_subscriptions');
+    });
+
+    it('removes detected sub from detectedSubscriptions array on success', async () => {
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(0);
+    });
+
+    it('removes entry from matchResults on success', async () => {
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(useBankStore.getState().matchResults.size).toBe(0);
+    });
+
+    it('sets CONFIRM_MATCH_FAILED error when updateSubscription fails', async () => {
+      mockUpdateSubscription.mockResolvedValueOnce(false);
+
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('CONFIRM_MATCH_FAILED');
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(1);
+    });
+
+    it('sets CONFIRM_MATCH_FAILED error when DB update fails', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: { message: 'DB error' } });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('CONFIRM_MATCH_FAILED');
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(1);
+    });
+
+    it('sets NETWORK_ERROR on exception', async () => {
+      mockUpdateSubscription.mockRejectedValueOnce(new Error('Network down'));
+
+      await act(async () => {
+        await useBankStore.getState().confirmMatch('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('NETWORK_ERROR');
+    });
+  });
+
+  describe('replaceWithDetected', () => {
+    const mockDetectedSub = {
+      id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g1',
+      merchantName: 'Netflix HD', amount: 15.49, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.9, status: 'detected' as const, firstSeen: '2025-09-15', lastSeen: '2026-02-15',
+    };
+
+    const mockMatchResult: MatchResult = {
+      detectedId: 'det-1', subscriptionId: 'sub-1', subscriptionName: 'Netflix',
+      subscriptionPrice: 12.99, subscriptionBillingCycle: 'monthly', subscriptionCurrency: 'EUR',
+      matchScore: 0.7, matchReasons: ['name_similar', 'cycle_match'],
+    };
+
+    beforeEach(() => {
+      useBankStore.setState({
+        detectedSubscriptions: [mockDetectedSub],
+        matchResults: new Map([['det-1', mockMatchResult]]),
+      });
+
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: null });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+    });
+
+    it('calls updateSubscription with ALL detected data (name, price, billing_cycle, currency)', async () => {
+      await act(async () => {
+        await useBankStore.getState().replaceWithDetected('det-1');
+      });
+
+      expect(mockUpdateSubscription).toHaveBeenCalledWith('sub-1', {
+        name: 'Netflix HD',
+        price: 15.49,
+        billing_cycle: 'monthly',
+        currency: 'EUR',
+      });
+    });
+
+    it('removes detected sub from array and matchResults on success', async () => {
+      await act(async () => {
+        await useBankStore.getState().replaceWithDetected('det-1');
+      });
+
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(0);
+      expect(useBankStore.getState().matchResults.size).toBe(0);
+    });
+
+    it('sets REPLACE_FAILED error when updateSubscription fails', async () => {
+      mockUpdateSubscription.mockResolvedValueOnce(false);
+
+      await act(async () => {
+        await useBankStore.getState().replaceWithDetected('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('REPLACE_FAILED');
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(1);
+    });
+
+    it('sets REPLACE_FAILED error when DB update fails', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: { message: 'DB error' } });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().replaceWithDetected('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('REPLACE_FAILED');
+    });
+
+    it('sets NETWORK_ERROR on exception', async () => {
+      mockUpdateSubscription.mockRejectedValueOnce(new Error('Network down'));
+
+      await act(async () => {
+        await useBankStore.getState().replaceWithDetected('det-1');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('NETWORK_ERROR');
+    });
+  });
+
+  describe('dismissMatch', () => {
+    const mockDetectedSub = {
+      id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g1',
+      merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.9, status: 'detected' as const, firstSeen: '2025-09-15', lastSeen: '2026-02-15',
+    };
+
+    const mockMatchResult: MatchResult = {
+      detectedId: 'det-1', subscriptionId: 'sub-1', subscriptionName: 'Netflix',
+      subscriptionPrice: 12.99, subscriptionBillingCycle: 'monthly', subscriptionCurrency: 'EUR',
+      matchScore: 1.0, matchReasons: ['name_similar'],
+    };
+
+    beforeEach(() => {
+      useBankStore.setState({
+        detectedSubscriptions: [mockDetectedSub],
+        matchResults: new Map([['det-1', mockMatchResult]]),
+      });
+    });
+
+    it('removes entry from matchResults', () => {
+      useBankStore.getState().dismissMatch('det-1');
+      expect(useBankStore.getState().matchResults.size).toBe(0);
+    });
+
+    it('keeps detected subscription in detectedSubscriptions array', () => {
+      useBankStore.getState().dismissMatch('det-1');
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(1);
+      expect(useBankStore.getState().detectedSubscriptions[0].id).toBe('det-1');
+    });
+
+    it('is a no-op if detectedId not in matchResults', () => {
+      useBankStore.getState().dismissMatch('non-existent-id');
+      expect(useBankStore.getState().matchResults.size).toBe(1); // unchanged
+    });
+  });
+
+  describe('partialize exclusions', () => {
+    it('does NOT persist matchResults or isMatching to storage', () => {
+      const matchResult: MatchResult = {
+        detectedId: 'det-1', subscriptionId: 'sub-1', subscriptionName: 'Netflix',
+        subscriptionPrice: 12.99, subscriptionBillingCycle: 'monthly', subscriptionCurrency: 'EUR',
+        matchScore: 1.0, matchReasons: ['name_similar'],
+      };
+      useBankStore.setState({
+        connections: [{ id: 'c1', userId: 'u1', provider: 'tink', bankName: '', status: 'active', connectedAt: '', consentGrantedAt: '', consentExpiresAt: '', lastSyncedAt: null, tinkCredentialsId: '' }],
+        matchResults: new Map([['det-1', matchResult]]),
+        isMatching: true,
+      });
+
+      const store = useBankStore as unknown as { persist: { getOptions: () => { partialize: (s: Record<string, unknown>) => Record<string, unknown> } } };
+      const partialize = store.persist.getOptions().partialize;
+      const persisted = partialize(useBankStore.getState());
+      expect(persisted).toHaveProperty('connections');
+      expect(persisted).not.toHaveProperty('matchResults');
+      expect(persisted).not.toHaveProperty('isMatching');
     });
   });
 
