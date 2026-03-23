@@ -346,4 +346,58 @@ describe('BankConnectionScreen', () => {
       expect(screen.getByText(/Last scanned:/)).toBeTruthy();
     });
   });
+
+  describe('Review Detected button (AC7)', () => {
+    it('shows Review Detected button when detected subscriptions exist', () => {
+      setupStoreMock({
+        connections: [mockActiveConnection],
+        detectedSubscriptions: [
+          { id: 'det-1', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g1', merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '2025-09-15', lastSeen: '2026-02-15' },
+        ],
+      });
+
+      renderWithProvider();
+
+      expect(screen.getByLabelText('Review 1 detected subscription')).toBeTruthy();
+    });
+
+    it('does NOT show Review Detected button when no detected subscriptions', () => {
+      setupStoreMock({
+        connections: [mockActiveConnection],
+        detectedSubscriptions: [],
+      });
+
+      renderWithProvider();
+
+      expect(screen.queryByLabelText(/Review.*detected/)).toBeNull();
+    });
+
+    it('navigates to DetectedReview on Review button press', () => {
+      setupStoreMock({
+        connections: [mockActiveConnection],
+        detectedSubscriptions: [
+          { id: 'det-1', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g1', merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '2025-09-15', lastSeen: '2026-02-15' },
+        ],
+      });
+
+      renderWithProvider();
+
+      fireEvent.press(screen.getByLabelText('Review 1 detected subscription'));
+      expect(mockNavigate).toHaveBeenCalledWith('DetectedReview');
+    });
+
+    it('shows detection snackbar with Review action when subscriptions found', async () => {
+      setupStoreMock({
+        connections: [mockActiveConnection],
+        lastDetectionResult: { success: true, detectedCount: 3, newCount: 2 },
+        isDetecting: false,
+      });
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(screen.getByText('3 subscriptions detected!')).toBeTruthy();
+      });
+    });
+  });
 });

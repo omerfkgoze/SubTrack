@@ -285,7 +285,8 @@ describe('useBankStore', () => {
       });
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await act(async () => {
@@ -324,7 +325,8 @@ describe('useBankStore', () => {
       });
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: mockDetected, error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockDetected, error: null }),
       });
 
       await act(async () => {
@@ -432,7 +434,8 @@ describe('useBankStore', () => {
 
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: mockRows, error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockRows, error: null }),
       });
 
       await act(async () => {
@@ -450,7 +453,8 @@ describe('useBankStore', () => {
     it('handles empty detected subscriptions', async () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await act(async () => {
@@ -474,6 +478,122 @@ describe('useBankStore', () => {
       expect(persisted).toHaveProperty('connections');
       expect(persisted).not.toHaveProperty('detectedSubscriptions');
       expect(persisted).not.toHaveProperty('lastDetectionResult');
+    });
+
+    it('fetchDetectedSubscriptions filters by status detected', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDetectedSubscriptions();
+      });
+
+      const fromCall = supabase.from.mock.calls[0];
+      expect(fromCall[0]).toBe('detected_subscriptions');
+    });
+  });
+
+  describe('approveDetectedSubscription', () => {
+    const mockDetected = {
+      id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g1',
+      merchantName: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.9, status: 'detected' as const, firstSeen: '2025-09-15', lastSeen: '2026-02-15',
+    };
+
+    beforeEach(() => {
+      useBankStore.setState({ detectedSubscriptions: [mockDetected] });
+    });
+
+    it('updates DB status to approved and removes item from local array', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: null });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().approveDetectedSubscription('det-1');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(0);
+      expect(detectionError).toBeNull();
+    });
+
+    it('sets error on approve failure', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: { message: 'DB error' } });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().approveDetectedSubscription('det-1');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1); // not removed on error
+      expect(detectionError?.code).toBe('APPROVE_FAILED');
+    });
+  });
+
+  describe('dismissDetectedSubscription', () => {
+    const mockDetected = {
+      id: 'det-2', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g2',
+      merchantName: 'Spotify', amount: 9.99, currency: 'EUR', frequency: 'monthly' as const,
+      confidenceScore: 0.75, status: 'detected' as const, firstSeen: '2025-10-01', lastSeen: '2026-03-01',
+    };
+
+    beforeEach(() => {
+      useBankStore.setState({ detectedSubscriptions: [mockDetected] });
+    });
+
+    it('updates DB status to dismissed and removes item from local array', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: null });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(0);
+      expect(detectionError).toBeNull();
+    });
+
+    it('sets error on dismiss failure', async () => {
+      const mockEq = jest.fn();
+      mockEq.mockReturnValueOnce({ eq: mockEq });
+      mockEq.mockResolvedValueOnce({ error: { message: 'DB error' } });
+      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectionError?.code).toBe('DISMISS_FAILED');
+    });
+  });
+
+  describe('detectedCount', () => {
+    it('returns the number of items in detectedSubscriptions', () => {
+      useBankStore.setState({
+        detectedSubscriptions: [
+          { id: 'det-1', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g1', merchantName: 'A', amount: 1, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '2025-01-01', lastSeen: '2026-01-01' },
+          { id: 'det-2', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g2', merchantName: 'B', amount: 2, currency: 'EUR', frequency: 'yearly', confidenceScore: 0.7, status: 'detected', firstSeen: '2025-01-01', lastSeen: '2026-01-01' },
+        ],
+      });
+      expect(useBankStore.getState().detectedCount()).toBe(2);
+    });
+
+    it('returns 0 when no detected subscriptions', () => {
+      useBankStore.setState({ detectedSubscriptions: [] });
+      expect(useBankStore.getState().detectedCount()).toBe(0);
     });
   });
 });

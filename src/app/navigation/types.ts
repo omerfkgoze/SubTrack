@@ -19,6 +19,7 @@ export type SettingsStackParamList = {
   Premium: { source?: 'settings' | 'upsell' } | undefined;
   BankConnection: { autoConnect?: boolean } | undefined;
   SupportedBanks: undefined;
+  DetectedReview: undefined;
   DataExport: undefined;
   MyData: undefined;
   Account: undefined;
@@ -31,11 +32,19 @@ export type SubscriptionsStackParamList = {
   EditSubscription: { subscriptionId: string };
 };
 
+export type AddPrefillParams = {
+  name: string;
+  price: number;
+  billing_cycle: string;
+  currency: string;
+  detectedId: string;
+};
+
 // Main Tabs
 export type MainTabsParamList = {
   Home: undefined;
   Subscriptions: NavigatorScreenParams<SubscriptionsStackParamList>;
-  Add: undefined;
+  Add: { prefill?: AddPrefillParams } | undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList>;
 };
 

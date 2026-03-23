@@ -43,14 +43,18 @@ export function BankConnectionScreen() {
   const detectionError = useBankStore((s) => s.detectionError);
   const lastDetectionResult = useBankStore((s) => s.lastDetectionResult);
   const detectSubscriptions = useBankStore((s) => s.detectSubscriptions);
+  const fetchDetectedSubscriptions = useBankStore((s) => s.fetchDetectedSubscriptions);
+  const detectedSubscriptions = useBankStore((s) => s.detectedSubscriptions);
   const isBankConnected = connections.length > 0;
+  const detectedCount = detectedSubscriptions.length;
   const activeConnection = connections.find((c) => c.status === 'active') ?? null;
   const displayConnection = activeConnection ?? connections[0] ?? null;
 
   useFocusEffect(
     useCallback(() => {
       fetchConnections();
-    }, [fetchConnections]),
+      fetchDetectedSubscriptions();
+    }, [fetchConnections, fetchDetectedSubscriptions]),
   );
 
   const [flowState, setFlowState] = useState<FlowState>(autoConnect ? 'consent' : 'info');
@@ -203,15 +207,19 @@ export function BankConnectionScreen() {
     await detectSubscriptions(activeConnection.id);
   }, [activeConnection, detectSubscriptions]);
 
+  const [detectionSnackbarWithReview, setDetectionSnackbarWithReview] = useState(false);
+
   // Show snackbar on detection result or error
   useEffect(() => {
     if (isDetecting) return;
     if (lastDetectionResult) {
       const count = lastDetectionResult.detectedCount;
       if (count === 0) {
+        setDetectionSnackbarWithReview(false);
         setSnackbarType('success');
         setSnackbarMessage('No recurring subscriptions detected yet. We\'ll keep checking as more transaction data becomes available.');
       } else {
+        setDetectionSnackbarWithReview(true);
         setSnackbarType('success');
         setSnackbarMessage(`${count} subscription${count === 1 ? '' : 's'} detected!`);
       }
@@ -312,6 +320,18 @@ export function BankConnectionScreen() {
                   accessibilityRole="button"
                 >
                   Scan for Subscriptions
+                </Button>
+              )}
+              {detectedCount > 0 && (
+                <Button
+                  mode="outlined"
+                  icon="eye"
+                  onPress={() => navigation.navigate('DetectedReview')}
+                  style={styles.reviewButton}
+                  accessibilityLabel={`Review ${detectedCount} detected subscription${detectedCount === 1 ? '' : 's'}`}
+                  accessibilityRole="button"
+                >
+                  {`Review Detected (${detectedCount})`}
                 </Button>
               )}
               <Text variant="bodySmall" style={styles.lastSyncedText}>
@@ -420,6 +440,8 @@ export function BankConnectionScreen() {
         action={
           snackbarType === 'error' && detectionError && activeConnection
             ? { label: 'Retry', onPress: handleScanPress }
+            : detectionSnackbarWithReview
+            ? { label: 'Review', onPress: () => navigation.navigate('DetectedReview') }
             : undefined
         }
       >
@@ -454,6 +476,9 @@ const styles = StyleSheet.create({
   },
   scanButton: {
     marginTop: 12,
+  },
+  reviewButton: {
+    marginTop: 8,
   },
   scanLoadingContainer: {
     flexDirection: 'row',

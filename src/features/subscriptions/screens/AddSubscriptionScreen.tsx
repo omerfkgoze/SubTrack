@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -14,17 +14,30 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DatePickerInput, registerTranslation, en } from 'react-native-paper-dates';
-import { format } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { format, addMonths, addWeeks, addDays, addYears } from 'date-fns';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { MainTabsParamList } from '@app/navigation/types';
 import { createSubscriptionSchema } from '@features/subscriptions/types/schemas';
 import type { CreateSubscriptionFormData } from '@features/subscriptions/types/schemas';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
+import { useBankStore } from '@shared/stores/useBankStore';
 import { SUBSCRIPTION_CATEGORIES } from '@config/categories';
 import { searchPopularServices } from '@config/popularServices';
 import { CategoryChip } from '@features/subscriptions/components/CategoryChip';
 import { CelebrationOverlay } from '@shared/components/CelebrationOverlay';
 
 registerTranslation('en', en);
+
+function computeRenewalDate(lastSeen: string, frequency: string): Date {
+  const base = new Date(lastSeen);
+  switch (frequency) {
+    case 'weekly': return addWeeks(base, 1);
+    case 'quarterly': return addDays(base, 90);
+    case 'yearly': return addYears(base, 1);
+    default: return addMonths(base, 1);
+  }
+}
 
 const BILLING_CYCLE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
@@ -36,6 +49,8 @@ const BILLING_CYCLE_OPTIONS = [
 export function AddSubscriptionScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<MainTabsParamList, 'Add'>>();
+  const prefill = route.params?.prefill;
 
   const addSubscription = useSubscriptionStore((s) => s.addSubscription);
   const isSubmitting = useSubscriptionStore((s) => s.isSubmitting);
@@ -67,6 +82,25 @@ export function AddSubscriptionScreen() {
       trial_expiry_date: undefined,
     },
   });
+
+  // Pre-fill form from detected subscription params
+  useEffect(() => {
+    if (!prefill) return;
+    setValue('name', prefill.name);
+    setValue('price', prefill.price);
+    const validCycles = ['monthly', 'yearly', 'quarterly', 'weekly'] as const;
+    type ValidCycle = typeof validCycles[number];
+    const cycle = validCycles.includes(prefill.billing_cycle as ValidCycle)
+      ? (prefill.billing_cycle as ValidCycle)
+      : 'monthly';
+    setValue('billing_cycle', cycle);
+
+    // Calculate next renewal from last seen
+    // We don't have lastSeen in prefill, so compute from today + frequency
+    const computed = computeRenewalDate(new Date().toISOString(), cycle);
+    setRenewalDate(computed);
+    setValue('renewal_date', format(computed, 'yyyy-MM-dd'));
+  }, [prefill, setValue]);
 
   const isTrial = watch('is_trial');
 
@@ -101,7 +135,7 @@ export function AddSubscriptionScreen() {
       const success = await addSubscription({
         name: data.name,
         price: data.price,
-        currency: 'EUR',
+        currency: prefill?.currency ?? 'EUR',
         billing_cycle: data.billing_cycle,
         renewal_date: data.renewal_date,
         is_trial: data.is_trial,
@@ -111,9 +145,15 @@ export function AddSubscriptionScreen() {
       });
 
       if (success) {
-        if (previousCount === 0) {
+        // If launched from a detected subscription, mark it as approved
+        if (prefill?.detectedId) {
+          await useBankStore.getState().approveDetectedSubscription(prefill.detectedId);
+        }
+
+        if (previousCount === 0 && !prefill?.detectedId) {
           setShowCelebration(true);
         } else {
+          setSnackbarMessage('Subscription added successfully!');
           reset();
           setRenewalDate(undefined);
           navigation.goBack();
@@ -124,7 +164,7 @@ export function AddSubscriptionScreen() {
         clearError();
       }
     },
-    [addSubscription, clearError, navigation, reset],
+    [addSubscription, clearError, navigation, reset, prefill],
   );
 
   const handleCelebrationDismiss = useCallback(() => {
