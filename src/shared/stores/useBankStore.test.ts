@@ -1,6 +1,23 @@
 import { act } from '@testing-library/react-native';
 import { useBankStore } from './useBankStore';
 
+jest.mock('@config/env', () => ({
+  env: {
+    SUPABASE_URL: 'https://test.supabase.co',
+    SUPABASE_ANON_KEY: 'test-key',
+    TINK_CLIENT_ID: 'test-tink-client-id',
+    DEMO_BANK_MODE: false,
+  },
+}));
+
+jest.mock('@features/bank/mocks/mockBankData', () => ({
+  MOCK_CONNECTION: {},
+  MOCK_DETECTED_SUBSCRIPTIONS: [],
+  MOCK_SUPPORTED_BANKS: [],
+  MOCK_DETECTION_RESULT: { success: true, detectedCount: 0, newCount: 0 },
+  mockDelay: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );

@@ -7,6 +7,7 @@ interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   TINK_CLIENT_ID: string;
+  DEMO_BANK_MODE: boolean;
 }
 
 function getEnvVar(key: string): string {
@@ -21,4 +22,5 @@ export const env: Env = {
   SUPABASE_URL: getEnvVar('EXPO_PUBLIC_SUPABASE_URL'),
   SUPABASE_ANON_KEY: getEnvVar('EXPO_PUBLIC_SUPABASE_ANON_KEY'),
   TINK_CLIENT_ID: getEnvVar('EXPO_PUBLIC_TINK_CLIENT_ID'),
+  DEMO_BANK_MODE: process.env.EXPO_PUBLIC_DEMO_BANK_MODE === 'true',
 };

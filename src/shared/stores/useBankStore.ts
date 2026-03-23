@@ -3,8 +3,16 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
+import { env } from '@config/env';
 import type { BankConnection, SupportedBank, DetectedSubscription, DetectionResult } from '@features/bank/types';
 import type { AppError } from '@features/subscriptions/types';
+import {
+  MOCK_CONNECTION,
+  MOCK_DETECTED_SUBSCRIPTIONS,
+  MOCK_SUPPORTED_BANKS,
+  MOCK_DETECTION_RESULT,
+  mockDelay,
+} from '@features/bank/mocks/mockBankData';
 
 interface BankState {
   connections: BankConnection[];
@@ -124,6 +132,13 @@ export const useBankStore = create<BankStore>()(
       lastDetectionResult: null,
 
       fetchConnections: async () => {
+        if (env.DEMO_BANK_MODE) {
+          set({ isFetchingConnections: true, connectionError: null });
+          await mockDelay(300);
+          set({ connections: [MOCK_CONNECTION], isFetchingConnections: false });
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -154,6 +169,11 @@ export const useBankStore = create<BankStore>()(
       },
 
       createLinkSession: async (market?: string): Promise<string | null> => {
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(500);
+          return 'demo-auth-code-mock';
+        }
+
         try {
           const { data, error } = await supabase.functions.invoke('tink-link-session', {
             body: { market },
@@ -191,6 +211,16 @@ export const useBankStore = create<BankStore>()(
       },
 
       initiateConnection: async (authCode: string, credentialsId?: string | null) => {
+        if (env.DEMO_BANK_MODE) {
+          set({ isConnecting: true, connectionError: null });
+          await mockDelay(1000);
+          set((state) => ({
+            connections: [...state.connections.filter((c) => c.id !== MOCK_CONNECTION.id), MOCK_CONNECTION],
+            isConnecting: false,
+          }));
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -258,6 +288,17 @@ export const useBankStore = create<BankStore>()(
       clearConnectionError: () => set({ connectionError: null }),
 
       detectSubscriptions: async (connectionId: string) => {
+        if (env.DEMO_BANK_MODE) {
+          set({ isDetecting: true, detectionError: null, lastDetectionResult: null });
+          await mockDelay(2000);
+          set({
+            detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'detected'),
+            lastDetectionResult: MOCK_DETECTION_RESULT,
+            isDetecting: false,
+          });
+          return;
+        }
+
         set({ isDetecting: true, detectionError: null, lastDetectionResult: null });
 
         try {
@@ -321,6 +362,23 @@ export const useBankStore = create<BankStore>()(
       },
 
       fetchDetectedSubscriptions: async () => {
+        if (env.DEMO_BANK_MODE) {
+          set({ isFetchingDetected: true });
+          await mockDelay(300);
+          // Return only items that haven't been acted on (still in local state)
+          const current = useBankStore.getState().detectedSubscriptions;
+          // If already populated, keep current state (user may have approved/dismissed some)
+          if (current.length > 0) {
+            set({ isFetchingDetected: false });
+            return;
+          }
+          set({
+            detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'detected'),
+            isFetchingDetected: false,
+          });
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -353,6 +411,14 @@ export const useBankStore = create<BankStore>()(
       },
 
       approveDetectedSubscription: async (id: string) => {
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(300);
+          set((state) => ({
+            detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+          }));
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -377,6 +443,14 @@ export const useBankStore = create<BankStore>()(
       },
 
       dismissDetectedSubscription: async (id: string) => {
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(200);
+          set((state) => ({
+            detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+          }));
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -401,6 +475,16 @@ export const useBankStore = create<BankStore>()(
       },
 
       fetchSupportedBanks: async (market?: string) => {
+        if (env.DEMO_BANK_MODE) {
+          set({ isFetchingBanks: true, fetchBanksError: null });
+          await mockDelay(400);
+          const filtered = market && market !== 'ALL'
+            ? MOCK_SUPPORTED_BANKS.filter((b) => b.market === market)
+            : MOCK_SUPPORTED_BANKS;
+          set({ supportedBanks: filtered, isFetchingBanks: false });
+          return;
+        }
+
         set({ isFetchingBanks: true, fetchBanksError: null });
 
         try {

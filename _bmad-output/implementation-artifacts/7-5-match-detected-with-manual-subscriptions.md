@@ -390,6 +390,36 @@ jest.mock('@shared/stores/useSubscriptionStore', () => ({
 
 ### Debug Log References
 
+### Pre-Implementation: Demo Bank Mode (Mock Layer)
+
+**Problem**: Tink sandbox/console does not provide realistic demo credentials for subscription detection, scanning, and matching scenarios. This makes it impossible to manually test Epic 7 features end-to-end in the app.
+
+**Solution**: A mock data layer was added that bypasses all Tink API calls and Supabase queries when `EXPO_PUBLIC_DEMO_BANK_MODE=true` is set in `.env`.
+
+**How it works**:
+- When `env.DEMO_BANK_MODE` is `true`, every `useBankStore` action returns mock data instead of calling Supabase/Tink edge functions.
+- Mock data includes: 1 active bank connection, 10 realistic detected subscriptions (Netflix, Spotify, iCloud, YouTube Premium, ChatGPT Plus, gym, Adobe CC, Xbox Game Pass, Medium, Cloudflare), and 10 supported banks across SE/DE/GB/NL/FR/TR markets.
+- Network delays are simulated with `mockDelay()` to preserve realistic UX timing.
+- `fetchDetectedSubscriptions()` in demo mode preserves local state so approve/dismiss actions work correctly within a session.
+
+**Developer instructions for Story 7.5 implementation**:
+1. Set `EXPO_PUBLIC_DEMO_BANK_MODE=true` in `.env` to enable mock mode.
+2. All store actions (`fetchConnections`, `createLinkSession`, `initiateConnection`, `detectSubscriptions`, `fetchDetectedSubscriptions`, `approveDetectedSubscription`, `dismissDetectedSubscription`, `fetchSupportedBanks`) work with mock data in this mode.
+3. The mock detected subscriptions include variety: different confidence scores (0.65–0.95), multiple currencies (EUR/USD), monthly and yearly frequencies — ideal for testing the matching algorithm.
+4. To add more mock subscriptions for testing edge cases, edit `src/features/bank/mocks/mockBankData.ts`.
+5. When Story 7.5 adds `confirmMatch`, `replaceWithDetected`, and `dismissMatch` actions to `useBankStore`, add corresponding demo mode branches following the same pattern (early return with `mockDelay` + local state update).
+6. Set `EXPO_PUBLIC_DEMO_BANK_MODE=false` (or remove the line) to use real Tink API.
+
+**Files changed**:
+- `src/config/env.ts` — Added `DEMO_BANK_MODE: boolean` to Env interface
+- `.env` — Added `EXPO_PUBLIC_DEMO_BANK_MODE=true`
+- `.env.example` — Added commented-out `EXPO_PUBLIC_DEMO_BANK_MODE` reference
+- `src/features/bank/mocks/mockBankData.ts` — **NEW** — Mock data: connection, 10 detected subscriptions, 10 supported banks, detection result, mockDelay helper
+- `src/shared/stores/useBankStore.ts` — Added demo mode early-return branches to all 8 actions
+- `src/shared/stores/useBankStore.test.ts` — Added `@config/env` and `@features/bank/mocks/mockBankData` mocks for test compatibility
+
+**Test status**: 749/749 passing (no regressions)
+
 ### Completion Notes List
 
 ### File List
