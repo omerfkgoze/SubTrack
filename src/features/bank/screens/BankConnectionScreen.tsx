@@ -25,7 +25,7 @@ import {
 } from '../services/bankService';
 import { env } from '@config/env';
 
-type FlowState = 'info' | 'consent' | 'webview' | 'processing';
+type FlowState = 'info' | 'consent' | 'preparing' | 'webview' | 'processing';
 
 export function BankConnectionScreen() {
   const theme = useTheme();
@@ -36,6 +36,7 @@ export function BankConnectionScreen() {
   const isConnecting = useBankStore((s) => s.isConnecting);
   const connectionError = useBankStore((s) => s.connectionError);
   const initiateConnection = useBankStore((s) => s.initiateConnection);
+  const createLinkSession = useBankStore((s) => s.createLinkSession);
   const clearConnectionError = useBankStore((s) => s.clearConnectionError);
   const fetchConnections = useBankStore((s) => s.fetchConnections);
   const isDetecting = useBankStore((s) => s.isDetecting);
@@ -57,6 +58,7 @@ export function BankConnectionScreen() {
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
   const [pendingAuthCode, setPendingAuthCode] = useState<string | null>(null);
   const [pendingCredentialsId, setPendingCredentialsId] = useState<string | null>(null);
+  const [delegatedCode, setDelegatedCode] = useState<string | null>(null);
   const webViewRef = useRef<WebView>(null);
   // navTimerRef is intentionally NOT cleared in the processing effect's cleanup.
   // Clearing it there would cancel navigation when setPendingAuthCode(null) triggers
@@ -72,6 +74,7 @@ export function BankConnectionScreen() {
   const tinkLinkUrl = buildTinkLinkUrl({
     clientId: env.TINK_CLIENT_ID,
     redirectUri: TINK_REDIRECT_URI,
+    authorizationCode: delegatedCode ?? undefined,
   });
 
   // Process auth code AFTER WebView is unmounted (flowState === 'processing')
@@ -120,9 +123,20 @@ export function BankConnectionScreen() {
     setFlowState('consent');
   }, [clearConnectionError]);
 
-  const handleConsentConfirm = useCallback(() => {
-    setFlowState('webview');
-  }, []);
+  const handleConsentConfirm = useCallback(async () => {
+    setFlowState('preparing');
+    clearConnectionError();
+    const code = await createLinkSession();
+    if (code) {
+      setDelegatedCode(code);
+      setFlowState('webview');
+    } else {
+      const currentError = useBankStore.getState().connectionError;
+      setSnackbarType('error');
+      setSnackbarMessage(currentError?.message ?? 'Failed to prepare bank connection. Please try again.');
+      setFlowState('info');
+    }
+  }, [createLinkSession, clearConnectionError]);
 
   const handleConsentCancel = useCallback(() => {
     setFlowState('info');
@@ -213,6 +227,18 @@ export function BankConnectionScreen() {
       // Retryable errors can be retried via the scan button which remains visible
     }
   }, [isDetecting, detectionError]);
+
+  // Preparing session (getting delegated auth code from server)
+  if (flowState === 'preparing') {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" />
+        <Text variant="bodyLarge" style={styles.processingText}>
+          Preparing bank connection...
+        </Text>
+      </View>
+    );
+  }
 
   // WebView flow
   if (flowState === 'webview') {

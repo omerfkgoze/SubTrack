@@ -12,13 +12,14 @@ so that I don't have to manually enter every subscription.
 
 ## Acceptance Criteria
 
-1. **AC1: Edge Function Fetches Recurring Transactions from Tink**
-   - **Given** the user has an active bank connection with a stored refresh token
+1. **AC1: Edge Function Detects Recurring Subscriptions from Transactions**
+   - **Given** the user has an active bank connection (permanent Tink user created via `tink-link-session`)
    - **When** detection is triggered (user-initiated from BankConnectionScreen)
-   - **Then** a new Edge Function (`tink-detect-subscriptions`) refreshes the user's Tink token using the stored `tink_refresh_token`
-   - **And** calls Tink's Data Enrichment API (`GET /enrichment/v1/recurring-transactions-groups`) with `enrichment.transactions:readonly` scope
-   - **And** paginates through all results using `nextPageToken`
-   - **And** maps Tink recurring groups to `DetectedSubscription` records
+   - **Then** the Edge Function (`tink-detect-subscriptions`) obtains a user access token via server-side authorization grant (no refresh_token needed)
+   - **And** fetches transactions from Tink Search API (`POST /api/v1/search`) with `transactions:read` scope (last 6 months)
+   - **And** runs custom recurring detection: groups by normalized description, analyzes interval regularity and amount consistency
+   - **And** maps detected recurring groups to `DetectedSubscription` records
+   - **Note:** ~~Originally designed to use Tink Data Enrichment API (`enrichment.transactions:readonly` scope). Pivoted to custom detection because the enrichment scope was not available in the Tink Console app and cannot be self-service enabled.~~
 
 2. **AC2: `detected_subscriptions` Table Created and Populated**
    - **Given** the Edge Function receives recurring transaction groups from Tink
@@ -28,18 +29,18 @@ so that I don't have to manually enter every subscription.
    - **And** results are NOT automatically added to the user's subscription list
    - **And** duplicate detection is prevented using `tink_group_id` + `user_id` uniqueness (upsert on re-scan)
 
-3. **AC3: Confidence Score Calculated from Tink Data**
-   - **Given** Tink returns recurring transaction groups with occurrence count and amount statistics
+3. **AC3: Confidence Score Calculated from Transaction Patterns**
+   - **Given** custom detection groups transactions by normalized description
    - **When** confidence is calculated
-   - **Then** groups with `occurrences.count >= 3` AND low `amount.standardDeviation` relative to `amount.mean` get high confidence (>80%)
-   - **And** groups with `occurrences.count == 2` OR high variability get medium confidence (50-80%)
+   - **Then** base score of 0.5, +0.3 for 6+ occurrences, +0.2 for 3-5, +0.05 for 2
+   - **And** amount consistency bonus: +0.2 for CV < 0.05, +0.1 for CV < 0.15, -0.1 for high variability
    - **And** the confidence score is stored as a decimal (0.0 to 1.0)
 
-4. **AC4: Frequency Mapped from Tink Period Labels**
-   - **Given** Tink provides `period.label` values (e.g., `"MONTHLY"`, `"WEEKLY"`, `"YEARLY"`)
-   - **When** the Edge Function maps the data
-   - **Then** `period.label` is mapped to SubTrack billing cycles: `MONTHLY` → `monthly`, `WEEKLY` → `weekly`, `YEARLY` → `yearly`, `QUARTERLY` → `quarterly`
-   - **And** unrecognized periods default to `monthly` with a lower confidence score penalty
+4. **AC4: Frequency Detected from Transaction Intervals**
+   - **Given** custom detection calculates median interval in days between grouped transactions
+   - **When** the interval is analyzed
+   - **Then** intervals are mapped to frequencies: 5-10 days → `weekly`, 25-35 days → `monthly`, 80-100 days → `quarterly`, 340-400 days → `yearly`
+   - **And** groups with unrecognizable intervals are excluded from results
 
 5. **AC5: `last_synced_at` Updated on Bank Connection**
    - **Given** the detection Edge Function completes successfully
@@ -66,9 +67,9 @@ so that I don't have to manually enter every subscription.
    - **Then** the Edge Function returns an appropriate error (e.g., `"Bank connection expired. Please reconnect."`)
    - **And** the "Scan for Subscriptions" button is disabled or shows "Reconnect required"
 
-9. **AC9: Token Refresh Failure Handled**
-   - **Given** the stored `tink_refresh_token` is invalid or expired
-   - **When** the Edge Function attempts to refresh the token
+9. **AC9: Authorization Grant Failure Handled**
+   - **Given** the server-side authorization grant fails (e.g., Tink user no longer valid)
+   - **When** the Edge Function attempts to obtain a user access token
    - **Then** the bank connection status is updated to `expired`
    - **And** the user is informed they need to reconnect their bank
 
@@ -108,19 +109,18 @@ so that I don't have to manually enter every subscription.
     2. Verifies user auth (same pattern as `tink-connect`)
     3. Loads the `bank_connections` row for the given `connectionId` + authenticated `user_id`
     4. Validates connection status is `active` (reject `expired`/`error`/`disconnected`)
-    5. Refreshes user token using stored `tink_refresh_token`
-    6. Calls Tink recurring-transactions-groups API
-    7. Maps results to `detected_subscriptions` rows
+    5. Obtains user access token via server-side authorization grant (no refresh_token needed)
+    6. Fetches transactions from Tink Search API (last 6 months)
+    7. Runs custom recurring detection on transactions
     8. Upserts into database (on conflict `user_id, tink_group_id` → update amount, frequency, confidence, last_seen, status if still 'detected')
     9. Updates `bank_connections.last_synced_at`
     10. Returns `{ success: true, detectedCount: number, newCount: number }`
   - [x] 2.2: Create `supabase/functions/tink-detect-subscriptions/utils.ts` with:
-    - `refreshUserToken(refreshToken, clientId, clientSecret)` — `POST /api/v1/oauth/token` with `grant_type=refresh_token`, `scope=enrichment.transactions:readonly`
-    - `fetchRecurringGroups(accessToken)` — calls `GET /enrichment/v1/recurring-transactions-groups` with pagination
-    - `mapTinkGroupToDetected(group, userId, connectionId)` — maps Tink response to DB row shape
-    - `calculateConfidence(group)` — computes confidence score from occurrence count and amount variability
-    - `mapPeriodToFrequency(periodLabel)` — maps Tink period labels to SubTrack billing cycles
-    - `parseTinkAmount(amountObj)` — converts Tink `{unscaledValue, scale}` to decimal number
+    - `getClientAccessToken(clientId, clientSecret)` — `POST /api/v1/oauth/token` with `grant_type=client_credentials`, `scope=authorization:grant`
+    - `generateUserAccessToken(externalUserId, clientId, clientSecret)` — server-side authorization grant → token exchange (bypasses refresh_token)
+    - `fetchTransactions(accessToken)` — `POST /api/v1/search` (last 6 months, outgoing transactions)
+    - `detectRecurringSubscriptions(transactions, userId, connectionId)` — custom detection: groups by normalized description, median interval analysis, amount CV check, confidence scoring
+    - Helper functions: `normalizeDescription`, `medianIntervalDays`, `intervalToFrequency`, `amountCV`, `calculateGroupConfidence`, `generateGroupId`
   - [x] 2.3: Deploy with `--no-verify-jwt` (same pattern as `tink-connect` — function has its own `getUser()` auth check).
   - [x] 2.4: On Tink API failure: return `503` with error message. On token refresh failure: update connection status to `expired`, return `401` with reconnect message.
   - [x] 2.5: Write Deno tests: successful detection, empty results, token refresh failure → connection expired, inactive connection rejected, upsert on re-scan, pagination handling.
@@ -182,11 +182,13 @@ so that I don't have to manually enter every subscription.
   - [x] 5.7: If connection is expired and detection was attempted: show "Bank connection expired. Please reconnect." with reconnect button (triggers existing Tink Link flow from Story 7.1).
   - [x] 5.8: Show `last_synced_at` timestamp below the scan button: "Last scanned: {date}" or "Never scanned" if null.
 
-- [x] **Task 6: Update Tink Link Scope** (AC: #1)
-  - [x] 6.1: In `src/features/bank/services/bankService.ts`, update the `scope` parameter in `buildTinkLinkUrl()`:
-    - **From:** `'accounts:read,transactions:read'`
-    - **To:** `'accounts:read,transactions:read,enrichment.transactions:readonly'`
-  - [x] 6.2: **IMPORTANT:** This only affects NEW connections. Existing connections may not have the enrichment scope. The Edge Function should handle `403 Forbidden` from the enrichment API gracefully (return error asking user to reconnect with updated permissions).
+- [x] **Task 6: Tink Link Permanent User Flow** (AC: #1)
+  - [x] 6.1: Created `supabase/functions/tink-link-session/index.ts` — new Edge Function that creates a permanent Tink user and generates a delegated authorization code for Tink Link. This enables the server-side authorization grant flow used by `tink-detect-subscriptions`.
+  - [x] 6.2: Updated `src/features/bank/services/bankService.ts` to accept optional `authorizationCode` param in Tink Link URL.
+  - [x] 6.3: Updated `src/shared/stores/useBankStore.ts` with `createLinkSession` action that calls `tink-link-session`.
+  - [x] 6.4: Updated `BankConnectionScreen.tsx` to call `createLinkSession` before opening Tink Link WebView, passing the delegated authorization code.
+  - [x] 6.5: Updated `supabase/functions/tink-connect/index.ts` to attempt server-side authorization grant for refresh_token (graceful fallback).
+  - [x] 6.6: ~~Original plan was to add `enrichment.transactions:readonly` scope. Not needed — custom detection uses `transactions:read` which is already in scope.~~
 
 - [x] **Task 7: Tests** (AC: #1–#9)
   - [x] 7.1: `supabase/functions/tink-detect-subscriptions/index.test.ts` — Deno tests: successful detection with mock Tink response, empty results, token refresh failure, inactive connection rejection, upsert behavior, pagination.
@@ -196,182 +198,62 @@ so that I don't have to manually enter every subscription.
 
 ## Dev Notes
 
-### CRITICAL: Read Before Implementation
+### CRITICAL: Architecture Pivot — Custom Detection (2026-03-23)
 
-**This is a Tink Data Enrichment API integration story. Per Epic 6 retro (Lesson 1):** Do pre-implementation research before writing code.
+**Original plan:** Use Tink Data Enrichment API (`GET /enrichment/v1/recurring-transactions-groups`) with `enrichment.transactions:readonly` scope and `refresh_token` grant.
 
-**Mandatory pre-implementation research:**
-- Confirm Tink Data Enrichment API is enabled in Tink Console for the sandbox app
-- Verify `enrichment.transactions:readonly` scope works with refresh token grant
-- Check if Tink sandbox returns realistic recurring transaction group data (or only demo data)
-- Test the `refresh_token` grant flow manually with the stored token format
+**What happened:**
+1. `tink_refresh_token` was always NULL — Tink app configuration doesn't support refresh tokens for the callback code exchange
+2. Attempted server-side authorization grant to get refresh_token — also returned NULL
+3. Pivoted to server-side authorization grant flow (no refresh_token needed, generates fresh user access token each time)
+4. `enrichment.transactions:readonly` scope was NOT available in the Tink Console app — confirmed by checking the client scopes list
+5. `transactions.recurring:read` scope also not available
+6. **Final decision:** Implement custom recurring detection using `transactions:read` scope (which IS available)
 
-### Tink Data Enrichment API — Key Discovery
+### Actual Architecture — Server-Side Authorization Grant + Custom Detection
 
-**DO NOT build a custom subscription detection algorithm.** Tink provides a built-in **Data Enrichment API** that identifies recurring transaction groups automatically. This is the `GET /enrichment/v1/recurring-transactions-groups` endpoint.
-
-**Why use Tink's enrichment instead of custom detection:**
-- Tink has access to transaction categorization ML models trained on millions of transactions
-- Handles edge cases (merchant name variations, amount changes, weekend adjustments)
-- Provides structured data: name, period, amount statistics, occurrence count
-- Prevents reinventing the wheel (BMAD anti-pattern #1)
-- Higher accuracy than any custom regex/pattern matching we could build
-
-### Tink Recurring Transaction Groups API — Confirmed Endpoint
-
-**Endpoint:** `GET https://api.tink.com/enrichment/v1/recurring-transactions-groups`
-
-**Authentication:** User access token with `enrichment.transactions:readonly` scope.
-
-**Token refresh flow:**
+**Token flow (no refresh_token needed):**
 ```
-POST https://api.tink.com/api/v1/oauth/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=refresh_token
-refresh_token={stored_tink_refresh_token}
-client_id={TINK_CLIENT_ID}
-client_secret={TINK_CLIENT_SECRET}
-scope=enrichment.transactions:readonly
+1. client_credentials grant → client access token (scope: authorization:grant)
+2. POST /api/v1/oauth/authorization-grant (with external_user_id) → authorization code
+3. authorization_code grant (exchange code for user access token with transactions:read scope)
 ```
 
-**Response shape (recurring-transactions-groups):**
-```typescript
-interface TinkRecurringGroup {
-  id: string;                          // UUID — maps to tink_group_id
-  categoryId: string;
-  name: string;                        // e.g., "Netflix"
-  period: {
-    label: string;                     // "MONTHLY" | "WEEKLY" | "YEARLY" | "QUARTERLY"
-    duration: {
-      mean: number;                    // Mean days between occurrences
-      standardDeviation: number;
-      minimum: number;
-      maximum: number;
-    };
-  };
-  amount: {
-    mean: { unscaledValue: string; scale: string };
-    standardDeviation: { unscaledValue: string; scale: string };
-    median: { unscaledValue: string; scale: string };
-    minimum: { unscaledValue: string; scale: string };
-    maximum: { unscaledValue: string; scale: string };
-    latest: { unscaledValue: string; scale: string };
-    currencyCode: string;              // "EUR", "SEK", etc.
-  };
-  occurrences: {
-    count: number;                     // Number of past occurrences found
-    firstDate: string;                 // "2020-07-05"
-    latestDate: string;                // "2020-09-05"
-    dayOfMonth: {
-      mean: number;
-      median: number;
-      minimum: number;
-      maximum: number;
-    };
-  };
-}
-
-interface TinkRecurringGroupsResponse {
-  recurringTransactionsGroups: TinkRecurringGroup[];
-  nextPageToken?: string;
-}
+**Transaction fetch:**
+```
+POST /api/v1/search (with user access token)
+- Fetches last 6 months of transactions
+- Filters to outgoing (negative amount) transactions
 ```
 
-**Pagination:** If `nextPageToken` is present, append `?pageToken={token}` to fetch the next page. Continue until `nextPageToken` is absent or empty.
+**Custom recurring detection algorithm:**
+1. Group outgoing transactions by normalized description (lowercase, strip trailing numbers/refs)
+2. Calculate median interval in days between transactions in each group
+3. Map interval to frequency: 5-10d → weekly, 25-35d → monthly, 80-100d → quarterly, 340-400d → yearly
+4. Check amount consistency: coefficient of variation (CV) must be < 0.3
+5. Calculate confidence score (base 0.5 + occurrence bonus + amount consistency bonus)
+6. Generate stable group ID via hash of normalized description + currency
 
-### Tink Amount Parsing
+### Permanent Tink User Flow (tink-link-session)
 
-Tink amounts use `{unscaledValue, scale}` format. To convert to a decimal number:
-```typescript
-function parseTinkAmount(amount: { unscaledValue: string; scale: string }): number {
-  const unscaled = parseInt(amount.unscaledValue, 10);
-  const scale = parseInt(amount.scale, 10);
-  return unscaled / Math.pow(10, scale);
-}
-// Example: { unscaledValue: "1300", scale: "2" } → 13.00
-// Example: { unscaledValue: "100", scale: "1" } → 10.0
+New Edge Function created to enable continuous access:
 ```
-
-### Confidence Score Calculation
-
-```typescript
-function calculateConfidence(group: TinkRecurringGroup): number {
-  let score = 0.5; // Base score
-
-  // Occurrence count factor (more occurrences = higher confidence)
-  if (group.occurrences.count >= 6) score += 0.3;
-  else if (group.occurrences.count >= 3) score += 0.2;
-  else if (group.occurrences.count === 2) score += 0.05;
-
-  // Amount consistency factor (low std dev = higher confidence)
-  const mean = parseTinkAmount(group.amount.mean);
-  const stdDev = parseTinkAmount(group.amount.standardDeviation);
-  if (mean > 0) {
-    const cv = stdDev / mean; // Coefficient of variation
-    if (cv < 0.05) score += 0.2;       // Very consistent
-    else if (cv < 0.15) score += 0.1;  // Somewhat consistent
-    else score -= 0.1;                   // High variability
-  }
-
-  return Math.min(1.0, Math.max(0.0, Math.round(score * 100) / 100));
-}
+Client: "Connect Bank Account" button press
+  ↓
+tink-link-session Edge Function:
+  1. Auth check (getUser)
+  2. client_credentials → client access token (scope: user:create,authorization:grant)
+  3. POST /api/v1/user/create (JSON body, handles 409 = already exists)
+  4. POST /api/v1/oauth/authorization-grant/delegate (actor_client_id for Tink Link)
+  5. Return { authorizationCode: delegatedCode }
+  ↓
+Client opens Tink Link WebView with authorization_code parameter
+  ↓
+tink-connect Edge Function (existing, modified):
+  1. Exchange callback code for tokens
+  2. Attempt server-side authorization grant for refresh_token (graceful fallback)
+  3. Store bank connection
 ```
-
-### Period Label to Frequency Mapping
-
-```typescript
-function mapPeriodToFrequency(label: string): 'weekly' | 'monthly' | 'quarterly' | 'yearly' {
-  switch (label.toUpperCase()) {
-    case 'WEEKLY': return 'weekly';
-    case 'MONTHLY': return 'monthly';
-    case 'QUARTERLY': return 'quarterly';
-    case 'YEARLY': return 'yearly';
-    default: return 'monthly'; // Safe fallback — most subscriptions are monthly
-  }
-}
-```
-
-### Token Refresh Pattern
-
-**Different from Story 7.1 (authorization_code) and Story 7.2 (client_credentials).**
-
-Story 7.3 uses `refresh_token` grant to get a **user-scoped** access token. This is needed because the enrichment API returns per-user data.
-
-```typescript
-export async function refreshUserToken(
-  refreshToken: string,
-  clientId: string,
-  clientSecret: string,
-): Promise<{ accessToken: string; newRefreshToken?: string }> {
-  const response = await fetch('https://api.tink.com/api/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: 'enrichment.transactions:readonly',
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Tink token refresh failed: ${response.status}`, errorText);
-    throw new Error(`TOKEN_REFRESH_FAILED:${response.status}`);
-  }
-
-  const data = await response.json();
-  return {
-    accessToken: data.access_token,
-    // Tink may issue a new refresh token — store it if present
-    newRefreshToken: data.refresh_token ?? undefined,
-  };
-}
-```
-
-**IMPORTANT:** If Tink returns a new `refresh_token` in the response, the Edge Function MUST update `bank_connections.tink_refresh_token` with the new value. Old refresh tokens may be invalidated (token rotation).
 
 ### Upsert Strategy for Re-scans
 
@@ -407,7 +289,7 @@ const { data, error } = await supabaseAdmin
 
 **Recommended approach:** Before upserting, query existing `detected_subscriptions` for the user where status != 'detected', collect their `tink_group_id` values, and exclude them from the upsert batch.
 
-### Edge Function Architecture
+### Edge Function Architecture (Updated)
 
 ```
 Client: "Scan for Subscriptions" button press
@@ -417,25 +299,16 @@ supabase.functions.invoke('tink-detect-subscriptions', { body: { connectionId } 
 Edge Function:
   1. Auth check (getUser)
   2. Load bank_connections row (verify ownership, status=active)
-  3. Refresh user token (grant_type=refresh_token)
+  3. Server-side authorization grant → user access token
      → On failure: update connection status='expired', return 401
-     → If new refresh_token received: update bank_connections.tink_refresh_token
-  4. Fetch recurring-transactions-groups (paginate)
-     → On 403: return error "enrichment scope not available, reconnect required"
-  5. Map groups → detected_subscriptions rows
+  4. Fetch transactions via POST /api/v1/search (last 6 months)
+     → On failure: return 503
+  5. Custom recurring detection → DetectedSubscriptionRow[]
   6. Filter out already-actioned rows (status != 'detected')
   7. Upsert into detected_subscriptions
   8. Update bank_connections.last_synced_at
   9. Return { success: true, detectedCount, newCount }
 ```
-
-### Scope Update Impact
-
-Adding `enrichment.transactions:readonly` to the Tink Link scope:
-- **New connections** will automatically request the enrichment scope during consent
-- **Existing connections** (from Story 7.1) may NOT have this scope. The enrichment API will return `403 Forbidden`
-- **Handling existing connections:** When the Edge Function gets a 403 from the enrichment API, it should return an error that tells the user to reconnect their bank. The UI should show: "Your bank connection needs updated permissions. Please reconnect to enable subscription detection."
-- **This is expected for the first release** — users who connected before Story 7.3 will need to reconnect once
 
 ### BankConnectionScreen UI Updates
 
@@ -460,7 +333,7 @@ Use React Native Paper components:
 
 ### What NOT to Do
 
-- **DO NOT** build a custom subscription detection algorithm from raw transactions — use Tink's Data Enrichment API (`recurring-transactions-groups`)
+- ~~**DO NOT** build a custom subscription detection algorithm from raw transactions — use Tink's Data Enrichment API~~ → **REVERSED:** Enrichment API scope not available; custom detection implemented using `transactions:read`
 - **DO NOT** auto-add detected subscriptions to the user's list — they go to `detected_subscriptions` with status `"detected"` for review (Story 7.4)
 - **DO NOT** call the Tink API directly from the client — always proxy through Edge Function (secret protection, NFR17)
 - **DO NOT** store the user access token anywhere — it's request-scoped, used only within the Edge Function invocation
@@ -475,11 +348,11 @@ Use React Native Paper components:
 
 1. **Edge Function deployment:** Deploy with `--no-verify-jwt` flag. Function has its own `getUser()` auth check internally.
 2. **`TINK_CLIENT_ID` and `TINK_CLIENT_SECRET`** are already configured in Supabase Edge Function secrets.
-3. **`tink_refresh_token`** is stored in `bank_connections` table, accessible only via service role key (not returned to client).
+3. **`tink_refresh_token`** is stored in `bank_connections` table but may be NULL — the server-side authorization grant flow does not require it.
 4. **Co-located tests, Zustand pattern, premium gate** — all patterns established in Story 7.1.
 5. **Error extraction pattern:** Use the same error detail extraction from Edge Function errors as in `useBankStore.initiateConnection()` (handling `error.context.json()`, `error.message` fallbacks).
 6. **`useFocusEffect` pattern:** Use for fetching detected subscriptions on screen focus.
-7. **Story 7.2 established:** `getClientCredentialsToken()` in `tink-providers/utils.ts`. Story 7.3 uses a DIFFERENT grant type (`refresh_token`) — do NOT reuse the client credentials helper. Create `refreshUserToken()` in `tink-detect-subscriptions/utils.ts`.
+7. **Story 7.3 uses server-side authorization grant** (`authorization-grant` with `external_user_id`) — different from Story 7.1 (authorization_code from Tink Link) and Story 7.2 (client_credentials only). The `generateUserAccessToken()` function in `tink-detect-subscriptions/utils.ts` handles this flow.
 
 ### Network Failure Handling
 
@@ -487,11 +360,10 @@ Per Epic 6 retro Lesson 2 — explicit failure paths:
 
 | Scenario | Edge Function returns | User sees | Retry |
 |----------|----------------------|-----------|-------|
-| Tink enrichment API success | `200 { success, detectedCount, newCount }` | Snackbar: "X subscriptions detected!" | N/A |
-| Tink enrichment API success, 0 results | `200 { success, detectedCount: 0 }` | "No recurring subscriptions detected yet." | Yes |
-| Tink token refresh failed | `401 { error: "TOKEN_REFRESH_FAILED" }` | "Bank connection expired. Please reconnect." | Reconnect |
-| Tink enrichment 403 (missing scope) | `403 { error: "ENRICHMENT_SCOPE_MISSING" }` | "Your bank connection needs updated permissions. Please reconnect." | Reconnect |
-| Tink API down | `503 { error: "..." }` | "Couldn't scan transactions. Please try again later." | Yes |
+| Detection success | `200 { success, detectedCount, newCount }` | Snackbar: "X subscriptions detected!" | N/A |
+| Detection success, 0 results | `200 { success, detectedCount: 0 }` | "No recurring subscriptions detected yet." | Yes |
+| Authorization grant failed | `401 { error: "TOKEN_REFRESH_FAILED" }` | "Bank connection expired. Please reconnect." | Reconnect |
+| Transaction fetch failed | `503 { error: "TRANSACTION_FETCH_ERROR" }` | "Couldn't fetch transactions. Please try again later." | Yes |
 | Connection not active | `400 { error: "CONNECTION_NOT_ACTIVE" }` | "Bank connection is not active." | Reconnect |
 | Network error (device offline) | N/A (client-side catch) | "Network error. Please check your connection." | Yes |
 
@@ -533,10 +405,11 @@ jest.mock('@shared/services/supabase', () => ({
 - [Source: _bmad-output/planning-artifacts/epics.md#Story 7.3] — Acceptance criteria
 - [Source: _bmad-output/planning-artifacts/architecture.md#Frontend-Architecture] — Zustand pattern, feature structure, error handling
 - [Source: _bmad-output/implementation-artifacts/7-2-supported-banks-list.md] — Previous story patterns, Edge Function deployment
-- [Source: _bmad-output/implementation-artifacts/7-1-bank-account-connection-via-open-banking.md] — Tink auth patterns, refresh token storage, retry pattern
-- [Source: Tink API — /enrichment/v1/recurring-transactions-groups] — Recurring subscription detection endpoint, response shape, pagination
-- [Source: Tink API — /enrichment/v1/recurring-transactions] — Individual recurring transactions within groups
-- [Source: Tink API — /api/v1/oauth/token] — Token refresh flow with grant_type=refresh_token
+- [Source: _bmad-output/implementation-artifacts/7-1-bank-account-connection-via-open-banking.md] — Tink auth patterns, retry pattern
+- [Source: Tink API — /api/v1/search] — Transaction search endpoint (used for fetching last 6 months)
+- [Source: Tink API — /api/v1/oauth/authorization-grant] — Server-side authorization grant (used instead of refresh_token)
+- [Source: Tink API — /api/v1/user/create] — Permanent Tink user creation (used by tink-link-session)
+- [Source: Tink API — /api/v1/oauth/authorization-grant/delegate] — Delegated authorization code for Tink Link
 - [Source: _bmad-output/planning-artifacts/prd.md#NFR38] — Transaction sync frequency: daily or user-triggered
 - [Source: _bmad-output/planning-artifacts/prd.md#NFR40] — Graceful degradation on bank API failure
 
@@ -552,31 +425,41 @@ claude-sonnet-4-6
 
 - Implemented `supabase/migrations/20260322200000_create_detected_subscriptions.sql` with table schema, RLS (SELECT only for users), and `updated_at` auto-trigger following `bank_connections` pattern.
 - Added `detected_subscriptions` Row/Insert/Update types to `src/shared/types/database.types.ts` manually (equivalent of `supabase gen types typescript`).
-- Created `supabase/functions/tink-detect-subscriptions/utils.ts` with `parseTinkAmount`, `calculateConfidence`, `mapPeriodToFrequency`, `mapTinkGroupToDetected`, `refreshUserToken`, `fetchRecurringGroups` — all with full pagination support.
-- Created `supabase/functions/tink-detect-subscriptions/index.ts` with full auth, active-connection validation, refresh-token flow with token rotation support, enrichment API call with 403/503 error handling, conditional upsert (excludes actioned rows), `last_synced_at` update.
+- **[REWRITTEN 2026-03-23]** `supabase/functions/tink-detect-subscriptions/utils.ts` — removed enrichment API functions (`refreshUserToken`, `fetchRecurringGroups`, `mapTinkGroupToDetected`, `parseTinkAmount`, `calculateConfidence`, `mapPeriodToFrequency`). Replaced with: `getClientAccessToken`, `generateUserAccessToken` (server-side auth grant), `fetchTransactions` (Tink Search API), `detectRecurringSubscriptions` (custom detection with `normalizeDescription`, `medianIntervalDays`, `intervalToFrequency`, `amountCV`, `calculateGroupConfidence`, `generateGroupId`).
+- **[REWRITTEN 2026-03-23]** `supabase/functions/tink-detect-subscriptions/index.ts` — removed refresh_token check and enrichment API flow. Now uses server-side authorization grant → fetch transactions → custom recurring detection → upsert.
+- **[NEW 2026-03-23]** `supabase/functions/tink-link-session/index.ts` — creates permanent Tink user + generates delegated authorization code for Tink Link. Three Tink API calls: `getClientAccessToken` → `createOrGetTinkUser` (JSON body, handles 409) → `generateDelegatedCode` (actor_client_id delegation).
+- **[MODIFIED 2026-03-23]** `supabase/functions/tink-connect/index.ts` — added server-side authorization grant attempt after callback code exchange to try to get refresh_token (graceful fallback if fails).
+- **[MODIFIED 2026-03-23]** `supabase/functions/tink-connect/utils.ts` — added `getClientAccessToken`, `generateUserAuthorizationCode`, made `refresh_token` optional in `TinkTokenResponse`.
+- **[MODIFIED 2026-03-23]** `src/features/bank/services/bankService.ts` — added optional `authorizationCode` param to `TinkLinkParams` and Tink Link URL builder.
+- **[MODIFIED 2026-03-23]** `src/shared/stores/useBankStore.ts` — added `createLinkSession` action (calls `tink-link-session` edge function).
+- **[MODIFIED 2026-03-23]** `src/features/bank/screens/BankConnectionScreen.tsx` — added `'preparing'` flow state, async `handleConsentConfirm` that calls `createLinkSession` before opening WebView with delegated code.
+- **[MODIFIED 2026-03-23]** `supabase/config.toml` — added `[functions.tink-link-session]` with `verify_jwt = false`.
 - Added `DetectedSubscription`, `DetectedSubscriptionStatus`, `DetectionResult` types to `src/features/bank/types/index.ts`.
 - Extended `useBankStore` with `detectedSubscriptions`, `isDetecting`, `isFetchingDetected`, `detectionError`, `lastDetectionResult` state + `detectSubscriptions` and `fetchDetectedSubscriptions` actions. Updated `partialize` to exclude transient detection data from AsyncStorage.
 - Added "Scan for Subscriptions" button, detection loading state, success/failure snackbar, "Last scanned" timestamp, and "Reconnect required" fallback to `BankConnectionScreen.tsx`.
-- Updated `bankService.ts` scope to include `enrichment.transactions:readonly` for new connections.
 - 708 tests passing, 0 regressions.
 
 ### Change Log
 
-- Date: 2026-03-22 — Story 7.3 implementation: automatic subscription detection via Tink Data Enrichment API
+- Date: 2026-03-22 — Story 7.3 initial implementation: automatic subscription detection via Tink Data Enrichment API
 - Date: 2026-03-22 — Code review fixes: replaced `connections[0]` with `displayConnection`/`activeConnection` for safe display, added Retry action to detection error snackbar, removed unnecessary Content-Type header on GET request, updated File List with missing files
+- Date: 2026-03-23 — **Architecture pivot:** Tink Data Enrichment API (`enrichment.transactions:readonly`) not available in Tink Console. Implemented custom recurring detection using `transactions:read` scope + Tink Search API. Created `tink-link-session` edge function for permanent Tink user flow. Rewrote `tink-detect-subscriptions` (utils.ts + index.ts) to use server-side authorization grant instead of refresh_token. Modified `tink-connect` to attempt server-side auth grant for refresh_token. Updated BankConnectionScreen to call `createLinkSession` before opening Tink Link WebView.
 
 ### File List
 
 - `supabase/migrations/20260322200000_create_detected_subscriptions.sql` (new)
-- `supabase/functions/tink-detect-subscriptions/index.ts` (new)
-- `supabase/functions/tink-detect-subscriptions/utils.ts` (new)
+- `supabase/functions/tink-detect-subscriptions/index.ts` (new → rewritten 2026-03-23)
+- `supabase/functions/tink-detect-subscriptions/utils.ts` (new → rewritten 2026-03-23)
 - `supabase/functions/tink-detect-subscriptions/index.test.ts` (new)
+- `supabase/functions/tink-link-session/index.ts` (new — 2026-03-23)
+- `supabase/functions/tink-connect/index.ts` (modified — 2026-03-23: server-side auth grant attempt)
+- `supabase/functions/tink-connect/utils.ts` (modified — 2026-03-23: added getClientAccessToken, generateUserAuthorizationCode)
 - `src/features/bank/types/index.ts` (modified)
 - `src/shared/types/database.types.ts` (modified)
-- `src/shared/stores/useBankStore.ts` (modified)
+- `src/shared/stores/useBankStore.ts` (modified — 2026-03-23: added createLinkSession)
 - `src/shared/stores/useBankStore.test.ts` (modified)
-- `src/features/bank/screens/BankConnectionScreen.tsx` (modified)
+- `src/features/bank/screens/BankConnectionScreen.tsx` (modified — 2026-03-23: preparing state, createLinkSession flow)
 - `src/features/bank/screens/BankConnectionScreen.test.tsx` (modified)
-- `src/features/bank/services/bankService.ts` (modified)
+- `src/features/bank/services/bankService.ts` (modified — 2026-03-23: authorizationCode param)
 - `src/features/bank/screens/SupportedBanksScreen.test.tsx` (modified — type fix)
-- `supabase/config.toml` (modified — config update)
+- `supabase/config.toml` (modified — 2026-03-23: added tink-link-session config)

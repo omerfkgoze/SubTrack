@@ -1,8 +1,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
-  refreshUserToken,
-  fetchRecurringGroups,
-  mapTinkGroupToDetected,
+  generateUserAccessToken,
+  fetchTransactions,
+  detectRecurringSubscriptions,
 } from './utils.ts'
 
 const corsHeaders = {
@@ -91,27 +91,19 @@ Deno.serve(async (req: Request) => {
       }, 400)
     }
 
-    if (!connection.tink_refresh_token) {
-      console.error('No refresh token stored for connection:', connectionId)
-      return jsonResponse({ error: 'Bank connection expired. Please reconnect.' }, 401)
-    }
-
-    // Refresh user token using stored refresh token (AC1, AC9)
+    // Get user access token via server-side authorization grant (AC1)
     let accessToken: string
-    let newRefreshToken: string | undefined
 
     try {
-      const tokenResult = await refreshUserToken(
-        connection.tink_refresh_token,
+      accessToken = await generateUserAccessToken(
+        user.id,
         tinkClientId,
         tinkClientSecret,
       )
-      accessToken = tokenResult.accessToken
-      newRefreshToken = tokenResult.newRefreshToken
-      console.log('Token refresh OK')
+      console.log('User access token obtained via authorization grant')
     } catch (tokenError) {
       const message = tokenError instanceof Error ? tokenError.message : 'Unknown'
-      console.error('Token refresh failed:', message)
+      console.error('Authorization grant failed:', message)
 
       // Update connection status to expired (AC9)
       await supabaseAdmin
@@ -125,39 +117,27 @@ Deno.serve(async (req: Request) => {
       }, 401)
     }
 
-    // If Tink issued a new refresh token, update it (token rotation)
-    if (newRefreshToken) {
-      await supabaseAdmin
-        .from('bank_connections')
-        .update({ tink_refresh_token: newRefreshToken, updated_at: new Date().toISOString() })
-        .eq('id', connectionId)
-      console.log('Refresh token rotated')
-    }
-
-    // Fetch recurring transaction groups from Tink Data Enrichment API (AC1)
-    let recurringGroups
+    // Fetch transactions using Search API (transactions:read scope)
+    let transactions
     try {
-      recurringGroups = await fetchRecurringGroups(accessToken)
-      console.log('Fetched recurring groups:', recurringGroups.length)
-    } catch (enrichmentError) {
-      const message = enrichmentError instanceof Error ? enrichmentError.message : 'Unknown'
-      console.error('Enrichment API failed:', message)
-
-      if (message.includes('ENRICHMENT_API_FAILED:403')) {
-        return jsonResponse({
-          error: 'ENRICHMENT_SCOPE_MISSING',
-          detail: 'Your bank connection needs updated permissions. Please reconnect to enable subscription detection.',
-        }, 403)
-      }
+      transactions = await fetchTransactions(accessToken)
+      console.log('Transactions fetched:', transactions.length)
+    } catch (fetchError) {
+      const message = fetchError instanceof Error ? fetchError.message : 'Unknown'
+      console.error('Transaction fetch failed:', message)
 
       return jsonResponse({
-        error: 'ENRICHMENT_API_ERROR',
-        detail: "Couldn't scan transactions. Please try again later.",
+        error: 'TRANSACTION_FETCH_ERROR',
+        detail: "Couldn't fetch transactions. Please try again later.",
       }, 503)
     }
 
+    // Detect recurring subscriptions from transactions
+    const detectedRows = detectRecurringSubscriptions(transactions, user.id, connectionId)
+    console.log('Detected recurring subscriptions:', detectedRows.length)
+
     // AC7: Zero results case — still update last_synced_at
-    if (recurringGroups.length === 0) {
+    if (detectedRows.length === 0) {
       await supabaseAdmin
         .from('bank_connections')
         .update({ last_synced_at: new Date().toISOString() })
@@ -166,13 +146,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, detectedCount: 0, newCount: 0 })
     }
 
-    // Map Tink groups to detected_subscriptions rows (AC2, AC3, AC4)
-    const mappedRows = recurringGroups.map((group) =>
-      mapTinkGroupToDetected(group, user.id, connectionId)
-    )
-
     // Filter out rows for subscriptions already actioned by user (status != 'detected')
-    // to avoid overwriting approved/dismissed/matched decisions
     const { data: existingActioned } = await supabaseAdmin
       .from('detected_subscriptions')
       .select('tink_group_id')
@@ -182,7 +156,7 @@ Deno.serve(async (req: Request) => {
     const actionedGroupIds = new Set(
       (existingActioned ?? []).map((r: { tink_group_id: string }) => r.tink_group_id)
     )
-    const rowsToUpsert = mappedRows.filter((row) => !actionedGroupIds.has(row.tink_group_id))
+    const rowsToUpsert = detectedRows.filter((row) => !actionedGroupIds.has(row.tink_group_id))
 
     // Track new vs existing for response count
     const { data: existingDetected } = await supabaseAdmin
@@ -217,11 +191,11 @@ Deno.serve(async (req: Request) => {
       .update({ last_synced_at: new Date().toISOString() })
       .eq('id', connectionId)
 
-    console.log('Detection complete. Total:', recurringGroups.length, 'New:', newCount)
+    console.log('Detection complete. Total:', detectedRows.length, 'New:', newCount)
 
     return jsonResponse({
       success: true,
-      detectedCount: recurringGroups.length,
+      detectedCount: detectedRows.length,
       newCount,
     })
   } catch (error) {

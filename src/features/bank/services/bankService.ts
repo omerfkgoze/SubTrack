@@ -7,6 +7,7 @@ export interface TinkLinkParams {
   redirectUri: string;
   market?: string;
   locale?: string;
+  authorizationCode?: string;
 }
 
 /**
@@ -25,6 +26,9 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
     url.searchParams.set('locale', params.locale);
   }
   url.searchParams.set('scope', 'accounts:read,transactions:read,enrichment.transactions:readonly');
+  if (params.authorizationCode) {
+    url.searchParams.set('authorization_code', params.authorizationCode);
+  }
   return url.toString();
 }
 

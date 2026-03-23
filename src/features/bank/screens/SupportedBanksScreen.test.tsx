@@ -50,6 +50,7 @@ function setupStoreMock(overrides: Record<string, unknown> = {}) {
     lastDetectionResult: null,
     fetchSupportedBanks: mockFetchSupportedBanks,
     fetchConnections: jest.fn(),
+    createLinkSession: jest.fn().mockResolvedValue('mock-code'),
     initiateConnection: jest.fn(),
     clearConnectionError: jest.fn(),
     detectSubscriptions: jest.fn(),

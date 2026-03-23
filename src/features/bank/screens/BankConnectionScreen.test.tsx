@@ -79,6 +79,7 @@ function setupStoreMock(overrides: Record<string, unknown> = {}) {
     detectionError: null,
     lastDetectionResult: null,
     detectedSubscriptions: [],
+    createLinkSession: jest.fn().mockResolvedValue('mock-delegated-code'),
     initiateConnection: mockInitiateConnection,
     clearConnectionError: mockClearConnectionError,
     fetchConnections: jest.fn(),

@@ -1,5 +1,10 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { exchangeAuthorizationCode, buildConsentDates } from './utils.ts'
+import {
+  exchangeAuthorizationCode,
+  buildConsentDates,
+  getClientAccessToken,
+  generateUserAuthorizationCode,
+} from './utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,14 +74,36 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Unauthorized: userId mismatch' }, 403)
     }
 
-    // Exchange authorization code for tokens
-    // Access token is in-memory only (request-scoped), never persisted
-    const tokenResponse = await exchangeAuthorizationCode(
+    // Exchange Tink Link callback code for tokens (confirms connection)
+    const callbackTokenResponse = await exchangeAuthorizationCode(
       authorizationCode,
       tinkClientId,
       tinkClientSecret,
     )
-    console.log('Token exchange OK, scopes:', tokenResponse.scope)
+    console.log('Callback token exchange OK, scopes:', callbackTokenResponse.scope)
+
+    // The callback code exchange may not return a refresh_token.
+    // For continuous access, generate a server-side authorization code and exchange it.
+    let refreshToken = callbackTokenResponse.refresh_token ?? null
+
+    if (!refreshToken) {
+      console.log('No refresh_token from callback code. Generating server-side authorization code...')
+      try {
+        const clientAccessToken = await getClientAccessToken(tinkClientId, tinkClientSecret)
+        const serverCode = await generateUserAuthorizationCode(clientAccessToken, userId)
+        const serverTokenResponse = await exchangeAuthorizationCode(
+          serverCode,
+          tinkClientId,
+          tinkClientSecret,
+        )
+        refreshToken = serverTokenResponse.refresh_token ?? null
+        console.log('Server-side token exchange OK, refresh_token:', refreshToken ? 'present' : 'missing',
+          'scopes:', serverTokenResponse.scope)
+      } catch (grantError) {
+        const msg = grantError instanceof Error ? grantError.message : 'Unknown'
+        console.warn('Server-side authorization grant failed:', msg, '— proceeding without refresh_token')
+      }
+    }
 
     // Use credentialsId from client callback URL (Tink Link provides it in redirect)
     // If not provided, generate a unique fallback from the token
@@ -120,7 +147,7 @@ Deno.serve(async (req: Request) => {
         consent_granted_at: consentGrantedAt.toISOString(),
         consent_expires_at: consentExpiresAt.toISOString(),
         tink_credentials_id: tinkCredentialsId,
-        tink_refresh_token: tokenResponse.refresh_token,
+        tink_refresh_token: refreshToken,
       })
       .select()
       .single()

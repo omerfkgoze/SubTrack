@@ -23,6 +23,7 @@ interface BankState {
 
 interface BankActions {
   fetchConnections: () => Promise<void>;
+  createLinkSession: (market?: string) => Promise<string | null>;
   initiateConnection: (authCode: string, credentialsId?: string | null) => Promise<void>;
   clearConnectionError: () => void;
   fetchSupportedBanks: (market?: string) => Promise<void>;
@@ -107,6 +108,55 @@ export const useBankStore = create<BankStore>()(
             connectionError: { code: 'NETWORK_ERROR', message: 'Network error loading bank connections' },
             isFetchingConnections: false,
           });
+        }
+      },
+
+      createLinkSession: async (market?: string): Promise<string | null> => {
+        try {
+          const { data, error } = await supabase.functions.invoke('tink-link-session', {
+            body: { market },
+          });
+
+          if (error) {
+            // Debug: log raw error shape
+            console.error('[useBankStore] Link session RAW error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+            console.error('[useBankStore] Link session data:', JSON.stringify(data));
+            let detail = 'Failed to prepare bank connection session.';
+            try {
+              if (error.context && typeof error.context.json === 'function') {
+                const body = await error.context.json();
+                console.error('[useBankStore] Link session body:', JSON.stringify(body));
+                detail = body?.error ?? detail;
+              } else if (error.message) {
+                detail = error.message;
+              }
+            } catch (parseErr) {
+              console.error('[useBankStore] Link session parse error:', parseErr);
+              if (error.message) detail = error.message;
+            }
+            console.error('[useBankStore] Link session error:', detail);
+            set({
+              connectionError: { code: 'SESSION_FAILED', message: detail },
+            });
+            return null;
+          }
+
+          if (data?.success && data?.authorizationCode) {
+            return data.authorizationCode as string;
+          }
+
+          console.error('[useBankStore] Unexpected link session response:', JSON.stringify(data));
+          set({
+            connectionError: { code: 'SESSION_FAILED', message: 'Failed to prepare bank connection session.' },
+          });
+          return null;
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : 'Failed to prepare bank connection session.';
+          console.error('[useBankStore] Link session catch:', detail);
+          set({
+            connectionError: { code: 'NETWORK_ERROR', message: detail },
+          });
+          return null;
         }
       },
 
