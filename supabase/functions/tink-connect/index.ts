@@ -123,9 +123,10 @@ Deno.serve(async (req: Request) => {
 
       if (existingConnection) {
         console.log('Existing connection found for credentialsId:', credentialsId)
+        const { tink_refresh_token: _secret, ...safeExisting } = existingConnection
         return jsonResponse({
           success: true,
-          connection: existingConnection,
+          connection: safeExisting,
           message: 'Bank connection already exists',
         })
       }
@@ -159,11 +160,14 @@ Deno.serve(async (req: Request) => {
 
     console.log('Bank connection created:', newConnection.id)
     // access_token is request-scoped (in-memory only, never persisted)
-    // refresh_token is stored in tink_refresh_token column — server-side only, not returned to client
+    // refresh_token is stored in tink_refresh_token column — server-side only (NFR17)
+
+    // Strip sensitive fields before returning to client
+    const { tink_refresh_token: _secret, ...safeConnection } = newConnection
 
     return jsonResponse({
       success: true,
-      connection: newConnection,
+      connection: safeConnection,
     })
   } catch (error) {
     // Log error without credentials

@@ -5,8 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fixed Tink Link actor client ID (provided by Tink for Tink Link integrations)
-const TINK_LINK_ACTOR_CLIENT_ID = 'df05e4b379934cd09963197cc855bfe9'
+// Tink Link actor client ID — loaded from env or falls back to Tink's standard actor ID
+const TINK_LINK_ACTOR_CLIENT_ID =
+  Deno.env.get('TINK_LINK_ACTOR_CLIENT_ID') ?? 'df05e4b379934cd09963197cc855bfe9'
 
 interface LinkSessionRequest {
   market?: string

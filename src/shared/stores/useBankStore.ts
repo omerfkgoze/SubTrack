@@ -65,6 +65,46 @@ function mapRowToDetectedSubscription(row: Record<string, unknown>): DetectedSub
   };
 }
 
+/**
+ * Extracts a user-facing error message from a Supabase FunctionsHttpError.
+ * Handles error.context.json() (raw Response body), error.message fallback.
+ */
+async function extractEdgeFunctionError(error: Record<string, unknown>, fallback: string): Promise<string> {
+  try {
+    if (error.context && typeof (error.context as Record<string, unknown>).json === 'function') {
+      const body = await (error.context as Response).json();
+      return body?.error ?? body?.detail ?? fallback;
+    }
+    if (error.message && typeof error.message === 'string') {
+      return error.message;
+    }
+  } catch {
+    if (error.message && typeof error.message === 'string') return error.message;
+  }
+  return fallback;
+}
+
+/**
+ * Same as extractEdgeFunctionError but also returns the raw parsed body for inspecting error codes.
+ */
+async function extractEdgeFunctionErrorWithBody(
+  error: Record<string, unknown>,
+  fallback: string,
+): Promise<{ detail: string; body: Record<string, unknown> | null }> {
+  try {
+    if (error.context && typeof (error.context as Record<string, unknown>).json === 'function') {
+      const body = await (error.context as Response).json();
+      return { detail: body?.error ?? body?.detail ?? fallback, body };
+    }
+    if (error.message && typeof error.message === 'string') {
+      return { detail: error.message, body: null };
+    }
+  } catch {
+    if (error.message && typeof error.message === 'string') return { detail: error.message, body: null };
+  }
+  return { detail: fallback, body: null };
+}
+
 export const useBankStore = create<BankStore>()(
   persist(
     (set) => ({
@@ -118,22 +158,10 @@ export const useBankStore = create<BankStore>()(
           });
 
           if (error) {
-            // Debug: log raw error shape
-            console.error('[useBankStore] Link session RAW error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-            console.error('[useBankStore] Link session data:', JSON.stringify(data));
-            let detail = 'Failed to prepare bank connection session.';
-            try {
-              if (error.context && typeof error.context.json === 'function') {
-                const body = await error.context.json();
-                console.error('[useBankStore] Link session body:', JSON.stringify(body));
-                detail = body?.error ?? detail;
-              } else if (error.message) {
-                detail = error.message;
-              }
-            } catch (parseErr) {
-              console.error('[useBankStore] Link session parse error:', parseErr);
-              if (error.message) detail = error.message;
-            }
+            const detail = await extractEdgeFunctionError(
+              error as Record<string, unknown>,
+              'Failed to prepare bank connection session.',
+            );
             console.error('[useBankStore] Link session error:', detail);
             set({
               connectionError: { code: 'SESSION_FAILED', message: detail },
@@ -189,20 +217,11 @@ export const useBankStore = create<BankStore>()(
           const { data, error } = await invokeWithRetry();
 
           if (error) {
-            // Extract the actual error detail from the Edge Function response
-            let detail = 'Connection setup failed. Please try again.';
-            try {
-              // FunctionsHttpError: error.context is the raw Response
-              if (error.context && typeof error.context.json === 'function') {
-                const body = await error.context.json();
-                detail = body?.error ?? detail;
-              } else if (error.message) {
-                detail = error.message;
-              }
-            } catch {
-              if (error.message) detail = error.message;
-            }
-            console.error('[useBankStore] Edge Function error:', detail, '| Raw:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+            const detail = await extractEdgeFunctionError(
+              error as Record<string, unknown>,
+              'Connection setup failed. Please try again.',
+            );
+            console.error('[useBankStore] Edge Function error:', detail);
             set({
               connectionError: { code: 'CONNECTION_FAILED', message: detail },
               isConnecting: false,
@@ -245,38 +264,30 @@ export const useBankStore = create<BankStore>()(
           });
 
           if (error) {
-            let detail = 'Subscription detection failed. Please try again.';
+            const { detail, body } = await extractEdgeFunctionErrorWithBody(
+              error as Record<string, unknown>,
+              'Subscription detection failed. Please try again.',
+            );
+            const errorField = body?.error ?? '';
             let errorCode = 'DETECTION_FAILED';
-            try {
-              if (error.context && typeof error.context.json === 'function') {
-                const body = await error.context.json();
-                const errorField = body?.error ?? '';
-                if (errorField === 'TOKEN_REFRESH_FAILED') {
-                  // Update local connection status to expired (AC9)
-                  set((state) => ({
-                    connections: state.connections.map((c) =>
-                      c.id === connectionId ? { ...c, status: 'expired' as const } : c,
-                    ),
-                  }));
-                  detail = 'Bank connection expired. Please reconnect.';
-                  errorCode = 'TOKEN_REFRESH_FAILED';
-                } else if (errorField === 'ENRICHMENT_SCOPE_MISSING') {
-                  detail = 'Your bank connection needs updated permissions. Please reconnect to enable subscription detection.';
-                  errorCode = 'ENRICHMENT_SCOPE_MISSING';
-                } else if (errorField === 'CONNECTION_NOT_ACTIVE') {
-                  detail = 'Bank connection is not active. Please reconnect your bank.';
-                  errorCode = 'CONNECTION_NOT_ACTIVE';
-                } else {
-                  detail = body?.detail ?? body?.error ?? detail;
-                }
-              } else if (error.message) {
-                detail = error.message;
-              }
-            } catch {
-              if (error.message) detail = error.message;
+            let message = detail;
+
+            if (errorField === 'TOKEN_REFRESH_FAILED') {
+              // Update local connection status to expired (AC9)
+              set((state) => ({
+                connections: state.connections.map((c) =>
+                  c.id === connectionId ? { ...c, status: 'expired' as const } : c,
+                ),
+              }));
+              message = 'Bank connection expired. Please reconnect.';
+              errorCode = 'TOKEN_REFRESH_FAILED';
+            } else if (errorField === 'CONNECTION_NOT_ACTIVE') {
+              message = 'Bank connection is not active. Please reconnect your bank.';
+              errorCode = 'CONNECTION_NOT_ACTIVE';
             }
+
             set({
-              detectionError: { code: errorCode, message: detail },
+              detectionError: { code: errorCode, message },
               isDetecting: false,
             });
             return;
@@ -320,14 +331,20 @@ export const useBankStore = create<BankStore>()(
             .eq('user_id', user.id);
 
           if (error) {
-            set({ isFetchingDetected: false });
+            set({
+              isFetchingDetected: false,
+              detectionError: { code: 'FETCH_DETECTED_FAILED', message: 'Failed to load detected subscriptions.' },
+            });
             return;
           }
 
           const detectedSubscriptions = (data ?? []).map(mapRowToDetectedSubscription);
           set({ detectedSubscriptions, isFetchingDetected: false });
         } catch {
-          set({ isFetchingDetected: false });
+          set({
+            isFetchingDetected: false,
+            detectionError: { code: 'NETWORK_ERROR', message: 'Network error loading detected subscriptions.' },
+          });
         }
       },
 
@@ -340,17 +357,10 @@ export const useBankStore = create<BankStore>()(
           });
 
           if (error) {
-            let detail = "Couldn't load supported banks. Please check your connection and try again.";
-            try {
-              if (error.context && typeof error.context.json === 'function') {
-                const body = await error.context.json();
-                detail = body?.error ?? detail;
-              } else if (error.message) {
-                detail = error.message;
-              }
-            } catch {
-              if (error.message) detail = error.message;
-            }
+            const detail = await extractEdgeFunctionError(
+              error as Record<string, unknown>,
+              "Couldn't load supported banks. Please check your connection and try again.",
+            );
             set({
               fetchBanksError: { code: 'FETCH_BANKS_FAILED', message: detail },
               isFetchingBanks: false,

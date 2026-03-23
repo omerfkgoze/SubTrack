@@ -249,7 +249,7 @@ export function BankConnectionScreen() {
           source={{ uri: tinkLinkUrl }}
           onNavigationStateChange={handleNavigationStateChange}
           onShouldStartLoadWithRequest={handleWebViewShouldStartLoad}
-          originWhitelist={['https://*', 'subtrack://*']}
+          originWhitelist={['https://link.tink.com/*', 'https://*.tink.com/*', 'subtrack://*']}
           style={styles.webview}
           startInLoadingState
           renderLoading={() => (

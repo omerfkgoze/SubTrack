@@ -181,14 +181,16 @@ interface TransactionGroup {
 
 /**
  * Normalizes a transaction description for grouping.
- * Removes trailing numbers/whitespace, lowercases.
+ * Banks often append transaction-specific identifiers to merchant names
+ * (e.g. "Netflix 12345678", "Spotify #4521"). Stripping these ensures
+ * recurring payments to the same merchant are grouped together.
  */
 function normalizeDescription(desc: string): string {
   return desc
     .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\d{2,}$/, '') // trailing numbers (e.g. reference IDs)
-    .replace(/\s*#\d+$/, '')
+    .replace(/\s+/g, ' ')        // collapse whitespace
+    .replace(/\s*\d{2,}$/, '')   // strip trailing reference IDs (e.g. "Netflix 12345678")
+    .replace(/\s*#\d+$/, '')     // strip trailing hash-refs (e.g. "Spotify #4521")
     .trim()
 }
 
@@ -210,7 +212,9 @@ function medianIntervalDays(dates: number[]): number {
 }
 
 /**
- * Maps median interval in days to a billing frequency.
+ * Maps median interval in days to a billing frequency (AC4).
+ * Ranges from acceptance criteria: 5-10d→weekly, 25-35d→monthly,
+ * 80-100d→quarterly, 340-400d→yearly. Gaps exclude irregular patterns.
  */
 function intervalToFrequency(days: number): 'weekly' | 'monthly' | 'quarterly' | 'yearly' | null {
   if (days >= 5 && days <= 10) return 'weekly'
@@ -244,11 +248,10 @@ function calculateGroupConfidence(group: TransactionGroup, frequency: string): n
   else if (count >= 3) score += 0.2
   else if (count === 2) score += 0.05
 
-  // Amount consistency
+  // Amount consistency (AC3): bonus only, no penalty for high variability
   const cv = amountCV(group.amounts)
   if (cv < 0.05) score += 0.2
   else if (cv < 0.15) score += 0.1
-  else score -= 0.1
 
   // Frequency recognition bonus
   if (['weekly', 'monthly', 'quarterly', 'yearly'].includes(frequency)) {

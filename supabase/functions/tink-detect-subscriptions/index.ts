@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
     const detectedRows = detectRecurringSubscriptions(transactions, user.id, connectionId)
     console.log('Detected recurring subscriptions:', detectedRows.length)
 
-    // AC7: Zero results case — still update last_synced_at
+    // AC7: Zero results case — still update last_synced_at (handled at end of function)
     if (detectedRows.length === 0) {
       await supabaseAdmin
         .from('bank_connections')

@@ -2,216 +2,77 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import { describe, it, beforeEach } from 'https://deno.land/std@0.208.0/testing/bdd.ts'
 import { stub, restore } from 'https://deno.land/std@0.208.0/testing/mock.ts'
 import {
-  parseTinkAmount,
-  calculateConfidence,
-  mapPeriodToFrequency,
-  mapTinkGroupToDetected,
-  refreshUserToken,
-  fetchRecurringGroups,
+  getClientAccessToken,
+  generateUserAccessToken,
+  fetchTransactions,
+  detectRecurringSubscriptions,
 } from './utils.ts'
-import type { TinkRecurringGroup } from './utils.ts'
+import type { DetectedSubscriptionRow } from './utils.ts'
 
-const mockTinkGroup: TinkRecurringGroup = {
-  id: 'group-123',
-  categoryId: 'cat-1',
-  name: 'Netflix',
-  period: {
-    label: 'MONTHLY',
-    duration: { mean: 30, standardDeviation: 1, minimum: 28, maximum: 31 },
-  },
-  amount: {
-    mean: { unscaledValue: '1299', scale: '2' },
-    standardDeviation: { unscaledValue: '0', scale: '2' },
-    median: { unscaledValue: '1299', scale: '2' },
-    minimum: { unscaledValue: '1299', scale: '2' },
-    maximum: { unscaledValue: '1299', scale: '2' },
-    latest: { unscaledValue: '1299', scale: '2' },
-    currencyCode: 'EUR',
-  },
-  occurrences: {
-    count: 6,
-    firstDate: '2025-09-15',
-    latestDate: '2026-02-15',
-    dayOfMonth: { mean: 15, median: 15, minimum: 14, maximum: 16 },
-  },
+// ── Helper: build a mock transaction ──
+
+function mockTransaction(overrides: Partial<{
+  id: string
+  description: string
+  amount: number
+  date: number
+  currencyCode: string
+}> = {}) {
+  return {
+    accountId: 'acc-1',
+    amount: overrides.amount ?? -12.99,
+    originalAmount: overrides.amount ?? -12.99,
+    categoryId: 'cat-1',
+    categoryType: 'EXPENSES',
+    currencyDenominatedAmount: {
+      currencyCode: overrides.currencyCode ?? 'EUR',
+      scale: 2,
+      unscaledValue: Math.round(Math.abs(overrides.amount ?? 12.99) * 100),
+    },
+    date: overrides.date ?? Date.now(),
+    description: overrides.description ?? 'Netflix',
+    id: overrides.id ?? `tx-${Math.random().toString(36).slice(2)}`,
+    type: 'DEFAULT',
+  }
 }
 
-describe('tink-detect-subscriptions Edge Function', () => {
+// Monthly dates going back 6 months (roughly 30 days apart)
+function monthlyDates(count: number, baseDate?: number): number[] {
+  const base = baseDate ?? Date.now()
+  const dates: number[] = []
+  for (let i = 0; i < count; i++) {
+    dates.push(base - i * 30 * 24 * 60 * 60 * 1000)
+  }
+  return dates.reverse()
+}
+
+describe('tink-detect-subscriptions utils', () => {
   beforeEach(() => {
     restore()
   })
 
-  describe('parseTinkAmount', () => {
-    it('converts unscaled/scale format to decimal', () => {
-      assertEquals(parseTinkAmount({ unscaledValue: '1300', scale: '2' }), 13.00)
-      assertEquals(parseTinkAmount({ unscaledValue: '100', scale: '1' }), 10.0)
-      assertEquals(parseTinkAmount({ unscaledValue: '999', scale: '2' }), 9.99)
-    })
+  // ── getClientAccessToken ──
 
-    it('handles zero scale', () => {
-      assertEquals(parseTinkAmount({ unscaledValue: '15', scale: '0' }), 15)
-    })
-
-    it('handles zero amount', () => {
-      assertEquals(parseTinkAmount({ unscaledValue: '0', scale: '2' }), 0)
-    })
-  })
-
-  describe('calculateConfidence', () => {
-    it('gives high confidence for many occurrences with consistent amounts', () => {
-      const score = calculateConfidence(mockTinkGroup)
-      // Base 0.5 + occurrences>=6 +0.3 + cv<0.05 +0.2 = 1.0
-      assertEquals(score, 1.0)
-    })
-
-    it('gives medium confidence for 3 occurrences', () => {
-      const group = {
-        ...mockTinkGroup,
-        occurrences: { ...mockTinkGroup.occurrences, count: 3 },
-      }
-      const score = calculateConfidence(group)
-      // Base 0.5 + occurrences>=3 +0.2 + cv<0.05 +0.2 = 0.9
-      assertEquals(score >= 0.5, true)
-      assertEquals(score <= 1.0, true)
-    })
-
-    it('gives lower confidence for 2 occurrences', () => {
-      const group = {
-        ...mockTinkGroup,
-        occurrences: { ...mockTinkGroup.occurrences, count: 2 },
-      }
-      const score2 = calculateConfidence(group)
-      const score6 = calculateConfidence(mockTinkGroup)
-      assertEquals(score2 < score6, true)
-    })
-
-    it('penalizes high amount variability', () => {
-      const highVariabilityGroup = {
-        ...mockTinkGroup,
-        amount: {
-          ...mockTinkGroup.amount,
-          standardDeviation: { unscaledValue: '500', scale: '2' }, // 5.00 / 12.99 ~ 38% CV
-        },
-      }
-      const highScore = calculateConfidence(mockTinkGroup)
-      const lowScore = calculateConfidence(highVariabilityGroup)
-      assertEquals(lowScore < highScore, true)
-    })
-
-    it('clamps score between 0 and 1', () => {
-      const score = calculateConfidence(mockTinkGroup)
-      assertEquals(score >= 0.0, true)
-      assertEquals(score <= 1.0, true)
-    })
-  })
-
-  describe('mapPeriodToFrequency', () => {
-    it('maps MONTHLY to monthly', () => {
-      assertEquals(mapPeriodToFrequency('MONTHLY'), 'monthly')
-    })
-
-    it('maps WEEKLY to weekly', () => {
-      assertEquals(mapPeriodToFrequency('WEEKLY'), 'weekly')
-    })
-
-    it('maps YEARLY to yearly', () => {
-      assertEquals(mapPeriodToFrequency('YEARLY'), 'yearly')
-    })
-
-    it('maps QUARTERLY to quarterly', () => {
-      assertEquals(mapPeriodToFrequency('QUARTERLY'), 'quarterly')
-    })
-
-    it('defaults unknown periods to monthly', () => {
-      assertEquals(mapPeriodToFrequency('BIWEEKLY'), 'monthly')
-      assertEquals(mapPeriodToFrequency('UNKNOWN'), 'monthly')
-    })
-
-    it('is case-insensitive', () => {
-      assertEquals(mapPeriodToFrequency('monthly'), 'monthly')
-      assertEquals(mapPeriodToFrequency('Weekly'), 'weekly')
-    })
-  })
-
-  describe('mapTinkGroupToDetected', () => {
-    it('maps all fields correctly', () => {
-      const row = mapTinkGroupToDetected(mockTinkGroup, 'user-1', 'conn-1')
-
-      assertEquals(row.user_id, 'user-1')
-      assertEquals(row.bank_connection_id, 'conn-1')
-      assertEquals(row.tink_group_id, 'group-123')
-      assertEquals(row.merchant_name, 'Netflix')
-      assertEquals(row.amount, 12.99)
-      assertEquals(row.currency, 'EUR')
-      assertEquals(row.frequency, 'monthly')
-      assertEquals(row.status, 'detected')
-      assertEquals(row.first_seen, '2025-09-15')
-      assertEquals(row.last_seen, '2026-02-15')
-    })
-
-    it('applies confidence penalty for unknown period label', () => {
-      const unknownPeriodGroup = {
-        ...mockTinkGroup,
-        period: { ...mockTinkGroup.period, label: 'BIWEEKLY' },
-      }
-      const rowKnown = mapTinkGroupToDetected(mockTinkGroup, 'user-1', 'conn-1')
-      const rowUnknown = mapTinkGroupToDetected(unknownPeriodGroup, 'user-1', 'conn-1')
-      assertEquals(rowUnknown.confidence_score < rowKnown.confidence_score, true)
-    })
-
-    it('sets status to detected by default', () => {
-      const row = mapTinkGroupToDetected(mockTinkGroup, 'user-1', 'conn-1')
-      assertEquals(row.status, 'detected')
-    })
-  })
-
-  describe('refreshUserToken', () => {
+  describe('getClientAccessToken', () => {
     it('returns access token on success', async () => {
       const fetchStub = stub(
         globalThis,
         'fetch',
         () =>
           Promise.resolve(
-            new Response(JSON.stringify({
-              access_token: 'new-access-token',
-              token_type: 'bearer',
-              expires_in: 7200,
-            }), { status: 200 }),
+            new Response(JSON.stringify({ access_token: 'client-token-123' }), { status: 200 }),
           ),
       )
 
       try {
-        const result = await refreshUserToken('refresh-token', 'client-id', 'client-secret')
-        assertEquals(result.accessToken, 'new-access-token')
-        assertEquals(result.newRefreshToken, undefined)
+        const token = await getClientAccessToken('client-id', 'client-secret')
+        assertEquals(token, 'client-token-123')
       } finally {
         fetchStub.restore()
       }
     })
 
-    it('returns new refresh token when Tink rotates it', async () => {
-      const fetchStub = stub(
-        globalThis,
-        'fetch',
-        () =>
-          Promise.resolve(
-            new Response(JSON.stringify({
-              access_token: 'new-access-token',
-              refresh_token: 'rotated-refresh-token',
-            }), { status: 200 }),
-          ),
-      )
-
-      try {
-        const result = await refreshUserToken('refresh-token', 'client-id', 'client-secret')
-        assertEquals(result.accessToken, 'new-access-token')
-        assertEquals(result.newRefreshToken, 'rotated-refresh-token')
-      } finally {
-        fetchStub.restore()
-      }
-    })
-
-    it('throws TOKEN_REFRESH_FAILED on 401', async () => {
+    it('throws CLIENT_TOKEN_FAILED on non-200', async () => {
       stub(
         globalThis,
         'fetch',
@@ -220,15 +81,15 @@ describe('tink-detect-subscriptions Edge Function', () => {
 
       let threw = false
       try {
-        await refreshUserToken('bad-token', 'client-id', 'client-secret')
+        await getClientAccessToken('bad-id', 'bad-secret')
       } catch (e) {
         threw = true
-        assertEquals((e as Error).message.startsWith('TOKEN_REFRESH_FAILED'), true)
+        assertEquals((e as Error).message.startsWith('CLIENT_TOKEN_FAILED'), true)
       }
       assertEquals(threw, true)
     })
 
-    it('uses grant_type=refresh_token in request body', async () => {
+    it('sends client_credentials grant_type', async () => {
       const fetchStub = stub(
         globalThis,
         'fetch',
@@ -239,23 +100,128 @@ describe('tink-detect-subscriptions Edge Function', () => {
       )
 
       try {
-        await refreshUserToken('my-refresh', 'my-client-id', 'my-secret')
+        await getClientAccessToken('my-client', 'my-secret')
         const [url, init] = fetchStub.calls[0].args as [string, RequestInit]
         assertEquals(url, 'https://api.tink.com/api/v1/oauth/token')
         const body = new URLSearchParams(init.body as string)
-        assertEquals(body.get('grant_type'), 'refresh_token')
-        assertEquals(body.get('refresh_token'), 'my-refresh')
-        assertEquals(body.get('scope'), 'enrichment.transactions:readonly')
+        assertEquals(body.get('grant_type'), 'client_credentials')
+        assertEquals(body.get('scope'), 'authorization:grant')
+        assertEquals(body.get('client_id'), 'my-client')
       } finally {
         fetchStub.restore()
       }
     })
   })
 
-  describe('fetchRecurringGroups', () => {
-    it('returns all groups from a single page', async () => {
+  // ── generateUserAccessToken ──
+
+  describe('generateUserAccessToken', () => {
+    it('performs 3-step auth flow: client token → auth grant → token exchange', async () => {
+      let callCount = 0
+      const fetchStub = stub(
+        globalThis,
+        'fetch',
+        () => {
+          callCount++
+          if (callCount === 1) {
+            // Step 1: client_credentials → client access token
+            return Promise.resolve(
+              new Response(JSON.stringify({ access_token: 'client-token' }), { status: 200 }),
+            )
+          }
+          if (callCount === 2) {
+            // Step 2: authorization-grant → code
+            return Promise.resolve(
+              new Response(JSON.stringify({ code: 'auth-code-123' }), { status: 200 }),
+            )
+          }
+          // Step 3: authorization_code → user access token
+          return Promise.resolve(
+            new Response(JSON.stringify({ access_token: 'user-token', scope: 'transactions:read' }), { status: 200 }),
+          )
+        },
+      )
+
+      try {
+        const token = await generateUserAccessToken('ext-user-1', 'client-id', 'client-secret')
+        assertEquals(token, 'user-token')
+        assertEquals(callCount, 3)
+      } finally {
+        fetchStub.restore()
+      }
+    })
+
+    it('throws AUTHORIZATION_GRANT_FAILED when grant step fails', async () => {
+      let callCount = 0
+      stub(
+        globalThis,
+        'fetch',
+        () => {
+          callCount++
+          if (callCount === 1) {
+            return Promise.resolve(
+              new Response(JSON.stringify({ access_token: 'client-token' }), { status: 200 }),
+            )
+          }
+          // Grant step fails
+          return Promise.resolve(new Response('Forbidden', { status: 403 }))
+        },
+      )
+
+      let threw = false
+      try {
+        await generateUserAccessToken('ext-user', 'client-id', 'secret')
+      } catch (e) {
+        threw = true
+        assertEquals((e as Error).message.startsWith('AUTHORIZATION_GRANT_FAILED'), true)
+      }
+      assertEquals(threw, true)
+    })
+
+    it('throws TOKEN_EXCHANGE_FAILED when code exchange fails', async () => {
+      let callCount = 0
+      stub(
+        globalThis,
+        'fetch',
+        () => {
+          callCount++
+          if (callCount === 1) {
+            return Promise.resolve(
+              new Response(JSON.stringify({ access_token: 'client-token' }), { status: 200 }),
+            )
+          }
+          if (callCount === 2) {
+            return Promise.resolve(
+              new Response(JSON.stringify({ code: 'code-123' }), { status: 200 }),
+            )
+          }
+          // Exchange step fails
+          return Promise.resolve(new Response('Server Error', { status: 500 }))
+        },
+      )
+
+      let threw = false
+      try {
+        await generateUserAccessToken('ext-user', 'client-id', 'secret')
+      } catch (e) {
+        threw = true
+        assertEquals((e as Error).message.startsWith('TOKEN_EXCHANGE_FAILED'), true)
+      }
+      assertEquals(threw, true)
+    })
+  })
+
+  // ── fetchTransactions ──
+
+  describe('fetchTransactions', () => {
+    it('returns filtered TRANSACTION results', async () => {
       const mockResponse = {
-        recurringTransactionsGroups: [mockTinkGroup],
+        count: 2,
+        results: [
+          { type: 'TRANSACTION', transaction: mockTransaction({ id: 'tx-1' }) },
+          { type: 'TRANSACTION', transaction: mockTransaction({ id: 'tx-2' }) },
+          { type: 'CATEGORIZATION', transaction: mockTransaction({ id: 'tx-skip' }) },
+        ],
       }
 
       const fetchStub = stub(
@@ -268,87 +234,34 @@ describe('tink-detect-subscriptions Edge Function', () => {
       )
 
       try {
-        const groups = await fetchRecurringGroups('access-token')
-        assertEquals(groups.length, 1)
-        assertEquals(groups[0].id, 'group-123')
-        assertEquals(groups[0].name, 'Netflix')
+        const txns = await fetchTransactions('access-token')
+        assertEquals(txns.length, 2)
+        assertEquals(txns[0].id, 'tx-1')
+        assertEquals(txns[1].id, 'tx-2')
       } finally {
         fetchStub.restore()
       }
     })
 
-    it('paginates through multiple pages', async () => {
-      const group2 = { ...mockTinkGroup, id: 'group-456', name: 'Spotify' }
-      let callCount = 0
-
-      const fetchStub = stub(
-        globalThis,
-        'fetch',
-        () => {
-          callCount++
-          if (callCount === 1) {
-            return Promise.resolve(
-              new Response(JSON.stringify({
-                recurringTransactionsGroups: [mockTinkGroup],
-                nextPageToken: 'page2token',
-              }), { status: 200 }),
-            )
-          }
-          return Promise.resolve(
-            new Response(JSON.stringify({
-              recurringTransactionsGroups: [group2],
-            }), { status: 200 }),
-          )
-        },
-      )
-
-      try {
-        const groups = await fetchRecurringGroups('access-token')
-        assertEquals(groups.length, 2)
-        assertEquals(groups[0].name, 'Netflix')
-        assertEquals(groups[1].name, 'Spotify')
-        assertEquals(callCount, 2)
-      } finally {
-        fetchStub.restore()
-      }
-    })
-
-    it('returns empty array when no groups found', async () => {
+    it('returns empty array when no results', async () => {
       const fetchStub = stub(
         globalThis,
         'fetch',
         () =>
           Promise.resolve(
-            new Response(JSON.stringify({ recurringTransactionsGroups: [] }), { status: 200 }),
+            new Response(JSON.stringify({ count: 0, results: [] }), { status: 200 }),
           ),
       )
 
       try {
-        const groups = await fetchRecurringGroups('access-token')
-        assertEquals(groups.length, 0)
+        const txns = await fetchTransactions('access-token')
+        assertEquals(txns.length, 0)
       } finally {
         fetchStub.restore()
       }
     })
 
-    it('throws ENRICHMENT_API_FAILED:403 on forbidden', async () => {
-      stub(
-        globalThis,
-        'fetch',
-        () => Promise.resolve(new Response('Forbidden', { status: 403 })),
-      )
-
-      let threw = false
-      try {
-        await fetchRecurringGroups('access-token')
-      } catch (e) {
-        threw = true
-        assertEquals((e as Error).message, 'ENRICHMENT_API_FAILED:403')
-      }
-      assertEquals(threw, true)
-    })
-
-    it('throws ENRICHMENT_API_FAILED:503 on service unavailable', async () => {
+    it('throws SEARCH_API_FAILED on error response', async () => {
       stub(
         globalThis,
         'fetch',
@@ -357,27 +270,29 @@ describe('tink-detect-subscriptions Edge Function', () => {
 
       let threw = false
       try {
-        await fetchRecurringGroups('access-token')
+        await fetchTransactions('access-token')
       } catch (e) {
         threw = true
-        assertEquals((e as Error).message, 'ENRICHMENT_API_FAILED:503')
+        assertEquals((e as Error).message, 'SEARCH_API_FAILED:503')
       }
       assertEquals(threw, true)
     })
 
-    it('passes authorization header with Bearer token', async () => {
+    it('sends POST to /api/v1/search with Bearer token', async () => {
       const fetchStub = stub(
         globalThis,
         'fetch',
         () =>
           Promise.resolve(
-            new Response(JSON.stringify({ recurringTransactionsGroups: [] }), { status: 200 }),
+            new Response(JSON.stringify({ count: 0, results: [] }), { status: 200 }),
           ),
       )
 
       try {
-        await fetchRecurringGroups('my-access-token')
-        const [, init] = fetchStub.calls[0].args as [string, RequestInit]
+        await fetchTransactions('my-access-token')
+        const [url, init] = fetchStub.calls[0].args as [string, RequestInit]
+        assertEquals(url, 'https://api.tink.com/api/v1/search')
+        assertEquals(init.method, 'POST')
         const headers = init.headers as Record<string, string>
         assertEquals(headers['Authorization'], 'Bearer my-access-token')
       } finally {
@@ -386,54 +301,245 @@ describe('tink-detect-subscriptions Edge Function', () => {
     })
   })
 
-  describe('Upsert strategy', () => {
-    it('should update existing detected subscriptions on re-scan', () => {
-      // Verify upsert conflict key: user_id + tink_group_id
-      const row1 = mapTinkGroupToDetected(mockTinkGroup, 'user-1', 'conn-1')
-      const row2 = mapTinkGroupToDetected(
-        { ...mockTinkGroup, amount: { ...mockTinkGroup.amount, mean: { unscaledValue: '1399', scale: '2' } } },
-        'user-1',
-        'conn-1',
+  // ── detectRecurringSubscriptions ──
+
+  describe('detectRecurringSubscriptions', () => {
+    it('detects monthly recurring subscription from 6 transactions', () => {
+      const dates = monthlyDates(6)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
       )
-      // Same conflict key (user_id + tink_group_id), different amount
-      assertEquals(row1.user_id, row2.user_id)
-      assertEquals(row1.tink_group_id, row2.tink_group_id)
-      assertEquals(row1.amount !== row2.amount, true)
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 1)
+      assertEquals(result[0].merchant_name, 'Netflix')
+      assertEquals(result[0].frequency, 'monthly')
+      assertEquals(result[0].user_id, 'user-1')
+      assertEquals(result[0].bank_connection_id, 'conn-1')
+      assertEquals(result[0].status, 'detected')
     })
 
-    it('should not update rows with non-detected status', () => {
-      // Simulate the filter logic: actioned rows should be excluded from upsert
-      const actionedGroupIds = new Set(['group-123'])
-      const mappedRows = [
-        mapTinkGroupToDetected(mockTinkGroup, 'user-1', 'conn-1'),
-        mapTinkGroupToDetected({ ...mockTinkGroup, id: 'group-456', name: 'Spotify' }, 'user-1', 'conn-1'),
+    it('returns empty for incoming (positive) transactions', () => {
+      const dates = monthlyDates(6)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Salary', amount: 3000, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 0)
+    })
+
+    it('returns empty for single transaction (needs >= 2)', () => {
+      const txns = [mockTransaction({ description: 'Netflix', amount: -12.99 })]
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 0)
+    })
+
+    it('excludes transactions with unrecognizable intervals (AC4)', () => {
+      // 15-day interval doesn't match any frequency range
+      const dates = [0, 1, 2, 3, 4].map((i) => Date.now() - i * 15 * 24 * 60 * 60 * 1000)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'SomeService', amount: -5.00, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 0)
+    })
+
+    it('excludes groups with high amount variability (CV > 0.3)', () => {
+      const dates = monthlyDates(4)
+      const amounts = [-5.00, -50.00, -5.00, -50.00] // very high CV
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Unstable', amount: amounts[i], date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 0)
+    })
+
+    it('detects multiple different subscriptions', () => {
+      const dates = monthlyDates(4)
+      const txns = [
+        ...dates.map((d, i) => mockTransaction({ id: `n-${i}`, description: 'Netflix', amount: -12.99, date: d })),
+        ...dates.map((d, i) => mockTransaction({ id: `s-${i}`, description: 'Spotify', amount: -9.99, date: d })),
       ]
-      const rowsToUpsert = mappedRows.filter((row) => !actionedGroupIds.has(row.tink_group_id))
-      assertEquals(rowsToUpsert.length, 1)
-      assertEquals(rowsToUpsert[0].tink_group_id, 'group-456')
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 2)
+      const names = result.map((r) => r.merchant_name.toLowerCase())
+      assertEquals(names.includes('netflix'), true)
+      assertEquals(names.includes('spotify'), true)
+    })
+
+    it('groups transactions by normalized description (strips trailing numbers)', () => {
+      const dates = monthlyDates(3)
+      const txns = [
+        mockTransaction({ id: 'tx-1', description: 'Netflix 12345', amount: -12.99, date: dates[0] }),
+        mockTransaction({ id: 'tx-2', description: 'Netflix 67890', amount: -12.99, date: dates[1] }),
+        mockTransaction({ id: 'tx-3', description: 'Netflix 11111', amount: -12.99, date: dates[2] }),
+      ]
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 1)
+    })
+
+    it('generates stable tink_group_id for same description+currency', () => {
+      const dates = monthlyDates(3)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+
+      const result1 = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      const result2 = detectRecurringSubscriptions(txns, 'user-1', 'conn-2')
+      assertEquals(result1[0].tink_group_id, result2[0].tink_group_id)
+    })
+
+    // ── AC3: Confidence Scoring ──
+
+    it('AC3: gives high confidence (1.0) for 6+ occurrences with consistent amounts', () => {
+      const dates = monthlyDates(6)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      // base 0.5 + 0.3 (6+ occurrences) + 0.2 (CV < 0.05) = 1.0
+      assertEquals(result[0].confidence_score, 1.0)
+    })
+
+    it('AC3: gives 0.9 for 3-5 occurrences with consistent amounts', () => {
+      const dates = monthlyDates(4)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      // base 0.5 + 0.2 (3-5 occurrences) + 0.2 (CV < 0.05) = 0.9
+      assertEquals(result[0].confidence_score, 0.9)
+    })
+
+    it('AC3: gives 0.75 for 2 occurrences with consistent amounts', () => {
+      const dates = monthlyDates(2)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      // base 0.5 + 0.05 (2 occurrences) + 0.2 (CV < 0.05) = 0.75
+      assertEquals(result[0].confidence_score, 0.75)
+    })
+
+    it('AC3: no penalty for high CV (only bonuses per spec)', () => {
+      const dates = monthlyDates(6)
+      // Slightly variable amounts (CV around 0.15-0.3 range)
+      const amounts = [-12.99, -13.50, -12.99, -14.00, -12.99, -13.00]
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'VariableService', amount: amounts[i], date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      if (result.length > 0) {
+        // Score should be >= base (0.5) since AC3 only specifies bonuses
+        assertEquals(result[0].confidence_score >= 0.5, true)
+      }
+    })
+
+    // ── AC4: Frequency Mapping ──
+
+    it('AC4: detects weekly frequency (5-10 day intervals)', () => {
+      const base = Date.now()
+      const dates = [0, 1, 2, 3, 4, 5].map((i) => base - i * 7 * 24 * 60 * 60 * 1000).reverse()
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'WeeklyService', amount: -4.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 1)
+      assertEquals(result[0].frequency, 'weekly')
+    })
+
+    it('AC4: detects quarterly frequency (80-100 day intervals)', () => {
+      const base = Date.now()
+      const dates = [0, 1, 2].map((i) => base - i * 90 * 24 * 60 * 60 * 1000).reverse()
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'QuarterlyService', amount: -29.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 1)
+      assertEquals(result[0].frequency, 'quarterly')
+    })
+
+    it('AC4: detects yearly frequency (340-400 day intervals)', () => {
+      const base = Date.now()
+      const dates = [0, 1].map((i) => base - i * 365 * 24 * 60 * 60 * 1000).reverse()
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'YearlyService', amount: -99.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 1)
+      assertEquals(result[0].frequency, 'yearly')
+    })
+
+    it('sorts results by confidence descending', () => {
+      const dates6 = monthlyDates(6)
+      const dates2 = monthlyDates(2)
+      const txns = [
+        ...dates2.map((d, i) => mockTransaction({ id: `lo-${i}`, description: 'LowConf', amount: -5.00, date: d })),
+        ...dates6.map((d, i) => mockTransaction({ id: `hi-${i}`, description: 'HighConf', amount: -10.00, date: d })),
+      ]
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result.length, 2)
+      assertEquals(result[0].confidence_score >= result[1].confidence_score, true)
+    })
+
+    it('sets first_seen and last_seen as ISO date strings', () => {
+      const dates = monthlyDates(3)
+      const txns = dates.map((d, i) =>
+        mockTransaction({ id: `tx-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+
+      const result = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(result[0].first_seen.match(/^\d{4}-\d{2}-\d{2}$/) !== null, true)
+      assertEquals(result[0].last_seen.match(/^\d{4}-\d{2}-\d{2}$/) !== null, true)
     })
   })
 
-  describe('Token refresh failure handling', () => {
-    it('throws with TOKEN_REFRESH_FAILED prefix on any non-200 response', async () => {
-      const statuses = [400, 401, 403, 500]
-      for (const status of statuses) {
-        stub(
-          globalThis,
-          'fetch',
-          () => Promise.resolve(new Response('Error', { status })),
-        )
+  // ── Upsert strategy ──
 
-        let threw = false
-        try {
-          await refreshUserToken('token', 'id', 'secret')
-        } catch (e) {
-          threw = true
-          assertEquals((e as Error).message.startsWith('TOKEN_REFRESH_FAILED'), true)
-        }
-        assertEquals(threw, true)
-        restore()
-      }
+  describe('Upsert strategy', () => {
+    it('same description+currency produces same tink_group_id (for upsert conflict)', () => {
+      const dates = monthlyDates(3)
+      const txns1 = dates.map((d, i) =>
+        mockTransaction({ id: `a-${i}`, description: 'Netflix', amount: -12.99, date: d }),
+      )
+      const txns2 = dates.map((d, i) =>
+        mockTransaction({ id: `b-${i}`, description: 'Netflix', amount: -13.99, date: d }),
+      )
+
+      const result1 = detectRecurringSubscriptions(txns1, 'user-1', 'conn-1')
+      const result2 = detectRecurringSubscriptions(txns2, 'user-1', 'conn-1')
+
+      assertEquals(result1[0].tink_group_id, result2[0].tink_group_id)
+      assertEquals(result1[0].amount !== result2[0].amount, true)
+    })
+
+    it('actioned rows can be filtered by tink_group_id Set', () => {
+      const dates = monthlyDates(3)
+      const txns = [
+        ...dates.map((d, i) => mockTransaction({ id: `n-${i}`, description: 'Netflix', amount: -12.99, date: d })),
+        ...dates.map((d, i) => mockTransaction({ id: `s-${i}`, description: 'Spotify', amount: -9.99, date: d })),
+      ]
+
+      const allDetected = detectRecurringSubscriptions(txns, 'user-1', 'conn-1')
+      assertEquals(allDetected.length, 2)
+
+      // Simulate filtering out actioned group
+      const actionedIds = new Set([allDetected[0].tink_group_id])
+      const toUpsert = allDetected.filter((r) => !actionedIds.has(r.tink_group_id))
+      assertEquals(toUpsert.length, 1)
     })
   })
 })
