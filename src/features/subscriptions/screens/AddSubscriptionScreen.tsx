@@ -95,9 +95,9 @@ export function AddSubscriptionScreen() {
       : 'monthly';
     setValue('billing_cycle', cycle);
 
-    // Calculate next renewal from last seen
-    // We don't have lastSeen in prefill, so compute from today + frequency
-    const computed = computeRenewalDate(new Date().toISOString(), cycle);
+    // Calculate next renewal from lastSeen date (or fallback to today)
+    const baseDate = prefill.lastSeen ?? new Date().toISOString();
+    const computed = computeRenewalDate(baseDate, cycle);
     setRenewalDate(computed);
     setValue('renewal_date', format(computed, 'yyyy-MM-dd'));
   }, [prefill, setValue]);

@@ -31,7 +31,6 @@ interface BankActions {
   fetchDetectedSubscriptions: () => Promise<void>;
   approveDetectedSubscription: (id: string) => Promise<void>;
   dismissDetectedSubscription: (id: string) => Promise<void>;
-  detectedCount: () => number;
 }
 
 export type BankStore = BankState & BankActions;
@@ -357,44 +356,48 @@ export const useBankStore = create<BankStore>()(
         const user = useAuthStore.getState().user;
         if (!user) return;
 
-        const { error } = await supabase
-          .from('detected_subscriptions')
-          .update({ status: 'approved' })
-          .eq('id', id)
-          .eq('user_id', user.id);
+        try {
+          const { error } = await supabase
+            .from('detected_subscriptions')
+            .update({ status: 'approved' })
+            .eq('id', id)
+            .eq('user_id', user.id);
 
-        if (error) {
-          set({ detectionError: { code: 'APPROVE_FAILED', message: 'Failed to update. Please try again.' } });
-          return;
+          if (error) {
+            set({ detectionError: { code: 'APPROVE_FAILED', message: 'Failed to update. Please try again.' } });
+            return;
+          }
+
+          set((state) => ({
+            detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+          }));
+        } catch {
+          set({ detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' } });
         }
-
-        set((state) => ({
-          detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
-        }));
       },
 
       dismissDetectedSubscription: async (id: string) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
-        const { error } = await supabase
-          .from('detected_subscriptions')
-          .update({ status: 'dismissed' })
-          .eq('id', id)
-          .eq('user_id', user.id);
+        try {
+          const { error } = await supabase
+            .from('detected_subscriptions')
+            .update({ status: 'dismissed' })
+            .eq('id', id)
+            .eq('user_id', user.id);
 
-        if (error) {
-          set({ detectionError: { code: 'DISMISS_FAILED', message: 'Failed to dismiss. Please try again.' } });
-          return;
+          if (error) {
+            set({ detectionError: { code: 'DISMISS_FAILED', message: 'Failed to dismiss. Please try again.' } });
+            return;
+          }
+
+          set((state) => ({
+            detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+          }));
+        } catch {
+          set({ detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' } });
         }
-
-        set((state) => ({
-          detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
-        }));
-      },
-
-      detectedCount: () => {
-        return useBankStore.getState().detectedSubscriptions.length;
       },
 
       fetchSupportedBanks: async (market?: string) => {

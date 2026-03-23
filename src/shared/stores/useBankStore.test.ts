@@ -522,6 +522,18 @@ describe('useBankStore', () => {
       expect(detectionError).toBeNull();
     });
 
+    it('sets NETWORK_ERROR on approve exception', async () => {
+      supabase.from.mockImplementation(() => { throw new Error('Network down'); });
+
+      await act(async () => {
+        await useBankStore.getState().approveDetectedSubscription('det-1');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectionError?.code).toBe('NETWORK_ERROR');
+    });
+
     it('sets error on approve failure', async () => {
       const mockEq = jest.fn();
       mockEq.mockReturnValueOnce({ eq: mockEq });
@@ -564,6 +576,18 @@ describe('useBankStore', () => {
       expect(detectionError).toBeNull();
     });
 
+    it('sets NETWORK_ERROR on dismiss exception', async () => {
+      supabase.from.mockImplementation(() => { throw new Error('Network down'); });
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectionError?.code).toBe('NETWORK_ERROR');
+    });
+
     it('sets error on dismiss failure', async () => {
       const mockEq = jest.fn();
       mockEq.mockReturnValueOnce({ eq: mockEq });
@@ -580,20 +604,4 @@ describe('useBankStore', () => {
     });
   });
 
-  describe('detectedCount', () => {
-    it('returns the number of items in detectedSubscriptions', () => {
-      useBankStore.setState({
-        detectedSubscriptions: [
-          { id: 'det-1', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g1', merchantName: 'A', amount: 1, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '2025-01-01', lastSeen: '2026-01-01' },
-          { id: 'det-2', userId: 'u1', bankConnectionId: 'c1', tinkGroupId: 'g2', merchantName: 'B', amount: 2, currency: 'EUR', frequency: 'yearly', confidenceScore: 0.7, status: 'detected', firstSeen: '2025-01-01', lastSeen: '2026-01-01' },
-        ],
-      });
-      expect(useBankStore.getState().detectedCount()).toBe(2);
-    });
-
-    it('returns 0 when no detected subscriptions', () => {
-      useBankStore.setState({ detectedSubscriptions: [] });
-      expect(useBankStore.getState().detectedCount()).toBe(0);
-    });
-  });
 });

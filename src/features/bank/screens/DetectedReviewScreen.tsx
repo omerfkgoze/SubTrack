@@ -11,33 +11,10 @@ import { useBankStore } from '@shared/stores/useBankStore';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { DetectedReviewCard } from '../components/DetectedReviewCard';
-import { addMonths, addWeeks, addYears, addDays, format } from 'date-fns';
-
 type DetectedReviewNavProp = CompositeNavigationProp<
   NativeStackNavigationProp<SettingsStackParamList, 'DetectedReview'>,
   BottomTabNavigationProp<MainTabsParamList>
 >;
-
-function calculateRenewalDate(lastSeen: string, frequency: DetectedSubscription['frequency']): string {
-  const base = new Date(lastSeen);
-  let renewal: Date;
-  switch (frequency) {
-    case 'weekly':
-      renewal = addWeeks(base, 1);
-      break;
-    case 'quarterly':
-      renewal = addDays(base, 90);
-      break;
-    case 'yearly':
-      renewal = addYears(base, 1);
-      break;
-    case 'monthly':
-    default:
-      renewal = addMonths(base, 1);
-      break;
-  }
-  return format(renewal, 'yyyy-MM-dd');
-}
 
 export function DetectedReviewScreen() {
   const theme = useTheme();
@@ -76,6 +53,7 @@ export function DetectedReviewScreen() {
           billing_cycle: item.frequency,
           currency: item.currency,
           detectedId: item.id,
+          lastSeen: item.lastSeen,
         },
       });
     },
@@ -170,9 +148,6 @@ export function DetectedReviewScreen() {
     </View>
   );
 }
-
-// Export for use in AddSubscriptionScreen
-export { calculateRenewalDate };
 
 const styles = StyleSheet.create({
   container: {

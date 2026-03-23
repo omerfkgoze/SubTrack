@@ -38,6 +38,7 @@ export type AddPrefillParams = {
   billing_cycle: string;
   currency: string;
   detectedId: string;
+  lastSeen?: string;
 };
 
 // Main Tabs

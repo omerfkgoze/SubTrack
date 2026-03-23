@@ -184,6 +184,7 @@ describe('DetectedReviewScreen', () => {
           billing_cycle: 'monthly',
           currency: 'EUR',
           detectedId: 'det-1',
+          lastSeen: '2026-02-15',
         },
       });
     });

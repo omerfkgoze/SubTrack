@@ -1,6 +1,6 @@
 # Story 7.4: Review & Approve Detected Subscriptions
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -382,7 +382,7 @@ None — implementation completed without blocking issues.
 - `supabase/migrations/20260323100000_add_detected_subscriptions_update_policy.sql` (new)
 - `src/app/navigation/types.ts` (modified — DetectedReview route, AddPrefillParams, Add tab params)
 - `src/app/navigation/SettingsStack.tsx` (modified — DetectedReviewScreen registered)
-- `src/shared/stores/useBankStore.ts` (modified — approveDetectedSubscription, dismissDetectedSubscription, detectedCount, fetchDetectedSubscriptions filter)
+- `src/shared/stores/useBankStore.ts` (modified — approveDetectedSubscription, dismissDetectedSubscription, fetchDetectedSubscriptions filter)
 - `src/features/bank/components/DetectedReviewCard.tsx` (new)
 - `src/features/bank/components/DetectedReviewCard.test.tsx` (new)
 - `src/features/bank/screens/DetectedReviewScreen.tsx` (new)
@@ -396,3 +396,4 @@ None — implementation completed without blocking issues.
 ## Change Log
 
 - 2026-03-23: Story 7.4 implemented — DetectedReviewScreen, DetectedReviewCard, useBankStore review actions (approve/dismiss), navigation routes, AddSubscriptionScreen prefill, BankConnectionScreen Review button. 749 tests pass.
+- 2026-03-23: Code review fixes — (H1) Added try/catch to approveDetectedSubscription/dismissDetectedSubscription for network error handling. (H2) Added lastSeen to AddPrefillParams and use it for renewal date calculation instead of today. (M1) Removed dead calculateRenewalDate export from DetectedReviewScreen. (M2) Removed unused detectedCount getter from useBankStore. All 86 affected tests pass.
