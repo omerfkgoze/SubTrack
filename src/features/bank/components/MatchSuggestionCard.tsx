@@ -96,7 +96,7 @@ export function MatchSuggestionCard({
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
 
           <View style={styles.column}>
             <Text variant="labelMedium" style={[styles.columnLabel, { color: theme.colors.onSurfaceVariant }]}>
@@ -192,7 +192,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: '#e0e0e0',
     marginHorizontal: 12,
   },
   reasonsRow: {

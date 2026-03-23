@@ -498,8 +498,19 @@ export const useBankStore = create<BankStore>()(
       },
 
       confirmMatch: async (detectedId: string) => {
+        set({ detectionError: null });
+
         if (env.DEMO_BANK_MODE) {
           await mockDelay(300);
+          const { matchResults: currentMatchResults, detectedSubscriptions: currentDetected } = useBankStore.getState();
+          const matchResult = currentMatchResults.get(detectedId);
+          const detected = currentDetected.find((s) => s.id === detectedId);
+          if (matchResult && detected) {
+            await useSubscriptionStore.getState().updateSubscription(matchResult.subscriptionId, {
+              price: detected.amount,
+              currency: detected.currency,
+            });
+          }
           set((state) => {
             const newMatchResults = new Map(state.matchResults);
             newMatchResults.delete(detectedId);
@@ -556,8 +567,21 @@ export const useBankStore = create<BankStore>()(
       },
 
       replaceWithDetected: async (detectedId: string) => {
+        set({ detectionError: null });
+
         if (env.DEMO_BANK_MODE) {
           await mockDelay(300);
+          const { matchResults: currentMatchResults, detectedSubscriptions: currentDetected } = useBankStore.getState();
+          const matchResult = currentMatchResults.get(detectedId);
+          const detected = currentDetected.find((s) => s.id === detectedId);
+          if (matchResult && detected) {
+            await useSubscriptionStore.getState().updateSubscription(matchResult.subscriptionId, {
+              name: detected.merchantName,
+              price: detected.amount,
+              billing_cycle: detected.frequency,
+              currency: detected.currency,
+            });
+          }
           set((state) => {
             const newMatchResults = new Map(state.matchResults);
             newMatchResults.delete(detectedId);

@@ -1,6 +1,6 @@
 # Story 7.5: Match Detected with Manual Subscriptions
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -370,3 +370,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-03-23: Implemented Story 7.5 — Match Detected with Manual Subscriptions. Added client-side matching algorithm, MatchSuggestionCard component, extended useBankStore with match state/actions, updated DetectedReviewScreen with conditional rendering and match action flows. 72 new tests (821 total, 0 regressions).
+- 2026-03-23: Code review fixes — (1) confirmMatch/replaceWithDetected now clear detectionError at start to prevent stale error snackbar on retry; (2) demo mode confirmMatch/replaceWithDetected now call updateSubscription for complete simulation; (3) MatchSuggestionCard divider color switched from hardcoded #e0e0e0 to theme.colors.outlineVariant.
