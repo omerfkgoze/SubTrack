@@ -37,6 +37,7 @@ interface BankState {
   dismissedItems: DetectedSubscription[];
   isFetchingDismissedItems: boolean;
   isDisconnecting: boolean;
+  isRefreshing: boolean;
   _demoDisconnectedIds: string[]; // tracks demo-mode disconnects so fetchConnections respects them
 }
 
@@ -54,6 +55,7 @@ interface BankActions {
   fetchDismissedItems: () => Promise<void>;
   undismissDetectedSubscription: (id: string) => Promise<void>;
   disconnectConnection: (connectionId: string) => Promise<void>;
+  refreshBankData: (connectionId: string) => Promise<void>;
   computeMatches: () => void;
   confirmMatch: (detectedId: string) => Promise<void>;
   replaceWithDetected: (detectedId: string) => Promise<void>;
@@ -158,6 +160,7 @@ export const useBankStore = create<BankStore>()(
       dismissedItems: [],
       isFetchingDismissedItems: false,
       isDisconnecting: false,
+      isRefreshing: false,
       _demoDisconnectedIds: [] as string[],
 
       fetchConnections: async () => {
@@ -752,6 +755,51 @@ export const useBankStore = create<BankStore>()(
             connectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' },
             isDisconnecting: false,
           });
+        }
+      },
+
+      refreshBankData: async (connectionId: string) => {
+        const { isRefreshing, isDetecting } = useBankStore.getState();
+        if (isRefreshing || isDetecting) return; // concurrent guard
+
+        set({ isRefreshing: true, detectionError: null });
+
+        if (env.DEMO_BANK_MODE) {
+          const disconnectedIds = useBankStore.getState()._demoDisconnectedIds;
+          if (!disconnectedIds.includes(connectionId)) {
+            await mockDelay(2000);
+            const now = new Date().toISOString();
+            set((state) => ({
+              connections: state.connections.map((c) =>
+                c.id === connectionId ? { ...c, lastSyncedAt: now } : c,
+              ),
+              detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'detected'),
+              lastDetectionResult: MOCK_DETECTION_RESULT,
+            }));
+          }
+          set({ isRefreshing: false });
+          return;
+        }
+
+        try {
+          await useBankStore.getState().detectSubscriptions(connectionId);
+
+          const { detectionError } = useBankStore.getState();
+          if (!detectionError) {
+            const now = new Date().toISOString();
+            set((state) => ({
+              connections: state.connections.map((c) =>
+                c.id === connectionId ? { ...c, lastSyncedAt: now } : c,
+              ),
+            }));
+            supabase
+              .from('bank_connections')
+              .update({ last_synced_at: now })
+              .eq('id', connectionId)
+              .then();
+          }
+        } finally {
+          set({ isRefreshing: false });
         }
       },
 

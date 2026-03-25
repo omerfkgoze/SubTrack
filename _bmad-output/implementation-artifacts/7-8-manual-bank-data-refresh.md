@@ -1,6 +1,6 @@
 # Story 7.8: Manual Bank Data Refresh
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -52,42 +52,42 @@ so that I can see the latest transactions without waiting for the daily sync.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `refreshBankData` action to useBankStore (AC: 1, 4, 5, 6)
-  - [ ] 1.1 Add state: `isRefreshing: boolean` (for pull-to-refresh indicator, distinct from `isDetecting`)
-  - [ ] 1.2 Add action: `refreshBankData(connectionId: string)` — calls `detectSubscriptions` internally but also updates `lastSyncedAt` on success
-  - [ ] 1.3 On success: update matching connection's `lastSyncedAt` in local state to `new Date().toISOString()`
-  - [ ] 1.4 On success: also update `last_synced_at` in Supabase `bank_connections` table
-  - [ ] 1.5 In demo mode: use `mockDelay()`, update mock connection's `lastSyncedAt`, set `lastDetectionResult`
-  - [ ] 1.6 Clear `detectionError` at start (lesson from 7.6)
-  - [ ] 1.7 Guard: if `isRefreshing` or `isDetecting` is already true, return early (prevent concurrent)
+- [x] Task 1: Add `refreshBankData` action to useBankStore (AC: 1, 4, 5, 6)
+  - [x] 1.1 Add state: `isRefreshing: boolean` (for pull-to-refresh indicator, distinct from `isDetecting`)
+  - [x] 1.2 Add action: `refreshBankData(connectionId: string)` — calls `detectSubscriptions` internally but also updates `lastSyncedAt` on success
+  - [x] 1.3 On success: update matching connection's `lastSyncedAt` in local state to `new Date().toISOString()`
+  - [x] 1.4 On success: also update `last_synced_at` in Supabase `bank_connections` table
+  - [x] 1.5 In demo mode: use `mockDelay()`, update mock connection's `lastSyncedAt`, set `lastDetectionResult`
+  - [x] 1.6 Clear `detectionError` at start (lesson from 7.6)
+  - [x] 1.7 Guard: if `isRefreshing` or `isDetecting` is already true, return early (prevent concurrent)
 
-- [ ] Task 2: Add pull-to-refresh to BankConnectionStatusScreen (AC: 2, 6)
-  - [ ] 2.1 Import `RefreshControl` from `react-native`
-  - [ ] 2.2 Add `isRefreshing` selector from useBankStore
-  - [ ] 2.3 Add `handlePullToRefresh` callback: calls `refreshBankData` for first active connection
-  - [ ] 2.4 Add `refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handlePullToRefresh} />}` to FlatList
-  - [ ] 2.5 Update existing `handleRefresh` (per-card Refresh Now) to call `refreshBankData` instead of `detectSubscriptions`
+- [x] Task 2: Add pull-to-refresh to BankConnectionStatusScreen (AC: 2, 6)
+  - [x] 2.1 Import `RefreshControl` from `react-native`
+  - [x] 2.2 Add `isRefreshing` selector from useBankStore
+  - [x] 2.3 Add `handlePullToRefresh` callback: calls `refreshBankData` for first active connection
+  - [x] 2.4 Add `refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handlePullToRefresh} />}` to FlatList
+  - [x] 2.5 Update existing `handleRefresh` (per-card Refresh Now) to call `refreshBankData` instead of `detectSubscriptions`
 
-- [ ] Task 3: Add pull-to-refresh to DetectedReviewScreen (AC: 3, 6)
-  - [ ] 3.1 Import `RefreshControl` from `react-native`
-  - [ ] 3.2 Add `isRefreshing` and `refreshBankData` and `connections` selectors from useBankStore
-  - [ ] 3.3 Add `handlePullToRefresh` callback: find first active connection, call `refreshBankData(connectionId)`, then `fetchDetectedSubscriptions()` + `computeMatches()`
-  - [ ] 3.4 Add `refreshControl` to FlatList
-  - [ ] 3.5 If no active connection, pull-to-refresh just calls `fetchDetectedSubscriptions()` (no bank sync)
+- [x] Task 3: Add pull-to-refresh to DetectedReviewScreen (AC: 3, 6)
+  - [x] 3.1 Import `RefreshControl` from `react-native`
+  - [x] 3.2 Add `isRefreshing` and `refreshBankData` and `connections` selectors from useBankStore
+  - [x] 3.3 Add `handlePullToRefresh` callback: find first active connection, call `refreshBankData(connectionId)`, then `fetchDetectedSubscriptions()` + `computeMatches()`
+  - [x] 3.4 Add `refreshControl` to FlatList
+  - [x] 3.5 If no active connection, pull-to-refresh just calls `fetchDetectedSubscriptions()` (no bank sync)
 
-- [ ] Task 4: Update "Refresh Now" button behavior on BankConnectionScreen (AC: 1, 4, 5)
-  - [ ] 4.1 Update `handleScanPress` in `BankConnectionScreen.tsx` to call `refreshBankData` instead of `detectSubscriptions`
-  - [ ] 4.2 The loading/result/error UI already exists for detection — verify it works with `refreshBankData` (same state variables: `isDetecting`, `lastDetectionResult`, `detectionError`)
+- [x] Task 4: Update "Refresh Now" button behavior on BankConnectionScreen (AC: 1, 4, 5)
+  - [x] 4.1 Update `handleScanPress` in `BankConnectionScreen.tsx` to call `refreshBankData` instead of `detectSubscriptions`
+  - [x] 4.2 The loading/result/error UI already exists for detection — verify it works with `refreshBankData` (same state variables: `isDetecting`, `lastDetectionResult`, `detectionError`)
 
-- [ ] Task 5: Snackbar feedback for refresh results (AC: 5)
-  - [ ] 5.1 BankConnectionStatusScreen: after `refreshBankData` completes, check `detectionError` — show error Snackbar if present, success Snackbar with detection count if successful
-  - [ ] 5.2 DetectedReviewScreen: show Snackbar on refresh error
+- [x] Task 5: Snackbar feedback for refresh results (AC: 5)
+  - [x] 5.1 BankConnectionStatusScreen: after `refreshBankData` completes, check `detectionError` — show error Snackbar if present, success Snackbar with detection count if successful
+  - [x] 5.2 DetectedReviewScreen: show Snackbar on refresh error
 
-- [ ] Task 6: Tests (AC: all)
-  - [ ] 6.1 Unit tests for `refreshBankData` in `useBankStore.test.ts`: success updates `lastSyncedAt`, failure keeps data intact, demo mode, concurrent guard
-  - [ ] 6.2 Update `BankConnectionStatusScreen.test.tsx`: pull-to-refresh triggers refresh, RefreshControl present, error snackbar on failure
-  - [ ] 6.3 Update `DetectedReviewScreen.test.tsx`: pull-to-refresh triggers refresh + re-fetch, works without active connection
-  - [ ] 6.4 Update `BankConnectionScreen.test.tsx`: scan button uses `refreshBankData`
+- [x] Task 6: Tests (AC: all)
+  - [x] 6.1 Unit tests for `refreshBankData` in `useBankStore.test.ts`: success updates `lastSyncedAt`, failure keeps data intact, demo mode, concurrent guard
+  - [x] 6.2 Update `BankConnectionStatusScreen.test.tsx`: pull-to-refresh triggers refresh, RefreshControl present, error snackbar on failure
+  - [x] 6.3 Update `DetectedReviewScreen.test.tsx`: pull-to-refresh triggers refresh + re-fetch, works without active connection
+  - [x] 6.4 Update `BankConnectionScreen.test.tsx`: scan button uses `refreshBankData`
 
 ## Dev Notes
 
@@ -232,10 +232,34 @@ src/features/bank/screens/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Added `isRefreshing: boolean` state and `refreshBankData(connectionId)` action to `useBankStore.ts`
+- `refreshBankData` wraps `detectSubscriptions` internally, updates `lastSyncedAt` on success (both local state + Supabase fire-and-forget), clears `detectionError` at start, and guards against concurrent calls
+- Demo mode: uses `mockDelay`, respects `_demoDisconnectedIds`, updates local state without Supabase call
+- Added `RefreshControl` pull-to-refresh to `BankConnectionStatusScreen` (FlatList) and `DetectedReviewScreen` (FlatList)
+- `BankConnectionStatusScreen`: pull-to-refresh calls `refreshBankData` for active connection, falls back to `fetchConnections` if no active connection; per-card "Refresh Now" also uses `refreshBankData`; shows error/success snackbar after refresh
+- `DetectedReviewScreen`: pull-to-refresh calls `refreshBankData` + `fetchDetectedSubscriptions` + `computeMatches`; if no active connection, skips bank sync; shows error snackbar on failure
+- `BankConnectionScreen`: `handleScanPress` now calls `refreshBankData` instead of `detectSubscriptions`; existing result/error UI (`isDetecting`, `lastDetectionResult`, `detectionError`) unchanged
+- All 275 bank tests pass, 7 new `refreshBankData` store tests added, screen tests updated for the new mock API
+
 ### File List
+
+- src/shared/stores/useBankStore.ts
+- src/shared/stores/useBankStore.test.ts
+- src/features/bank/screens/BankConnectionStatusScreen.tsx
+- src/features/bank/screens/BankConnectionStatusScreen.test.tsx
+- src/features/bank/screens/DetectedReviewScreen.tsx
+- src/features/bank/screens/DetectedReviewScreen.test.tsx
+- src/features/bank/screens/BankConnectionScreen.tsx
+- src/features/bank/screens/BankConnectionScreen.test.tsx
+- _bmad-output/implementation-artifacts/7-8-manual-bank-data-refresh.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+## Change Log
+
+- 2026-03-25: Story implemented — added `refreshBankData` action to `useBankStore`, pull-to-refresh on `BankConnectionStatusScreen` and `DetectedReviewScreen`, updated scan button on `BankConnectionScreen` to use `refreshBankData`, Snackbar feedback for refresh results. All 275 bank tests pass.

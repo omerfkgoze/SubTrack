@@ -50,6 +50,7 @@ const mockConfirmMatch = jest.fn().mockResolvedValue(undefined);
 const mockReplaceWithDetected = jest.fn().mockResolvedValue(undefined);
 const mockDismissMatch = jest.fn();
 const mockFetchSubscriptions = jest.fn().mockResolvedValue(undefined);
+const mockRefreshBankData = jest.fn().mockResolvedValue(undefined);
 
 const mockDetected = [
   {
@@ -100,6 +101,8 @@ function setupMocks(overrides: BankStateOverride & {
     isFetchingDetected,
     detectionError,
     matchResults,
+    isRefreshing: false,
+    connections: [{ id: 'conn-1', status: 'active' }],
     fetchDetectedSubscriptions: mockFetchDetectedSubscriptions,
     dismissDetectedSubscription: mockDismissDetectedSubscription,
     approveDetectedSubscription: mockApproveDetectedSubscription,
@@ -107,6 +110,7 @@ function setupMocks(overrides: BankStateOverride & {
     confirmMatch: mockConfirmMatch,
     replaceWithDetected: mockReplaceWithDetected,
     dismissMatch: mockDismissMatch,
+    refreshBankData: mockRefreshBankData,
   };
 
   mockUseBankStore.mockImplementation(
@@ -368,6 +372,8 @@ describe('DetectedReviewScreen', () => {
         isFetchingDetected: false,
         detectionError: { code: 'CONFIRM_MATCH_FAILED', message: 'Failed to confirm match. Please try again.' },
         matchResults: new Map([['det-1', mockMatchResult]]),
+        isRefreshing: false,
+        connections: [{ id: 'conn-1', status: 'active' }],
         fetchDetectedSubscriptions: mockFetchDetectedSubscriptions,
         dismissDetectedSubscription: mockDismissDetectedSubscription,
         approveDetectedSubscription: mockApproveDetectedSubscription,
@@ -375,6 +381,7 @@ describe('DetectedReviewScreen', () => {
         confirmMatch: mockConfirmMatch,
         replaceWithDetected: mockReplaceWithDetected,
         dismissMatch: mockDismissMatch,
+        refreshBankData: mockRefreshBankData,
       };
       (useBankStore as jest.MockedFunction<typeof useBankStore> & { getState: () => typeof bankStateWithError }).getState =
         jest.fn().mockReturnValue(bankStateWithError);
@@ -382,6 +389,62 @@ describe('DetectedReviewScreen', () => {
       fireEvent.press(screen.getByLabelText('Confirm match between Netflix and Netflix Premium'));
       await waitFor(() => {
         expect(mockConfirmMatch).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('pull-to-refresh', () => {
+    it('renders RefreshControl on detected list', () => {
+      setupMocks();
+      renderWithProvider();
+      expect(screen.getByText('Netflix')).toBeTruthy();
+    });
+
+    it('calls refreshBankData and fetchDetectedSubscriptions on pull-to-refresh with active connection', async () => {
+      setupMocks();
+      renderWithProvider();
+      const flatList = screen.UNSAFE_getByType(require('react-native').FlatList);
+      await waitFor(async () => {
+        flatList.props.refreshControl.props.onRefresh();
+      });
+      await waitFor(() => {
+        expect(mockRefreshBankData).toHaveBeenCalledWith('conn-1');
+        expect(mockFetchDetectedSubscriptions).toHaveBeenCalled();
+        expect(mockComputeMatches).toHaveBeenCalled();
+      });
+    });
+
+    it('calls only fetchDetectedSubscriptions when no active connection on pull-to-refresh', async () => {
+      const bankState = {
+        detectedSubscriptions: mockDetected,
+        isFetchingDetected: false,
+        detectionError: null,
+        matchResults: new Map(),
+        isRefreshing: false,
+        connections: [],
+        fetchDetectedSubscriptions: mockFetchDetectedSubscriptions,
+        dismissDetectedSubscription: mockDismissDetectedSubscription,
+        approveDetectedSubscription: mockApproveDetectedSubscription,
+        computeMatches: mockComputeMatches,
+        confirmMatch: mockConfirmMatch,
+        replaceWithDetected: mockReplaceWithDetected,
+        dismissMatch: mockDismissMatch,
+        refreshBankData: mockRefreshBankData,
+      };
+      mockUseBankStore.mockImplementation(
+        (selector: (s: typeof bankState) => unknown) => selector(bankState) as never,
+      );
+      (useBankStore as jest.MockedFunction<typeof useBankStore> & { getState: () => typeof bankState }).getState =
+        jest.fn().mockReturnValue(bankState);
+
+      renderWithProvider();
+      const flatList = screen.UNSAFE_getByType(require('react-native').FlatList);
+      await waitFor(async () => {
+        flatList.props.refreshControl.props.onRefresh();
+      });
+      await waitFor(() => {
+        expect(mockRefreshBankData).not.toHaveBeenCalled();
+        expect(mockFetchDetectedSubscriptions).toHaveBeenCalled();
       });
     });
   });

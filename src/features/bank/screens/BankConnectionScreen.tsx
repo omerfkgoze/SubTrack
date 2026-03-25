@@ -42,7 +42,7 @@ export function BankConnectionScreen() {
   const isDetecting = useBankStore((s) => s.isDetecting);
   const detectionError = useBankStore((s) => s.detectionError);
   const lastDetectionResult = useBankStore((s) => s.lastDetectionResult);
-  const detectSubscriptions = useBankStore((s) => s.detectSubscriptions);
+  const refreshBankData = useBankStore((s) => s.refreshBankData);
   const fetchDetectedSubscriptions = useBankStore((s) => s.fetchDetectedSubscriptions);
   const detectedSubscriptions = useBankStore((s) => s.detectedSubscriptions);
   const isBankConnected = connections.length > 0;
@@ -211,8 +211,8 @@ export function BankConnectionScreen() {
 
   const handleScanPress = useCallback(async () => {
     if (!activeConnection) return;
-    await detectSubscriptions(activeConnection.id);
-  }, [activeConnection, detectSubscriptions]);
+    await refreshBankData(activeConnection.id);
+  }, [activeConnection, refreshBankData]);
 
   const [detectionSnackbarWithReview, setDetectionSnackbarWithReview] = useState(false);
 

@@ -57,6 +57,7 @@ const mockUseBankStore = useBankStore as jest.MockedFunction<typeof useBankStore
 const mockInitiateConnection = jest.fn();
 const mockClearConnectionError = jest.fn();
 const mockDetectSubscriptions = jest.fn();
+const mockRefreshBankData = jest.fn();
 
 const mockActiveConnection = {
   id: 'conn-1', userId: 'user-1', provider: 'tink', bankName: 'Demo Bank',
@@ -84,8 +85,10 @@ function setupStoreMock(overrides: Record<string, unknown> = {}) {
     clearConnectionError: mockClearConnectionError,
     fetchConnections: jest.fn(),
     detectSubscriptions: mockDetectSubscriptions,
+    refreshBankData: mockRefreshBankData,
     fetchDetectedSubscriptions: jest.fn(),
     fetchSupportedBanks: jest.fn(),
+    isRefreshing: false,
     ...overrides,
   };
 
@@ -260,14 +263,14 @@ describe('BankConnectionScreen', () => {
       expect(screen.queryByLabelText('Scan for Subscriptions')).toBeNull();
     });
 
-    it('calls detectSubscriptions with correct connectionId on press', () => {
+    it('calls refreshBankData with correct connectionId on press', () => {
       setupStoreMock({ connections: [mockActiveConnection] });
 
       renderWithProvider();
 
       fireEvent.press(screen.getByLabelText('Scan for Subscriptions'));
 
-      expect(mockDetectSubscriptions).toHaveBeenCalledWith('conn-1');
+      expect(mockRefreshBankData).toHaveBeenCalledWith('conn-1');
     });
   });
 

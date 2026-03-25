@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { Text, ActivityIndicator, Button, Snackbar, Dialog, Portal, useTheme } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,9 +16,10 @@ export function BankConnectionStatusScreen() {
   const isFetchingConnections = useBankStore((s) => s.isFetchingConnections);
   const fetchConnections = useBankStore((s) => s.fetchConnections);
   const disconnectConnection = useBankStore((s) => s.disconnectConnection);
-  const detectSubscriptions = useBankStore((s) => s.detectSubscriptions);
+  const refreshBankData = useBankStore((s) => s.refreshBankData);
   const isDisconnecting = useBankStore((s) => s.isDisconnecting);
   const isDetecting = useBankStore((s) => s.isDetecting);
+  const isRefreshing = useBankStore((s) => s.isRefreshing);
 
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [confirmDisconnectId, setConfirmDisconnectId] = useState<string | null>(null);
@@ -50,9 +51,36 @@ export function BankConnectionStatusScreen() {
     navigation.navigate('BankConnection', { autoConnect: true });
   }, [navigation]);
 
+  const handlePullToRefresh = useCallback(async () => {
+    const activeConn = connections.find((c) => c.status === 'active');
+    if (activeConn) {
+      await refreshBankData(activeConn.id);
+      const error = useBankStore.getState().detectionError;
+      if (error) {
+        setSnackbarMessage(error.message);
+      } else {
+        const result = useBankStore.getState().lastDetectionResult;
+        if (result) {
+          const count = result.detectedCount;
+          setSnackbarMessage(
+            count === 0
+              ? 'No new subscriptions detected'
+              : `${count} subscription${count === 1 ? '' : 's'} detected!`,
+          );
+        }
+      }
+    } else {
+      await fetchConnections();
+    }
+  }, [connections, refreshBankData, fetchConnections]);
+
   const handleRefresh = useCallback(async (connectionId: string) => {
-    await detectSubscriptions(connectionId);
-  }, [detectSubscriptions]);
+    await refreshBankData(connectionId);
+    const error = useBankStore.getState().detectionError;
+    if (error) {
+      setSnackbarMessage(error.message);
+    }
+  }, [refreshBankData]);
 
   if (isFetchingConnections) {
     return (
@@ -102,6 +130,9 @@ export function BankConnectionStatusScreen() {
           />
         )}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handlePullToRefresh} />
+        }
       />
 
       <Portal>

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { Text, Button, ActivityIndicator, Snackbar, useTheme } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +32,8 @@ export function DetectedReviewScreen() {
   const confirmMatch = useBankStore((s) => s.confirmMatch);
   const replaceWithDetected = useBankStore((s) => s.replaceWithDetected);
   const dismissMatch = useBankStore((s) => s.dismissMatch);
+  const isRefreshing = useBankStore((s) => s.isRefreshing);
+  const refreshBankData = useBankStore((s) => s.refreshBankData);
 
   const canAddSubscription = usePremiumStore((s) => s.canAddSubscription);
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
@@ -136,6 +138,21 @@ export function DetectedReviewScreen() {
     [dismissMatch],
   );
 
+  const handlePullToRefresh = useCallback(async () => {
+    const { connections } = useBankStore.getState();
+    const activeConn = connections.find((c) => c.status === 'active');
+    if (activeConn) {
+      await refreshBankData(activeConn.id);
+      const error = useBankStore.getState().detectionError;
+      if (error) {
+        setSnackbarType('error');
+        setSnackbarMessage(error.message);
+      }
+    }
+    await fetchDetectedSubscriptions();
+    computeMatches();
+  }, [refreshBankData, fetchDetectedSubscriptions, computeMatches]);
+
   if (isFetchingDetected) {
     return (
       <View style={[styles.container, styles.centered]} accessibilityLabel="Loading detected subscriptions">
@@ -196,6 +213,9 @@ export function DetectedReviewScreen() {
       <FlatList
         data={sortedItems}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handlePullToRefresh} />
+        }
         renderItem={({ item }) => {
           const match = matchResults.get(item.id);
           if (match) {

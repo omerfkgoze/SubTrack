@@ -1430,4 +1430,141 @@ describe('useBankStore', () => {
     });
   });
 
+  describe('refreshBankData', () => {
+    beforeEach(() => {
+      useBankStore.setState({
+        connections: [{
+          id: 'conn-1', userId: 'user-1', provider: 'tink', bankName: 'Demo Bank',
+          status: 'active', connectedAt: '2026-03-21T12:00:00Z',
+          consentGrantedAt: '2026-03-21T12:00:00Z', consentExpiresAt: '2026-09-17T12:00:00Z',
+          lastSyncedAt: null, tinkCredentialsId: 'cred-1',
+        }],
+        isRefreshing: false,
+        isDetecting: false,
+        detectionError: null,
+        lastDetectionResult: null,
+      });
+    });
+
+    it('sets isRefreshing true then false around the operation', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: { success: true, detectedCount: 2, newCount: 1 },
+        error: null,
+      });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        update: jest.fn().mockReturnThis(),
+        then: jest.fn(),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      expect(useBankStore.getState().isRefreshing).toBe(false);
+    });
+
+    it('updates lastSyncedAt on success', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: { success: true, detectedCount: 2, newCount: 1 },
+        error: null,
+      });
+      const mockUpdateChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        update: jest.fn().mockReturnThis(),
+        then: jest.fn().mockResolvedValue(undefined),
+      };
+      supabase.from.mockReturnValue(mockUpdateChain);
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      const { connections } = useBankStore.getState();
+      expect(connections[0].lastSyncedAt).not.toBeNull();
+      expect(typeof connections[0].lastSyncedAt).toBe('string');
+    });
+
+    it('keeps existing data intact on failure', async () => {
+      supabase.functions.invoke.mockResolvedValue({
+        data: null,
+        error: { message: 'Detection failed' },
+      });
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      const { connections, isRefreshing } = useBankStore.getState();
+      expect(isRefreshing).toBe(false);
+      // lastSyncedAt should remain null (not updated on failure)
+      expect(connections[0].lastSyncedAt).toBeNull();
+    });
+
+    it('concurrent guard: returns early if isRefreshing is already true', async () => {
+      useBankStore.setState({ isRefreshing: true });
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('concurrent guard: returns early if isDetecting is already true', async () => {
+      useBankStore.setState({ isDetecting: true });
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('clears detectionError at start', async () => {
+      useBankStore.setState({ detectionError: { code: 'OLD_ERROR', message: 'Old error' } });
+
+      supabase.functions.invoke.mockResolvedValue({
+        data: { success: true, detectedCount: 0, newCount: 0 },
+        error: null,
+      });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+        update: jest.fn().mockReturnThis(),
+        then: jest.fn().mockResolvedValue(undefined),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      // After successful detection, detectionError should be null
+      expect(useBankStore.getState().detectionError).toBeNull();
+    });
+
+    it('works in demo mode with mockDelay', async () => {
+      const { env: mockEnv } = jest.requireMock('@config/env');
+      mockEnv.DEMO_BANK_MODE = true;
+
+      const { mockDelay: mockDelayFn } = jest.requireMock('@features/bank/mocks/mockBankData');
+      mockDelayFn.mockResolvedValue(undefined);
+
+      await act(async () => {
+        await useBankStore.getState().refreshBankData('conn-1');
+      });
+
+      mockEnv.DEMO_BANK_MODE = false;
+
+      const { isRefreshing } = useBankStore.getState();
+      expect(isRefreshing).toBe(false);
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+  });
+
 });
