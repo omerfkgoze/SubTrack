@@ -36,6 +36,7 @@ interface BankState {
   isFetchingDismissed: boolean;
   dismissedItems: DetectedSubscription[];
   isFetchingDismissedItems: boolean;
+  isDisconnecting: boolean;
 }
 
 interface BankActions {
@@ -51,6 +52,7 @@ interface BankActions {
   fetchDismissedMerchants: () => Promise<void>;
   fetchDismissedItems: () => Promise<void>;
   undismissDetectedSubscription: (id: string) => Promise<void>;
+  disconnectConnection: (connectionId: string) => Promise<void>;
   computeMatches: () => void;
   confirmMatch: (detectedId: string) => Promise<void>;
   replaceWithDetected: (detectedId: string) => Promise<void>;
@@ -154,6 +156,7 @@ export const useBankStore = create<BankStore>()(
       isFetchingDismissed: false,
       dismissedItems: [],
       isFetchingDismissedItems: false,
+      isDisconnecting: false,
 
       fetchConnections: async () => {
         if (env.DEMO_BANK_MODE) {
@@ -686,6 +689,61 @@ export const useBankStore = create<BankStore>()(
           }
         } catch {
           set({ detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' } });
+        }
+      },
+
+      disconnectConnection: async (connectionId: string) => {
+        set({ isDisconnecting: true, connectionError: null });
+
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(500);
+          set((state) => ({
+            connections: state.connections.filter((c) => c.id !== connectionId),
+            isDisconnecting: false,
+            detectedSubscriptions: [],
+            dismissedMerchants: [],
+            dismissedItems: [],
+            matchResults: new Map(),
+            lastDetectionResult: null,
+          }));
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) {
+          set({ isDisconnecting: false });
+          return;
+        }
+
+        try {
+          const { error } = await supabase
+            .from('bank_connections')
+            .update({ status: 'disconnected' })
+            .eq('id', connectionId)
+            .eq('user_id', user.id);
+
+          if (error) {
+            set({
+              connectionError: { code: 'DISCONNECT_FAILED', message: 'Failed to disconnect. Please try again.' },
+              isDisconnecting: false,
+            });
+            return;
+          }
+
+          set((state) => ({
+            connections: state.connections.filter((c) => c.id !== connectionId),
+            isDisconnecting: false,
+            detectedSubscriptions: [],
+            dismissedMerchants: [],
+            dismissedItems: [],
+            matchResults: new Map(),
+            lastDetectionResult: null,
+          }));
+        } catch {
+          set({
+            connectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' },
+            isDisconnecting: false,
+          });
         }
       },
 

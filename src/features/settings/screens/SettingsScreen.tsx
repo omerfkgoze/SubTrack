@@ -305,6 +305,34 @@ export function SettingsScreen() {
           />
           {isPremium && isBankConnected && (
             <List.Item
+              title="Connection Status"
+              description={() => {
+                const activeConn = bankConnections.find((c) => c.status === 'active');
+                const expiredConn = bankConnections.find((c) => c.status === 'expired');
+                const errorConn = bankConnections.find((c) => c.status === 'error');
+                if (expiredConn || errorConn) return <Text style={{ color: theme.colors.error }} variant="bodySmall">Expired — reconnect needed</Text>;
+                if (activeConn) return <Text style={{ color: theme.colors.secondary }} variant="bodySmall">Connected</Text>;
+                return <Text variant="bodySmall">Check connections</Text>;
+              }}
+              left={(props) => {
+                const hasIssue = bankConnections.some((c) => c.status === 'expired' || c.status === 'error');
+                return (
+                  <List.Icon
+                    {...props}
+                    icon="bank-transfer"
+                    color={hasIssue ? theme.colors.error : theme.colors.secondary}
+                  />
+                );
+              }}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('BankConnectionStatus')}
+              style={styles.listItem}
+              accessibilityLabel="Connection Status"
+              accessibilityRole="button"
+            />
+          )}
+          {isPremium && isBankConnected && (
+            <List.Item
               title="Dismissed Items"
               description={dismissedItemsCount > 0 ? `${dismissedItemsCount} item${dismissedItemsCount === 1 ? '' : 's'} dismissed` : 'No dismissed items'}
               left={(props) => <List.Icon {...props} icon="eye-off-outline" />}

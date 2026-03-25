@@ -11,6 +11,7 @@ import { BankConnectionScreen } from '@features/bank/screens/BankConnectionScree
 import { SupportedBanksScreen } from '@features/bank/screens/SupportedBanksScreen';
 import { DetectedReviewScreen } from '@features/bank/screens/DetectedReviewScreen';
 import { DismissedItemsScreen } from '@features/bank/screens/DismissedItemsScreen';
+import { BankConnectionStatusScreen } from '@features/bank/screens/BankConnectionStatusScreen';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -54,6 +55,11 @@ export function SettingsStack() {
         name="DetectedReview"
         component={DetectedReviewScreen}
         options={{ title: 'Detected Subscriptions' }}
+      />
+      <Stack.Screen
+        name="BankConnectionStatus"
+        component={BankConnectionStatusScreen}
+        options={{ title: 'Connection Status' }}
       />
       <Stack.Screen
         name="DismissedItems"

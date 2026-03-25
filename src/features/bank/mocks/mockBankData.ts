@@ -26,6 +26,51 @@ export const MOCK_CONNECTION: BankConnection = {
   tinkCredentialsId: 'demo-cred-001',
 };
 
+// --- Mock Connections (multi-status for ConnectionStatusCard testing) ---
+
+const expiredDate = new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000); // 200 days ago (expired)
+const expiringSoonDate = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000); // expires in 10 days
+
+export const MOCK_CONNECTIONS_MULTI: BankConnection[] = [
+  MOCK_CONNECTION,
+  {
+    id: 'demo-conn-002',
+    userId: 'demo-user',
+    provider: 'tink',
+    bankName: 'Expired Bank',
+    status: 'expired',
+    connectedAt: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000).toISOString(),
+    consentGrantedAt: new Date(now.getTime() - 200 * 24 * 60 * 60 * 1000).toISOString(),
+    consentExpiresAt: expiredDate.toISOString(),
+    lastSyncedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    tinkCredentialsId: 'demo-cred-002',
+  },
+  {
+    id: 'demo-conn-003',
+    userId: 'demo-user',
+    provider: 'tink',
+    bankName: 'Error Bank',
+    status: 'error',
+    connectedAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    consentGrantedAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    consentExpiresAt: new Date(now.getTime() + 150 * 24 * 60 * 60 * 1000).toISOString(),
+    lastSyncedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    tinkCredentialsId: 'demo-cred-003',
+  },
+  {
+    id: 'demo-conn-004',
+    userId: 'demo-user',
+    provider: 'tink',
+    bankName: 'Expiring Soon Bank',
+    status: 'expiring_soon',
+    connectedAt: new Date(now.getTime() - 170 * 24 * 60 * 60 * 1000).toISOString(),
+    consentGrantedAt: new Date(now.getTime() - 170 * 24 * 60 * 60 * 1000).toISOString(),
+    consentExpiresAt: expiringSoonDate.toISOString(),
+    lastSyncedAt: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+    tinkCredentialsId: 'demo-cred-004',
+  },
+];
+
 // --- Mock Detected Subscriptions ---
 // Realistic mix: streaming, music, cloud, news, fitness, gaming, productivity
 

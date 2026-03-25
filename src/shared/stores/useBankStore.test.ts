@@ -1327,4 +1327,107 @@ describe('useBankStore', () => {
     });
   });
 
+  describe('disconnectConnection', () => {
+    function mockDisconnectSuccess() {
+      const eq2Mock = jest.fn().mockResolvedValue({ data: null, error: null });
+      const eq1Mock = jest.fn().mockReturnValue({ eq: eq2Mock });
+      supabase.from.mockReturnValue({
+        update: jest.fn().mockReturnValue({ eq: eq1Mock }),
+      });
+    }
+
+    function mockDisconnectError(dbError: object) {
+      const eq2Mock = jest.fn().mockResolvedValue({ data: null, error: dbError });
+      const eq1Mock = jest.fn().mockReturnValue({ eq: eq2Mock });
+      supabase.from.mockReturnValue({
+        update: jest.fn().mockReturnValue({ eq: eq1Mock }),
+      });
+    }
+
+    beforeEach(() => {
+      useBankStore.setState({
+        connections: [
+          { id: 'conn-1', userId: 'user-1', provider: 'tink', bankName: 'Demo Bank', status: 'active', connectedAt: '', consentGrantedAt: '', consentExpiresAt: '', lastSyncedAt: null, tinkCredentialsId: '' },
+        ],
+        detectedSubscriptions: [{ id: 'det-1', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'grp-1', merchantName: 'Netflix', amount: 9.99, currency: 'EUR', frequency: 'monthly', confidenceScore: 0.9, status: 'detected', firstSeen: '', lastSeen: '' }],
+        dismissedMerchants: [{ id: 'dm-1', userId: 'user-1', merchantName: 'Coffee', dismissedAt: '' }],
+        dismissedItems: [{ id: 'det-2', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'grp-2', merchantName: 'Coffee', amount: 4.5, currency: 'EUR', frequency: 'weekly', confidenceScore: 0.5, status: 'dismissed', firstSeen: '', lastSeen: '' }],
+        lastDetectionResult: { success: true, detectedCount: 1, newCount: 1 },
+        isDisconnecting: false,
+        connectionError: null,
+      });
+    });
+
+    it('disconnects successfully and clears bank state', async () => {
+      mockDisconnectSuccess();
+
+      await act(async () => {
+        await useBankStore.getState().disconnectConnection('conn-1');
+      });
+
+      const state = useBankStore.getState();
+      expect(state.connections).toHaveLength(0);
+      expect(state.isDisconnecting).toBe(false);
+      expect(state.connectionError).toBeNull();
+      expect(state.detectedSubscriptions).toHaveLength(0);
+      expect(state.dismissedMerchants).toHaveLength(0);
+      expect(state.dismissedItems).toHaveLength(0);
+      expect(state.lastDetectionResult).toBeNull();
+    });
+
+    it('sets connectionError on Supabase failure', async () => {
+      mockDisconnectError({ message: 'DB error' });
+
+      await act(async () => {
+        await useBankStore.getState().disconnectConnection('conn-1');
+      });
+
+      const state = useBankStore.getState();
+      expect(state.connections).toHaveLength(1); // not removed
+      expect(state.isDisconnecting).toBe(false);
+      expect(state.connectionError?.code).toBe('DISCONNECT_FAILED');
+    });
+
+    it('sets NETWORK_ERROR on thrown exception', async () => {
+      supabase.from.mockImplementation(() => { throw new Error('Network error'); });
+
+      await act(async () => {
+        await useBankStore.getState().disconnectConnection('conn-1');
+      });
+
+      const state = useBankStore.getState();
+      expect(state.isDisconnecting).toBe(false);
+      expect(state.connectionError?.code).toBe('NETWORK_ERROR');
+    });
+
+    it('clears error state at action start', async () => {
+      useBankStore.setState({ connectionError: { code: 'OLD_ERROR', message: 'old error' } });
+      mockDisconnectSuccess();
+
+      await act(async () => {
+        await useBankStore.getState().disconnectConnection('conn-1');
+      });
+
+      // Error is cleared at start and no new error on success
+      expect(useBankStore.getState().connectionError).toBeNull();
+    });
+
+    it('disconnects in demo mode using local state only', async () => {
+      const { env: mockEnv } = jest.requireMock('@config/env');
+      mockEnv.DEMO_BANK_MODE = true;
+
+      await act(async () => {
+        await useBankStore.getState().disconnectConnection('conn-1');
+      });
+
+      mockEnv.DEMO_BANK_MODE = false;
+
+      const state = useBankStore.getState();
+      expect(state.connections).toHaveLength(0);
+      expect(state.isDisconnecting).toBe(false);
+      expect(state.detectedSubscriptions).toHaveLength(0);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+  });
+
 });

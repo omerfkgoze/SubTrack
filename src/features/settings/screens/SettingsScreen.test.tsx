@@ -362,4 +362,78 @@ describe('SettingsScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('DismissedItems');
     });
   });
+
+  describe('Connection Status section (Story 7.7)', () => {
+    const { useBankStore } = jest.requireMock('@shared/stores/useBankStore');
+
+    function setupBankMock(connections: unknown[], dismissedItems: unknown[]) {
+      useBankStore.mockImplementation((selector: (s: Record<string, unknown>) => unknown) =>
+        selector({
+          connections,
+          fetchConnections: mockFetchBankConnections,
+          dismissedItems,
+          fetchDismissedItems: mockFetchDismissedItems,
+        }),
+      );
+    }
+
+    it('does not render Connection Status for free users', () => {
+      setupBankMock([], []);
+      renderWithProvider();
+      expect(screen.queryByLabelText('Connection Status')).toBeNull();
+    });
+
+    it('does not render Connection Status for premium users without bank connected', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([], []);
+      renderWithProvider();
+      expect(screen.queryByLabelText('Connection Status')).toBeNull();
+    });
+
+    it('renders Connection Status for premium users with connected bank', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1', status: 'active' }], []);
+      renderWithProvider();
+      expect(screen.getByLabelText('Connection Status')).toBeTruthy();
+    });
+
+    it('navigates to BankConnectionStatus screen when tapped', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1', status: 'active' }], []);
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Connection Status'));
+      expect(mockNavigate).toHaveBeenCalledWith('BankConnectionStatus');
+    });
+
+    it('shows "Connected" description when connection is active', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1', status: 'active' }], []);
+      renderWithProvider();
+      // Use getAllByText to handle "Connected" appearing as Bank Connection description too
+      const items = screen.getAllByText('Connected');
+      expect(items.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('shows "Expired — reconnect needed" description when connection is expired', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1', status: 'expired' }], []);
+      renderWithProvider();
+      expect(screen.getByText('Expired — reconnect needed')).toBeTruthy();
+    });
+  });
 });

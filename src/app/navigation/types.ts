@@ -18,6 +18,7 @@ export type SettingsStackParamList = {
   NotificationHistory: undefined;
   Premium: { source?: 'settings' | 'upsell' } | undefined;
   BankConnection: { autoConnect?: boolean } | undefined;
+  BankConnectionStatus: undefined;
   SupportedBanks: undefined;
   DetectedReview: undefined;
   DismissedItems: undefined;
