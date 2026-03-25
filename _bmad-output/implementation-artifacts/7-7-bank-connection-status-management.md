@@ -230,8 +230,11 @@ claude-sonnet-4-6
 - src/app/navigation/SettingsStack.tsx (modified — registered BankConnectionStatusScreen)
 - src/features/settings/screens/SettingsScreen.tsx (modified — added Connection Status List.Item)
 - src/features/settings/screens/SettingsScreen.test.tsx (modified — added Connection Status section tests)
+- src/features/bank/screens/BankConnectionScreen.tsx (modified — demo mode skips WebView, goes directly to processing)
 
 ## Change Log
 
 - 2026-03-25: Implemented Story 7.7 — Bank Connection Status & Management. Added disconnectConnection action to useBankStore, created ConnectionStatusCard component, BankConnectionStatusScreen, registered navigation route, integrated into SettingsScreen Bank section. 908 tests passing.
-- 2026-03-25: [Code Review Fix] Demo mode disconnect bug — fetchConnections was unconditionally resetting connections to [MOCK_CONNECTION], undoing disconnects. Added `_demoDisconnectedIds` tracking to useBankStore so fetchConnections respects demo disconnects. initiateConnection clears the ID on reconnect. All 116 related tests passing.
+- 2026-03-25: [Code Review Fix #1] Demo mode disconnect bug — fetchConnections was unconditionally resetting connections to [MOCK_CONNECTION], undoing disconnects. Added `_demoDisconnectedIds` tracking (persisted to AsyncStorage) to useBankStore so fetchConnections respects demo disconnects. initiateConnection clears the ID on reconnect.
+- 2026-03-25: [Code Review Fix #2] Changed `_demoDisconnectedIds` from Set to string[] for JSON serialization and added to `partialize` so disconnect survives app restart.
+- 2026-03-25: [Code Review Fix #3] Demo mode WebView skip — BankConnectionScreen was opening real Tink URL with mock auth code. Now in demo mode, consent confirm skips WebView and goes directly to processing/initiateConnection. All 143 related tests passing.

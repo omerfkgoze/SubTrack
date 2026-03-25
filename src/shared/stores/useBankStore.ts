@@ -37,7 +37,7 @@ interface BankState {
   dismissedItems: DetectedSubscription[];
   isFetchingDismissedItems: boolean;
   isDisconnecting: boolean;
-  _demoDisconnectedIds: Set<string>; // tracks demo-mode disconnects so fetchConnections respects them
+  _demoDisconnectedIds: string[]; // tracks demo-mode disconnects so fetchConnections respects them
 }
 
 interface BankActions {
@@ -158,14 +158,14 @@ export const useBankStore = create<BankStore>()(
       dismissedItems: [],
       isFetchingDismissedItems: false,
       isDisconnecting: false,
-      _demoDisconnectedIds: new Set<string>(),
+      _demoDisconnectedIds: [] as string[],
 
       fetchConnections: async () => {
         if (env.DEMO_BANK_MODE) {
           set({ isFetchingConnections: true, connectionError: null });
           await mockDelay(300);
           const disconnectedIds = useBankStore.getState()._demoDisconnectedIds;
-          const mockConnections = [MOCK_CONNECTION].filter((c) => !disconnectedIds.has(c.id));
+          const mockConnections = [MOCK_CONNECTION].filter((c) => !disconnectedIds.includes(c.id));
           set({ connections: mockConnections, isFetchingConnections: false });
           return;
         }
@@ -245,15 +245,11 @@ export const useBankStore = create<BankStore>()(
         if (env.DEMO_BANK_MODE) {
           set({ isConnecting: true, connectionError: null });
           await mockDelay(1000);
-          set((state) => {
-            const newDisconnectedIds = new Set(state._demoDisconnectedIds);
-            newDisconnectedIds.delete(MOCK_CONNECTION.id);
-            return {
-              connections: [...state.connections.filter((c) => c.id !== MOCK_CONNECTION.id), MOCK_CONNECTION],
-              isConnecting: false,
-              _demoDisconnectedIds: newDisconnectedIds,
-            };
-          });
+          set((state) => ({
+            connections: [...state.connections.filter((c) => c.id !== MOCK_CONNECTION.id), MOCK_CONNECTION],
+            isConnecting: false,
+            _demoDisconnectedIds: state._demoDisconnectedIds.filter((id) => id !== MOCK_CONNECTION.id),
+          }));
           return;
         }
 
@@ -714,7 +710,9 @@ export const useBankStore = create<BankStore>()(
             dismissedItems: [],
             matchResults: new Map(),
             lastDetectionResult: null,
-            _demoDisconnectedIds: new Set([...state._demoDisconnectedIds, connectionId]),
+            _demoDisconnectedIds: state._demoDisconnectedIds.includes(connectionId)
+              ? state._demoDisconnectedIds
+              : [...state._demoDisconnectedIds, connectionId],
           }));
           return;
         }
@@ -966,6 +964,7 @@ export const useBankStore = create<BankStore>()(
       partialize: (state) => ({
         connections: state.connections,
         dismissedMerchants: state.dismissedMerchants, // persisted — permanent user preference
+        _demoDisconnectedIds: state._demoDisconnectedIds, // persisted — survives app restart in demo mode
         // detectedSubscriptions, lastDetectionResult, matchResults, isMatching are NOT persisted — transient data
       }),
     },

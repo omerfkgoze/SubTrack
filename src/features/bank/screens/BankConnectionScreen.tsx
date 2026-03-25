@@ -132,8 +132,15 @@ export function BankConnectionScreen() {
     clearConnectionError();
     const code = await createLinkSession();
     if (code) {
-      setDelegatedCode(code);
-      setFlowState('webview');
+      if (env.DEMO_BANK_MODE) {
+        // Skip WebView in demo mode — go straight to processing with the mock auth code
+        setPendingAuthCode(code);
+        setPendingCredentialsId(null);
+        setFlowState('processing');
+      } else {
+        setDelegatedCode(code);
+        setFlowState('webview');
+      }
     } else {
       const currentError = useBankStore.getState().connectionError;
       setSnackbarType('error');
