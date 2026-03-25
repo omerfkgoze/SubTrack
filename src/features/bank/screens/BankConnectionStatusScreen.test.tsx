@@ -182,14 +182,16 @@ describe('BankConnectionStatusScreen', () => {
       expect(screen.getByText('Test Bank')).toBeTruthy();
     });
 
-    it('calls refreshBankData for active connection on pull-to-refresh', async () => {
+    it('calls refreshBankData and fetchConnections for active connection on pull-to-refresh', async () => {
       renderScreen();
+      const fetchCallsBefore = mockFetchConnections.mock.calls.length;
       const flatList = screen.UNSAFE_getByType(require('react-native').FlatList);
       await waitFor(async () => {
         flatList.props.refreshControl.props.onRefresh();
       });
       await waitFor(() => {
         expect(mockRefreshBankData).toHaveBeenCalledWith('conn-1');
+        expect(mockFetchConnections.mock.calls.length).toBeGreaterThan(fetchCallsBefore);
       });
     });
 
@@ -232,6 +234,36 @@ describe('BankConnectionStatusScreen', () => {
       fireEvent.press(screen.getByLabelText('Refresh bank data'));
       await waitFor(() => {
         expect(mockRefreshBankData).toHaveBeenCalledWith('conn-1');
+      });
+    });
+
+    it('per-card Refresh Now shows success snackbar with detection count', async () => {
+      const { useBankStore } = jest.requireMock('@shared/stores/useBankStore');
+      useBankStore.getState = jest.fn(() => ({
+        connectionError: null,
+        detectionError: null,
+        lastDetectionResult: { detectedCount: 3, newCount: 1 },
+      }));
+
+      renderScreen();
+      fireEvent.press(screen.getByLabelText('Refresh bank data'));
+      await waitFor(() => {
+        expect(screen.getByText('3 subscriptions detected!')).toBeTruthy();
+      });
+    });
+
+    it('per-card Refresh Now shows error snackbar on failure', async () => {
+      const { useBankStore } = jest.requireMock('@shared/stores/useBankStore');
+      useBankStore.getState = jest.fn(() => ({
+        connectionError: null,
+        detectionError: { code: 'DETECTION_FAILED', message: 'Scan failed' },
+        lastDetectionResult: null,
+      }));
+
+      renderScreen();
+      fireEvent.press(screen.getByLabelText('Refresh bank data'));
+      await waitFor(() => {
+        expect(screen.getByText('Scan failed')).toBeTruthy();
       });
     });
   });

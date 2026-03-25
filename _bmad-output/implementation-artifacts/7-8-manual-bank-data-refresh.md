@@ -1,6 +1,6 @@
 # Story 7.8: Manual Bank Data Refresh
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -263,3 +263,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-03-25: Story implemented — added `refreshBankData` action to `useBankStore`, pull-to-refresh on `BankConnectionStatusScreen` and `DetectedReviewScreen`, updated scan button on `BankConnectionScreen` to use `refreshBankData`, Snackbar feedback for refresh results. All 275 bank tests pass.
+- 2026-03-26: Code review fixes — `handlePullToRefresh` on `BankConnectionStatusScreen` now also calls `fetchConnections()` after `refreshBankData` when active connection exists (AC2 full compliance); `handleRefresh` (per-card Refresh Now) now shows success Snackbar with detection count (Task 5.1 full compliance). 18/18 screen tests pass.

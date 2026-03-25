@@ -55,6 +55,7 @@ export function BankConnectionStatusScreen() {
     const activeConn = connections.find((c) => c.status === 'active');
     if (activeConn) {
       await refreshBankData(activeConn.id);
+      await fetchConnections();
       const error = useBankStore.getState().detectionError;
       if (error) {
         setSnackbarMessage(error.message);
@@ -79,6 +80,16 @@ export function BankConnectionStatusScreen() {
     const error = useBankStore.getState().detectionError;
     if (error) {
       setSnackbarMessage(error.message);
+    } else {
+      const result = useBankStore.getState().lastDetectionResult;
+      if (result) {
+        const count = result.detectedCount;
+        setSnackbarMessage(
+          count === 0
+            ? 'No new subscriptions detected'
+            : `${count} subscription${count === 1 ? '' : 's'} detected!`,
+        );
+      }
     }
   }, [refreshBankData]);
 
