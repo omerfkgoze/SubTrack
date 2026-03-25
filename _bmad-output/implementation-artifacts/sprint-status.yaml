@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-23 # story 7-5 done
+last_updated: 2026-03-25 # story 7-6 ready-for-dev
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -108,7 +108,7 @@ development_status:
   7-3-automatic-subscription-detection: done
   7-4-review-approve-detected-subscriptions: done
   7-5-match-detected-with-manual-subscriptions: done
-  7-6-dismiss-incorrectly-detected-subscriptions: backlog
+  7-6-dismiss-incorrectly-detected-subscriptions: ready-for-dev
   7-7-bank-connection-status-management: backlog
   7-8-manual-bank-data-refresh: backlog
   7-9-bank-connection-expiry-notifications: backlog
