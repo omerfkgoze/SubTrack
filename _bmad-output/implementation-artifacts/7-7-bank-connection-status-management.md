@@ -1,6 +1,6 @@
 # Story 7.7: Bank Connection Status & Management
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -234,3 +234,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - 2026-03-25: Implemented Story 7.7 — Bank Connection Status & Management. Added disconnectConnection action to useBankStore, created ConnectionStatusCard component, BankConnectionStatusScreen, registered navigation route, integrated into SettingsScreen Bank section. 908 tests passing.
+- 2026-03-25: [Code Review Fix] Demo mode disconnect bug — fetchConnections was unconditionally resetting connections to [MOCK_CONNECTION], undoing disconnects. Added `_demoDisconnectedIds` tracking to useBankStore so fetchConnections respects demo disconnects. initiateConnection clears the ID on reconnect. All 116 related tests passing.
