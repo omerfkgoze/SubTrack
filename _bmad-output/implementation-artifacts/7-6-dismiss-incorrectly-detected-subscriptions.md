@@ -1,6 +1,6 @@
 # Story 7.6: Dismiss Incorrectly Detected Subscriptions
 
-Status: review
+Status: done
 
 ## Story
 
@@ -199,6 +199,13 @@ None — implementation proceeded cleanly without blockers.
 - Added mock dismissed merchants and dismissed detected subscriptions to `mockBankData.ts`
 - All 865 tests pass with zero regressions
 
+### Code Review Fixes (AI Review — 2026-03-25)
+- **[M1] Fixed wrong dismissed date in DismissedItemCard**: Card was showing `lastSeen` (last bank transaction date) instead of actual `dismissedAt` from `dismissed_merchants` record. Added `dismissedAt` prop to `DismissedItemCard`, `DismissedItemsScreen` now looks up the real date from `dismissedMerchants` state and passes it through. Falls back to `lastSeen` if merchant record not found.
+- **[M2] Fixed missing error state clearing**: `fetchDismissedMerchants()` and `fetchDismissedItems()` were not clearing `detectionError` at start — inconsistent with 7.5 lesson. Both now set `detectionError: null` on start. Added 2 new unit tests to verify.
+- Updated `DismissedItemsScreen` to also call `fetchDismissedMerchants()` on focus (needed for M1 fix).
+- Updated `DismissedItemCard.test.tsx` and `DismissedItemsScreen.test.tsx` mocks to include new props/state.
+- All 88 tests in affected suites pass after fixes.
+
 ### Change Log
 - Added `dismissed_merchants` Supabase migration (2026-03-25)
 - Added `DismissedMerchant` type, store state/actions, and filtering logic (2026-03-25)
@@ -206,6 +213,7 @@ None — implementation proceeded cleanly without blockers.
 - Added navigation route and SettingsScreen integration for Dismissed Items (2026-03-25)
 - Updated DetectedReviewScreen with merchant exclusion Snackbar (2026-03-25)
 - Added 67 new unit tests + 10 component tests + 9 screen tests + 1 new DetectedReview test + 5 new SettingsScreen tests (2026-03-25)
+- Code review fixes: DismissedItemCard dismissedAt prop, error clearing in fetch actions, updated tests (2026-03-25)
 
 ### File List
 - supabase/migrations/20260325000000_create_dismissed_merchants.sql (NEW)

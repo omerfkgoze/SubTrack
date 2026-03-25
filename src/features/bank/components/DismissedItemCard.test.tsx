@@ -22,10 +22,12 @@ const mockItem: DetectedSubscription = {
 
 const mockOnUndismiss = jest.fn();
 
-function renderCard(item: DetectedSubscription = mockItem) {
+const mockDismissedAt = '2026-03-18T10:00:00Z';
+
+function renderCard(item: DetectedSubscription = mockItem, dismissedAt?: string) {
   return render(
     <PaperProvider theme={theme}>
-      <DismissedItemCard item={item} onUndismiss={mockOnUndismiss} />
+      <DismissedItemCard item={item} dismissedAt={dismissedAt ?? mockDismissedAt} onUndismiss={mockOnUndismiss} />
     </PaperProvider>,
   );
 }

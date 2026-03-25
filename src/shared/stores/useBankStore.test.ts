@@ -764,6 +764,21 @@ describe('useBankStore', () => {
 
       expect(supabase.from).not.toHaveBeenCalled();
     });
+
+    it('clears detectionError at start', async () => {
+      useBankStore.setState({ detectionError: { code: 'OLD_ERROR', message: 'old' } });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedMerchants();
+      });
+
+      expect(useBankStore.getState().detectionError).toBeNull();
+    });
   });
 
   describe('fetchDismissedItems', () => {
@@ -821,6 +836,21 @@ describe('useBankStore', () => {
       const { dismissedItems, isFetchingDismissedItems } = useBankStore.getState();
       expect(dismissedItems).toEqual([]);
       expect(isFetchingDismissedItems).toBe(false);
+    });
+
+    it('clears detectionError at start', async () => {
+      useBankStore.setState({ detectionError: { code: 'OLD_ERROR', message: 'old' } });
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedItems();
+      });
+
+      expect(useBankStore.getState().detectionError).toBeNull();
     });
   });
 

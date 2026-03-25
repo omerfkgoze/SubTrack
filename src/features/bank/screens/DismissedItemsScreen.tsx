@@ -14,6 +14,8 @@ export function DismissedItemsScreen() {
   const fetchDismissedItems = useBankStore((s) => s.fetchDismissedItems);
   const undismissDetectedSubscription = useBankStore((s) => s.undismissDetectedSubscription);
   const detectionError = useBankStore((s) => s.detectionError);
+  const dismissedMerchants = useBankStore((s) => s.dismissedMerchants);
+  const fetchDismissedMerchants = useBankStore((s) => s.fetchDismissedMerchants);
 
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarType, setSnackbarType] = useState<'success' | 'error'>('success');
@@ -21,7 +23,8 @@ export function DismissedItemsScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchDismissedItems();
-    }, [fetchDismissedItems]),
+      fetchDismissedMerchants();
+    }, [fetchDismissedItems, fetchDismissedMerchants]),
   );
 
   const handleUndismiss = useCallback(
@@ -68,12 +71,16 @@ export function DismissedItemsScreen() {
       <FlatList
         data={dismissedItems}
         keyExtractor={(item: DetectedSubscription) => item.id}
-        renderItem={({ item }: { item: DetectedSubscription }) => (
-          <DismissedItemCard
-            item={item}
-            onUndismiss={() => handleUndismiss(item.id)}
-          />
-        )}
+        renderItem={({ item }: { item: DetectedSubscription }) => {
+          const merchant = dismissedMerchants.find((m) => m.merchantName === item.merchantName);
+          return (
+            <DismissedItemCard
+              item={item}
+              dismissedAt={merchant?.dismissedAt}
+              onUndismiss={() => handleUndismiss(item.id)}
+            />
+          );
+        }}
         contentContainerStyle={styles.listContent}
       />
 

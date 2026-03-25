@@ -5,6 +5,7 @@ import type { DetectedSubscription } from '../types';
 
 interface DismissedItemCardProps {
   item: DetectedSubscription;
+  dismissedAt?: string; // ISO date from dismissed_merchants record
   onUndismiss: () => void;
 }
 
@@ -31,9 +32,9 @@ function formatFrequency(frequency: DetectedSubscription['frequency']): string {
   }
 }
 
-export function DismissedItemCard({ item, onUndismiss }: DismissedItemCardProps) {
+export function DismissedItemCard({ item, dismissedAt, onUndismiss }: DismissedItemCardProps) {
   const theme = useTheme();
-  const dismissedDate = formatRelativeDate(item.lastSeen);
+  const dismissedDate = formatRelativeDate(dismissedAt ?? item.lastSeen);
 
   return (
     <Card style={styles.card} accessibilityLabel={`Dismissed item: ${item.merchantName}`}>

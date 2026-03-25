@@ -556,7 +556,7 @@ export const useBankStore = create<BankStore>()(
       },
 
       fetchDismissedMerchants: async () => {
-        set({ isFetchingDismissed: true });
+        set({ isFetchingDismissed: true, detectionError: null });
 
         if (env.DEMO_BANK_MODE) {
           await mockDelay(300);
@@ -595,7 +595,7 @@ export const useBankStore = create<BankStore>()(
       },
 
       fetchDismissedItems: async () => {
-        set({ isFetchingDismissedItems: true });
+        set({ isFetchingDismissedItems: true, detectionError: null });
 
         if (env.DEMO_BANK_MODE) {
           await mockDelay(300);

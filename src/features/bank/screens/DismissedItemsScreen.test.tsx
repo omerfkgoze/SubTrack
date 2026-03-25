@@ -27,6 +27,7 @@ jest.mock('@shared/stores/useBankStore', () => ({
 const mockUseBankStore = useBankStore as jest.MockedFunction<typeof useBankStore>;
 
 const mockFetchDismissedItems = jest.fn().mockResolvedValue(undefined);
+const mockFetchDismissedMerchants = jest.fn().mockResolvedValue(undefined);
 const mockUndismissDetectedSubscription = jest.fn().mockResolvedValue(undefined);
 
 const mockDismissedItem = {
@@ -44,8 +45,16 @@ const mockDismissedItem = {
   lastSeen: '2026-03-20',
 };
 
+const mockDismissedMerchant = {
+  id: 'dm-1',
+  userId: 'user-1',
+  merchantName: 'Coffee Shop',
+  dismissedAt: '2026-03-18T10:00:00Z',
+};
+
 type BankStateOverride = {
   dismissedItems?: typeof mockDismissedItem[];
+  dismissedMerchants?: typeof mockDismissedMerchant[];
   isFetchingDismissedItems?: boolean;
   detectionError?: { code: string; message: string } | null;
 };
@@ -53,15 +62,18 @@ type BankStateOverride = {
 function setupMocks(overrides: BankStateOverride = {}) {
   const {
     dismissedItems = [mockDismissedItem],
+    dismissedMerchants = [mockDismissedMerchant],
     isFetchingDismissedItems = false,
     detectionError = null,
   } = overrides;
 
   const bankState = {
     dismissedItems,
+    dismissedMerchants,
     isFetchingDismissedItems,
     detectionError,
     fetchDismissedItems: mockFetchDismissedItems,
+    fetchDismissedMerchants: mockFetchDismissedMerchants,
     undismissDetectedSubscription: mockUndismissDetectedSubscription,
   };
 
