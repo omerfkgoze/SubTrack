@@ -1,5 +1,12 @@
 export type DetectedSubscriptionStatus = 'detected' | 'approved' | 'dismissed' | 'matched';
 
+export interface DismissedMerchant {
+  id: string;
+  userId: string;
+  merchantName: string;
+  dismissedAt: string; // ISO date
+}
+
 export interface DetectedSubscription {
   id: string;
   userId: string;

@@ -91,6 +91,9 @@ export function DetectedReviewScreen() {
       if (error?.code === 'DISMISS_FAILED') {
         setSnackbarType('error');
         setSnackbarMessage(error.message);
+      } else {
+        setSnackbarType('success');
+        setSnackbarMessage('Merchant excluded from future detections');
       }
     },
     [dismissDetectedSubscription],

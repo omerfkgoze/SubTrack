@@ -297,6 +297,15 @@ describe('DetectedReviewScreen', () => {
         expect(mockDismissDetectedSubscription).toHaveBeenCalledWith('det-1');
       });
     });
+
+    it('shows merchant exclusion snackbar when Not a Sub is pressed', async () => {
+      mockDismissDetectedSubscription.mockResolvedValue(undefined);
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Netflix is not a subscription'));
+      await waitFor(() => {
+        expect(screen.getByText('Merchant excluded from future detections')).toBeTruthy();
+      });
+    });
   });
 
   describe('Confirm Match action', () => {

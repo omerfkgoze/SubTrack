@@ -5,7 +5,7 @@
  * Activated by EXPO_PUBLIC_DEMO_BANK_MODE=true
  */
 
-import type { BankConnection, DetectedSubscription, SupportedBank, DetectionResult } from '../types';
+import type { BankConnection, DetectedSubscription, SupportedBank, DetectionResult, DismissedMerchant } from '../types';
 
 // --- Mock Bank Connection ---
 
@@ -170,6 +170,34 @@ export const MOCK_DETECTED_SUBSCRIPTIONS: DetectedSubscription[] = [
     firstSeen: '2025-04-10',
     lastSeen: '2026-03-10',
   },
+  {
+    id: 'demo-det-011',
+    userId: 'demo-user',
+    bankConnectionId: 'demo-conn-001',
+    tinkGroupId: 'grp-coffee',
+    merchantName: 'Local Coffee Shop',
+    amount: 4.50,
+    currency: 'EUR',
+    frequency: 'weekly',
+    confidenceScore: 0.55,
+    status: 'dismissed',
+    firstSeen: '2026-01-01',
+    lastSeen: '2026-03-20',
+  },
+  {
+    id: 'demo-det-012',
+    userId: 'demo-user',
+    bankConnectionId: 'demo-conn-001',
+    tinkGroupId: 'grp-supermarket',
+    merchantName: 'Supermarket Weekly',
+    amount: 95.00,
+    currency: 'EUR',
+    frequency: 'weekly',
+    confidenceScore: 0.50,
+    status: 'dismissed',
+    firstSeen: '2026-01-15',
+    lastSeen: '2026-03-15',
+  },
 ];
 
 // --- Mock Supported Banks ---
@@ -194,6 +222,23 @@ export const MOCK_DETECTION_RESULT: DetectionResult = {
   detectedCount: MOCK_DETECTED_SUBSCRIPTIONS.length,
   newCount: 3,
 };
+
+// --- Mock Dismissed Merchants ---
+
+export const MOCK_DISMISSED_MERCHANTS: DismissedMerchant[] = [
+  {
+    id: 'demo-dm-001',
+    userId: 'demo-user',
+    merchantName: 'Local Coffee Shop',
+    dismissedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+  },
+  {
+    id: 'demo-dm-002',
+    userId: 'demo-user',
+    merchantName: 'Supermarket Weekly',
+    dismissedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+  },
+];
 
 // --- Helper: simulate network delay ---
 

@@ -10,6 +10,7 @@ import { PaywallScreen } from '@features/premium/screens/PaywallScreen';
 import { BankConnectionScreen } from '@features/bank/screens/BankConnectionScreen';
 import { SupportedBanksScreen } from '@features/bank/screens/SupportedBanksScreen';
 import { DetectedReviewScreen } from '@features/bank/screens/DetectedReviewScreen';
+import { DismissedItemsScreen } from '@features/bank/screens/DismissedItemsScreen';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -53,6 +54,11 @@ export function SettingsStack() {
         name="DetectedReview"
         component={DetectedReviewScreen}
         options={{ title: 'Detected Subscriptions' }}
+      />
+      <Stack.Screen
+        name="DismissedItems"
+        component={DismissedItemsScreen}
+        options={{ title: 'Dismissed Items' }}
       />
       <Stack.Screen
         name="DataExport"

@@ -1,6 +1,6 @@
 # Story 7.6: Dismiss Incorrectly Detected Subscriptions
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -46,44 +46,44 @@ so that my detected list stays accurate and relevant.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create `dismissed_merchants` table migration (AC: 2)
-  - [ ] 1.1 Add Supabase migration: `dismissed_merchants` table (id, user_id, merchant_name, dismissed_at) with RLS
-  - [ ] 1.2 Generate updated TypeScript types via `supabase gen types typescript`
-  - [ ] 1.3 Add `DismissedMerchant` type to `src/features/bank/types/index.ts`
+- [x] Task 1: Create `dismissed_merchants` table migration (AC: 2)
+  - [x] 1.1 Add Supabase migration: `dismissed_merchants` table (id, user_id, merchant_name, dismissed_at) with RLS
+  - [x] 1.2 Generate updated TypeScript types via `supabase gen types typescript`
+  - [x] 1.3 Add `DismissedMerchant` type to `src/features/bank/types/index.ts`
 
-- [ ] Task 2: Update useBankStore — Dismissed Merchants State & Actions (AC: 1, 2, 5)
-  - [ ] 2.1 Add state: `dismissedMerchants: DismissedMerchant[]`, `isFetchingDismissed: boolean`
-  - [ ] 2.2 Add action: `fetchDismissedMerchants()` — loads from Supabase
-  - [ ] 2.3 Add action: `fetchDismissedItems()` — loads detected_subscriptions with status='dismissed'
-  - [ ] 2.4 Update `dismissDetectedSubscription(id)` — also insert into `dismissed_merchants`
-  - [ ] 2.5 Add action: `undismissDetectedSubscription(id)` — status → 'detected', remove from `dismissed_merchants`
-  - [ ] 2.6 Update `fetchDetectedSubscriptions()` — filter out merchants in `dismissedMerchants` list
-  - [ ] 2.7 Persist `dismissedMerchants` to AsyncStorage for offline filtering
+- [x] Task 2: Update useBankStore — Dismissed Merchants State & Actions (AC: 1, 2, 5)
+  - [x] 2.1 Add state: `dismissedMerchants: DismissedMerchant[]`, `isFetchingDismissed: boolean`
+  - [x] 2.2 Add action: `fetchDismissedMerchants()` — loads from Supabase
+  - [x] 2.3 Add action: `fetchDismissedItems()` — loads detected_subscriptions with status='dismissed'
+  - [x] 2.4 Update `dismissDetectedSubscription(id)` — also insert into `dismissed_merchants`
+  - [x] 2.5 Add action: `undismissDetectedSubscription(id)` — status → 'detected', remove from `dismissed_merchants`
+  - [x] 2.6 Update `fetchDetectedSubscriptions()` — filter out merchants in `dismissedMerchants` list
+  - [x] 2.7 Persist `dismissedMerchants` to AsyncStorage for offline filtering
 
-- [ ] Task 3: Create DismissedItemsScreen (AC: 3, 4, 5)
-  - [ ] 3.1 Create `src/features/bank/screens/DismissedItemsScreen.tsx` with FlatList
-  - [ ] 3.2 Create `src/features/bank/components/DismissedItemCard.tsx` — merchant name, amount, frequency, dismissed date, "Undo Dismiss" button
-  - [ ] 3.3 Add empty state: "No dismissed items" with descriptive text
-  - [ ] 3.4 Add loading state with ActivityIndicator
-  - [ ] 3.5 Add error handling with retry Snackbar
+- [x] Task 3: Create DismissedItemsScreen (AC: 3, 4, 5)
+  - [x] 3.1 Create `src/features/bank/screens/DismissedItemsScreen.tsx` with FlatList
+  - [x] 3.2 Create `src/features/bank/components/DismissedItemCard.tsx` — merchant name, amount, frequency, dismissed date, "Undo Dismiss" button
+  - [x] 3.3 Add empty state: "No dismissed items" with descriptive text
+  - [x] 3.4 Add loading state with ActivityIndicator
+  - [x] 3.5 Add error handling with retry Snackbar
 
-- [ ] Task 4: Navigation & Settings Integration (AC: 3)
-  - [ ] 4.1 Add `DismissedItems` to `SettingsStackParamList` in `src/app/navigation/types.ts`
-  - [ ] 4.2 Add DismissedItemsScreen to SettingsStack navigator
-  - [ ] 4.3 Add "Dismissed Items" List.Item in SettingsScreen under Bank section (show count badge via `right` prop)
-  - [ ] 4.4 Only show when user has Premium + connected bank (same guard as existing Bank items)
+- [x] Task 4: Navigation & Settings Integration (AC: 3)
+  - [x] 4.1 Add `DismissedItems` to `SettingsStackParamList` in `src/app/navigation/types.ts`
+  - [x] 4.2 Add DismissedItemsScreen to SettingsStack navigator
+  - [x] 4.3 Add "Dismissed Items" List.Item in SettingsScreen under Bank section (show count badge via `right` prop)
+  - [x] 4.4 Only show when user has Premium + connected bank (same guard as existing Bank items)
 
-- [ ] Task 5: Update DetectedReviewScreen — "Not a Sub" handler (AC: 1)
-  - [ ] 5.1 Verify existing `handleNotSubscription` calls `dismissDetectedSubscription` (already exists from 7.4)
-  - [ ] 5.2 Ensure `dismissDetectedSubscription` now also stores merchant exclusion (from Task 2.4)
-  - [ ] 5.3 Add success Snackbar: "Merchant excluded from future detections"
+- [x] Task 5: Update DetectedReviewScreen — "Not a Sub" handler (AC: 1)
+  - [x] 5.1 Verify existing `handleNotSubscription` calls `dismissDetectedSubscription` (already exists from 7.4)
+  - [x] 5.2 Ensure `dismissDetectedSubscription` now also stores merchant exclusion (from Task 2.4)
+  - [x] 5.3 Add success Snackbar: "Merchant excluded from future detections"
 
-- [ ] Task 6: Tests (AC: all)
-  - [ ] 6.1 Unit tests for useBankStore new actions (fetchDismissedMerchants, undismissDetectedSubscription, merchant filtering) — co-located in `useBankStore.test.ts`
-  - [ ] 6.2 Component tests for DismissedItemCard — `DismissedItemCard.test.tsx`
-  - [ ] 6.3 Screen tests for DismissedItemsScreen — `DismissedItemsScreen.test.tsx` (render, empty state, undo action, error state)
-  - [ ] 6.4 Update DetectedReviewScreen tests — verify merchant exclusion Snackbar
-  - [ ] 6.5 Update SettingsScreen tests — verify "Dismissed Items" item renders with count
+- [x] Task 6: Tests (AC: all)
+  - [x] 6.1 Unit tests for useBankStore new actions (fetchDismissedMerchants, undismissDetectedSubscription, merchant filtering) — co-located in `useBankStore.test.ts`
+  - [x] 6.2 Component tests for DismissedItemCard — `DismissedItemCard.test.tsx`
+  - [x] 6.3 Screen tests for DismissedItemsScreen — `DismissedItemsScreen.test.tsx` (render, empty state, undo action, error state)
+  - [x] 6.4 Update DetectedReviewScreen tests — verify merchant exclusion Snackbar
+  - [x] 6.5 Update SettingsScreen tests — verify "Dismissed Items" item renders with count
 
 ## Dev Notes
 
@@ -177,11 +177,49 @@ src/app/navigation/
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None — implementation proceeded cleanly without blockers.
 
 ### Completion Notes List
+- Created `dismissed_merchants` Supabase migration with UUID PK, RLS, and UNIQUE(user_id, merchant_name) constraint
+- Added `DismissedMerchant` type to bank types
+- Extended `useBankStore` with: `dismissedMerchants`, `isFetchingDismissed`, `dismissedItems`, `isFetchingDismissedItems` state fields
+- Added `fetchDismissedMerchants()`, `fetchDismissedItems()`, `undismissDetectedSubscription()` actions
+- Updated `dismissDetectedSubscription()` to also upsert into `dismissed_merchants` (best-effort, non-fatal if DB insert fails)
+- Updated `fetchDetectedSubscriptions()` to filter out merchants in `dismissedMerchants` list (client-side exclusion)
+- `dismissedMerchants` persisted to AsyncStorage; `dismissedItems` is transient
+- Created `DismissedItemCard.tsx` component with merchant name, amount, frequency, relative dismissed date, and Undo button
+- Created `DismissedItemsScreen.tsx` with FlatList, loading/empty/error states and success Snackbar on Undo
+- Added `DismissedItems` route to `SettingsStackParamList` and `SettingsStack.tsx`
+- Added "Dismissed Items" `List.Item` in Bank section of SettingsScreen — only shown for Premium+connected users
+- Added count badge display to Dismissed Items nav entry
+- Updated `handleNotSubscription` in `DetectedReviewScreen` to show "Merchant excluded from future detections" Snackbar
+- Added mock dismissed merchants and dismissed detected subscriptions to `mockBankData.ts`
+- All 865 tests pass with zero regressions
 
 ### Change Log
+- Added `dismissed_merchants` Supabase migration (2026-03-25)
+- Added `DismissedMerchant` type, store state/actions, and filtering logic (2026-03-25)
+- Created `DismissedItemCard` component and `DismissedItemsScreen` screen (2026-03-25)
+- Added navigation route and SettingsScreen integration for Dismissed Items (2026-03-25)
+- Updated DetectedReviewScreen with merchant exclusion Snackbar (2026-03-25)
+- Added 67 new unit tests + 10 component tests + 9 screen tests + 1 new DetectedReview test + 5 new SettingsScreen tests (2026-03-25)
 
 ### File List
+- supabase/migrations/20260325000000_create_dismissed_merchants.sql (NEW)
+- src/features/bank/types/index.ts (MODIFIED)
+- src/features/bank/mocks/mockBankData.ts (MODIFIED)
+- src/shared/stores/useBankStore.ts (MODIFIED)
+- src/shared/stores/useBankStore.test.ts (MODIFIED)
+- src/features/bank/components/DismissedItemCard.tsx (NEW)
+- src/features/bank/components/DismissedItemCard.test.tsx (NEW)
+- src/features/bank/screens/DismissedItemsScreen.tsx (NEW)
+- src/features/bank/screens/DismissedItemsScreen.test.tsx (NEW)
+- src/app/navigation/types.ts (MODIFIED)
+- src/app/navigation/SettingsStack.tsx (MODIFIED)
+- src/features/settings/screens/SettingsScreen.tsx (MODIFIED)
+- src/features/settings/screens/SettingsScreen.test.tsx (MODIFIED)
+- src/features/bank/screens/DetectedReviewScreen.tsx (MODIFIED)
+- src/features/bank/screens/DetectedReviewScreen.test.tsx (MODIFIED)

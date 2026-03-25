@@ -20,6 +20,7 @@ export type SettingsStackParamList = {
   BankConnection: { autoConnect?: boolean } | undefined;
   SupportedBanks: undefined;
   DetectedReview: undefined;
+  DismissedItems: undefined;
   DataExport: undefined;
   MyData: undefined;
   Account: undefined;

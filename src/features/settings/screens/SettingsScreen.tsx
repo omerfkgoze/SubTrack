@@ -39,6 +39,8 @@ export function SettingsScreen() {
   const bankConnections = useBankStore((s) => s.connections);
   const isBankConnected = bankConnections.length > 0;
   const fetchBankConnections = useBankStore((s) => s.fetchConnections);
+  const dismissedItemsCount = useBankStore((s) => s.dismissedItems.length);
+  const fetchDismissedItems = useBankStore((s) => s.fetchDismissedItems);
   const isBiometricAvailable = useAuthStore((s) => s.isBiometricAvailable);
   const isBiometricEnabled = useAuthStore((s) => s.isBiometricEnabled);
   const biometryType = useAuthStore((s) => s.biometryType);
@@ -68,7 +70,10 @@ export function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchBankConnections();
-    }, [fetchBankConnections]),
+      if (isPremium && isBankConnected) {
+        fetchDismissedItems();
+      }
+    }, [fetchBankConnections, fetchDismissedItems, isPremium, isBankConnected]),
   );
 
   useEffect(() => {
@@ -298,6 +303,27 @@ export function SettingsScreen() {
             accessibilityLabel="Bank Connection"
             accessibilityRole="button"
           />
+          {isPremium && isBankConnected && (
+            <List.Item
+              title="Dismissed Items"
+              description={dismissedItemsCount > 0 ? `${dismissedItemsCount} item${dismissedItemsCount === 1 ? '' : 's'} dismissed` : 'No dismissed items'}
+              left={(props) => <List.Icon {...props} icon="eye-off-outline" />}
+              right={(props) => (
+                <View style={styles.dismissedRight}>
+                  {dismissedItemsCount > 0 && (
+                    <Text variant="labelSmall" style={[styles.countBadge, { backgroundColor: theme.colors.secondaryContainer, color: theme.colors.onSecondaryContainer }]}>
+                      {dismissedItemsCount}
+                    </Text>
+                  )}
+                  <List.Icon {...props} icon="chevron-right" />
+                </View>
+              )}
+              onPress={() => navigation.navigate('DismissedItems')}
+              style={styles.listItem}
+              accessibilityLabel="Dismissed Items"
+              accessibilityRole="button"
+            />
+          )}
         </List.Section>
 
         <List.Section>
@@ -537,5 +563,17 @@ const styles = StyleSheet.create({
   },
   biometricButton: {
     minHeight: 44,
+  },
+  dismissedRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 4,
+    fontWeight: 'bold',
   },
 });

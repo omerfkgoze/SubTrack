@@ -96,6 +96,10 @@ describe('useBankStore', () => {
       lastDetectionResult: null,
       matchResults: new Map(),
       isMatching: false,
+      dismissedMerchants: [],
+      isFetchingDismissed: false,
+      dismissedItems: [],
+      isFetchingDismissedItems: false,
     });
     mockUpdateSubscription.mockResolvedValue(true);
   });
@@ -595,15 +599,59 @@ describe('useBankStore', () => {
       confidenceScore: 0.75, status: 'detected' as const, firstSeen: '2025-10-01', lastSeen: '2026-03-01',
     };
 
+    const mockMerchantRow = {
+      id: 'dm-1', user_id: 'user-1', merchant_name: 'Spotify', dismissed_at: '2026-03-25T00:00:00Z',
+    };
+
+    function buildDismissMock(updateError: unknown = null, merchantRow: unknown = mockMerchantRow, merchantError: unknown = null) {
+      return jest.fn().mockImplementation((table: string) => {
+        if (table === 'detected_subscriptions') {
+          const mockEq = jest.fn();
+          mockEq.mockReturnValueOnce({ eq: mockEq });
+          mockEq.mockResolvedValueOnce({ error: updateError });
+          return { update: jest.fn().mockReturnValue({ eq: mockEq }) };
+        }
+        // dismissed_merchants
+        return {
+          upsert: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({ data: merchantRow, error: merchantError }),
+            }),
+          }),
+        };
+      });
+    }
+
     beforeEach(() => {
       useBankStore.setState({ detectedSubscriptions: [mockDetected] });
     });
 
     it('updates DB status to dismissed and removes item from local array', async () => {
-      const mockEq = jest.fn();
-      mockEq.mockReturnValueOnce({ eq: mockEq });
-      mockEq.mockResolvedValueOnce({ error: null });
-      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+      supabase.from.mockImplementation(buildDismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      const { detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(0);
+      expect(detectionError).toBeNull();
+    });
+
+    it('adds merchant to dismissedMerchants on successful dismiss', async () => {
+      supabase.from.mockImplementation(buildDismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      const { dismissedMerchants } = useBankStore.getState();
+      expect(dismissedMerchants).toHaveLength(1);
+      expect(dismissedMerchants[0].merchantName).toBe('Spotify');
+    });
+
+    it('still removes item from detectedSubscriptions even when merchant upsert fails', async () => {
+      supabase.from.mockImplementation(buildDismissMock(null, null, { message: 'Upsert failed' }));
 
       await act(async () => {
         await useBankStore.getState().dismissDetectedSubscription('det-2');
@@ -627,10 +675,7 @@ describe('useBankStore', () => {
     });
 
     it('sets error on dismiss failure', async () => {
-      const mockEq = jest.fn();
-      mockEq.mockReturnValueOnce({ eq: mockEq });
-      mockEq.mockResolvedValueOnce({ error: { message: 'DB error' } });
-      supabase.from.mockReturnValue({ update: jest.fn().mockReturnValue({ eq: mockEq }) });
+      supabase.from.mockImplementation(buildDismissMock({ message: 'DB error' }));
 
       await act(async () => {
         await useBankStore.getState().dismissDetectedSubscription('det-2');
@@ -639,6 +684,321 @@ describe('useBankStore', () => {
       const { detectedSubscriptions, detectionError } = useBankStore.getState();
       expect(detectedSubscriptions).toHaveLength(1);
       expect(detectionError?.code).toBe('DISMISS_FAILED');
+    });
+
+    it('clears detectionError at start', async () => {
+      useBankStore.setState({ detectionError: { code: 'OLD_ERROR', message: 'old' } });
+      supabase.from.mockImplementation(buildDismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().dismissDetectedSubscription('det-2');
+      });
+
+      expect(useBankStore.getState().detectionError).toBeNull();
+    });
+  });
+
+  describe('fetchDismissedMerchants', () => {
+    const mockMerchantRows = [
+      { id: 'dm-1', user_id: 'user-1', merchant_name: 'Spotify', dismissed_at: '2026-03-20T00:00:00Z' },
+      { id: 'dm-2', user_id: 'user-1', merchant_name: 'Netflix', dismissed_at: '2026-03-15T00:00:00Z' },
+    ];
+
+    it('fetches dismissed merchants from DB', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockMerchantRows, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedMerchants();
+      });
+
+      const { dismissedMerchants, isFetchingDismissed } = useBankStore.getState();
+      expect(dismissedMerchants).toHaveLength(2);
+      expect(dismissedMerchants[0].merchantName).toBe('Spotify');
+      expect(dismissedMerchants[1].merchantName).toBe('Netflix');
+      expect(isFetchingDismissed).toBe(false);
+    });
+
+    it('handles empty dismissed merchants', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedMerchants();
+      });
+
+      const { dismissedMerchants, isFetchingDismissed } = useBankStore.getState();
+      expect(dismissedMerchants).toEqual([]);
+      expect(isFetchingDismissed).toBe(false);
+    });
+
+    it('handles DB error gracefully', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedMerchants();
+      });
+
+      const { dismissedMerchants, isFetchingDismissed } = useBankStore.getState();
+      expect(dismissedMerchants).toEqual([]);
+      expect(isFetchingDismissed).toBe(false);
+    });
+
+    it('returns early without user', async () => {
+      const { useAuthStore } = jest.requireMock('@shared/stores/useAuthStore');
+      useAuthStore.getState.mockReturnValueOnce({ user: null });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedMerchants();
+      });
+
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('fetchDismissedItems', () => {
+    const mockDismissedRows = [
+      {
+        id: 'det-5', user_id: 'user-1', bank_connection_id: 'conn-1', tink_group_id: 'g5',
+        merchant_name: 'Coffee Shop', amount: 4.50, currency: 'EUR', frequency: 'weekly',
+        confidence_score: 0.55, status: 'dismissed', first_seen: '2026-01-01', last_seen: '2026-03-20',
+      },
+    ];
+
+    it('fetches dismissed items from DB', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockDismissedRows, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedItems();
+      });
+
+      const { dismissedItems, isFetchingDismissedItems } = useBankStore.getState();
+      expect(dismissedItems).toHaveLength(1);
+      expect(dismissedItems[0].merchantName).toBe('Coffee Shop');
+      expect(dismissedItems[0].status).toBe('dismissed');
+      expect(isFetchingDismissedItems).toBe(false);
+    });
+
+    it('handles empty dismissed items', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedItems();
+      });
+
+      expect(useBankStore.getState().dismissedItems).toEqual([]);
+    });
+
+    it('handles DB error gracefully', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDismissedItems();
+      });
+
+      const { dismissedItems, isFetchingDismissedItems } = useBankStore.getState();
+      expect(dismissedItems).toEqual([]);
+      expect(isFetchingDismissedItems).toBe(false);
+    });
+  });
+
+  describe('undismissDetectedSubscription', () => {
+    const mockDismissedItem = {
+      id: 'det-5', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g5',
+      merchantName: 'Coffee Shop', amount: 4.50, currency: 'EUR', frequency: 'weekly' as const,
+      confidenceScore: 0.55, status: 'dismissed' as const, firstSeen: '2026-01-01', lastSeen: '2026-03-20',
+    };
+
+    const mockDismissedMerchant = {
+      id: 'dm-5', userId: 'user-1', merchantName: 'Coffee Shop', dismissedAt: '2026-03-20T00:00:00Z',
+    };
+
+    function buildUndismissMock(updateError: unknown = null, deleteError: unknown = null) {
+      return jest.fn().mockImplementation((table: string) => {
+        if (table === 'detected_subscriptions') {
+          const mockEq = jest.fn();
+          mockEq.mockReturnValueOnce({ eq: mockEq });
+          mockEq.mockResolvedValueOnce({ error: updateError });
+          return { update: jest.fn().mockReturnValue({ eq: mockEq }) };
+        }
+        // dismissed_merchants
+        const mockEq = jest.fn();
+        mockEq.mockReturnValueOnce({ eq: mockEq });
+        mockEq.mockResolvedValueOnce({ error: deleteError });
+        return { delete: jest.fn().mockReturnValue({ eq: mockEq }) };
+      });
+    }
+
+    beforeEach(() => {
+      useBankStore.setState({
+        dismissedItems: [mockDismissedItem],
+        dismissedMerchants: [mockDismissedMerchant],
+      });
+    });
+
+    it('reverts status to detected in DB and moves item to detectedSubscriptions', async () => {
+      supabase.from.mockImplementation(buildUndismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().undismissDetectedSubscription('det-5');
+      });
+
+      const { dismissedItems, detectedSubscriptions, detectionError } = useBankStore.getState();
+      expect(dismissedItems).toHaveLength(0);
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectedSubscriptions[0].status).toBe('detected');
+      expect(detectionError).toBeNull();
+    });
+
+    it('removes merchant from dismissedMerchants on undismiss', async () => {
+      supabase.from.mockImplementation(buildUndismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().undismissDetectedSubscription('det-5');
+      });
+
+      expect(useBankStore.getState().dismissedMerchants).toHaveLength(0);
+    });
+
+    it('sets UNDISMISS_FAILED error when DB update fails', async () => {
+      supabase.from.mockImplementation(buildUndismissMock({ message: 'DB error' }));
+
+      await act(async () => {
+        await useBankStore.getState().undismissDetectedSubscription('det-5');
+      });
+
+      const { dismissedItems, detectionError } = useBankStore.getState();
+      expect(dismissedItems).toHaveLength(1); // not removed
+      expect(detectionError?.code).toBe('UNDISMISS_FAILED');
+    });
+
+    it('sets NETWORK_ERROR on exception', async () => {
+      supabase.from.mockImplementation(() => { throw new Error('Network down'); });
+
+      await act(async () => {
+        await useBankStore.getState().undismissDetectedSubscription('det-5');
+      });
+
+      expect(useBankStore.getState().detectionError?.code).toBe('NETWORK_ERROR');
+    });
+
+    it('clears detectionError at start', async () => {
+      useBankStore.setState({ detectionError: { code: 'OLD_ERROR', message: 'old' } });
+      supabase.from.mockImplementation(buildUndismissMock());
+
+      await act(async () => {
+        await useBankStore.getState().undismissDetectedSubscription('det-5');
+      });
+
+      expect(useBankStore.getState().detectionError).toBeNull();
+    });
+  });
+
+  describe('fetchDetectedSubscriptions merchant filtering', () => {
+    const mockRows = [
+      {
+        id: 'det-1', user_id: 'user-1', bank_connection_id: 'conn-1', tink_group_id: 'g1',
+        merchant_name: 'Netflix', amount: 12.99, currency: 'EUR', frequency: 'monthly',
+        confidence_score: 0.9, status: 'detected', first_seen: '2025-09-15', last_seen: '2026-02-15',
+      },
+      {
+        id: 'det-2', user_id: 'user-1', bank_connection_id: 'conn-1', tink_group_id: 'g2',
+        merchant_name: 'Coffee Shop', amount: 4.50, currency: 'EUR', frequency: 'weekly',
+        confidence_score: 0.55, status: 'detected', first_seen: '2026-01-01', last_seen: '2026-03-20',
+      },
+    ];
+
+    it('filters out merchants in dismissedMerchants list', async () => {
+      useBankStore.setState({
+        dismissedMerchants: [
+          { id: 'dm-1', userId: 'user-1', merchantName: 'Coffee Shop', dismissedAt: '2026-03-20T00:00:00Z' },
+        ],
+      });
+
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockRows, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDetectedSubscriptions();
+      });
+
+      const { detectedSubscriptions } = useBankStore.getState();
+      expect(detectedSubscriptions).toHaveLength(1);
+      expect(detectedSubscriptions[0].merchantName).toBe('Netflix');
+    });
+
+    it('returns all items when no merchants are dismissed', async () => {
+      supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockResolvedValue({ data: mockRows, error: null }),
+      });
+
+      await act(async () => {
+        await useBankStore.getState().fetchDetectedSubscriptions();
+      });
+
+      expect(useBankStore.getState().detectedSubscriptions).toHaveLength(2);
+    });
+  });
+
+  describe('dismissedMerchants persistence', () => {
+    it('persists dismissedMerchants to storage', () => {
+      useBankStore.setState({
+        connections: [],
+        dismissedMerchants: [
+          { id: 'dm-1', userId: 'user-1', merchantName: 'Coffee Shop', dismissedAt: '2026-03-20T00:00:00Z' },
+        ],
+      });
+
+      const store = useBankStore as unknown as { persist: { getOptions: () => { partialize: (s: Record<string, unknown>) => Record<string, unknown> } } };
+      const partialize = store.persist.getOptions().partialize;
+      const persisted = partialize(useBankStore.getState());
+      expect(persisted).toHaveProperty('dismissedMerchants');
+      expect((persisted.dismissedMerchants as unknown[]).length).toBe(1);
+    });
+
+    it('does NOT persist dismissedItems to storage', () => {
+      useBankStore.setState({
+        connections: [],
+        dismissedItems: [
+          {
+            id: 'det-5', userId: 'user-1', bankConnectionId: 'conn-1', tinkGroupId: 'g5',
+            merchantName: 'Coffee Shop', amount: 4.50, currency: 'EUR', frequency: 'weekly',
+            confidenceScore: 0.55, status: 'dismissed', firstSeen: '2026-01-01', lastSeen: '2026-03-20',
+          },
+        ],
+      });
+
+      const store = useBankStore as unknown as { persist: { getOptions: () => { partialize: (s: Record<string, unknown>) => Record<string, unknown> } } };
+      const partialize = store.persist.getOptions().partialize;
+      const persisted = partialize(useBankStore.getState());
+      expect(persisted).not.toHaveProperty('dismissedItems');
     });
   });
 

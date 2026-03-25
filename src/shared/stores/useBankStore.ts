@@ -5,13 +5,14 @@ import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { env } from '@config/env';
-import type { BankConnection, SupportedBank, DetectedSubscription, DetectionResult } from '@features/bank/types';
+import type { BankConnection, SupportedBank, DetectedSubscription, DetectionResult, DismissedMerchant } from '@features/bank/types';
 import type { AppError } from '@features/subscriptions/types';
 import {
   MOCK_CONNECTION,
   MOCK_DETECTED_SUBSCRIPTIONS,
   MOCK_SUPPORTED_BANKS,
   MOCK_DETECTION_RESULT,
+  MOCK_DISMISSED_MERCHANTS,
   mockDelay,
 } from '@features/bank/mocks/mockBankData';
 import { findMatches, type MatchResult } from '@features/bank/utils/matchingUtils';
@@ -31,6 +32,10 @@ interface BankState {
   lastDetectionResult: DetectionResult | null;
   matchResults: Map<string, MatchResult>; // transient, recomputed on focus
   isMatching: boolean;
+  dismissedMerchants: DismissedMerchant[];
+  isFetchingDismissed: boolean;
+  dismissedItems: DetectedSubscription[];
+  isFetchingDismissedItems: boolean;
 }
 
 interface BankActions {
@@ -43,6 +48,9 @@ interface BankActions {
   fetchDetectedSubscriptions: () => Promise<void>;
   approveDetectedSubscription: (id: string) => Promise<void>;
   dismissDetectedSubscription: (id: string) => Promise<void>;
+  fetchDismissedMerchants: () => Promise<void>;
+  fetchDismissedItems: () => Promise<void>;
+  undismissDetectedSubscription: (id: string) => Promise<void>;
   computeMatches: () => void;
   confirmMatch: (detectedId: string) => Promise<void>;
   replaceWithDetected: (detectedId: string) => Promise<void>;
@@ -142,6 +150,10 @@ export const useBankStore = create<BankStore>()(
       lastDetectionResult: null,
       matchResults: new Map<string, MatchResult>(),
       isMatching: false,
+      dismissedMerchants: [],
+      isFetchingDismissed: false,
+      dismissedItems: [],
+      isFetchingDismissedItems: false,
 
       fetchConnections: async () => {
         if (env.DEMO_BANK_MODE) {
@@ -385,8 +397,12 @@ export const useBankStore = create<BankStore>()(
             useBankStore.getState().computeMatches();
             return;
           }
+          const { dismissedMerchants } = useBankStore.getState();
+          const dismissedNames = new Set(dismissedMerchants.map((m) => m.merchantName));
           set({
-            detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'detected'),
+            detectedSubscriptions: MOCK_DETECTED_SUBSCRIPTIONS.filter(
+              (s) => s.status === 'detected' && !dismissedNames.has(s.merchantName),
+            ),
             isFetchingDetected: false,
           });
           useBankStore.getState().computeMatches();
@@ -414,7 +430,11 @@ export const useBankStore = create<BankStore>()(
             return;
           }
 
-          const detectedSubscriptions = (data ?? []).map(mapRowToDetectedSubscription);
+          const { dismissedMerchants } = useBankStore.getState();
+          const dismissedNames = new Set(dismissedMerchants.map((m) => m.merchantName));
+          const detectedSubscriptions = (data ?? [])
+            .map(mapRowToDetectedSubscription)
+            .filter((s) => !dismissedNames.has(s.merchantName));
           set({ detectedSubscriptions, isFetchingDetected: false });
           useBankStore.getState().computeMatches();
         } catch {
@@ -458,11 +478,28 @@ export const useBankStore = create<BankStore>()(
       },
 
       dismissDetectedSubscription: async (id: string) => {
+        set({ detectionError: null });
+
+        const detected = useBankStore.getState().detectedSubscriptions.find((s) => s.id === id);
+
         if (env.DEMO_BANK_MODE) {
           await mockDelay(200);
-          set((state) => ({
-            detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
-          }));
+          if (detected) {
+            const newMerchant: DismissedMerchant = {
+              id: `demo-dm-${Date.now()}`,
+              userId: detected.userId,
+              merchantName: detected.merchantName,
+              dismissedAt: new Date().toISOString(),
+            };
+            set((state) => ({
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+              dismissedMerchants: [...state.dismissedMerchants.filter((m) => m.merchantName !== detected.merchantName), newMerchant],
+            }));
+          } else {
+            set((state) => ({
+              detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
+            }));
+          }
           return;
         }
 
@@ -481,9 +518,172 @@ export const useBankStore = create<BankStore>()(
             return;
           }
 
+          // Remove from local detectedSubscriptions
           set((state) => ({
             detectedSubscriptions: state.detectedSubscriptions.filter((s) => s.id !== id),
           }));
+
+          // Best-effort: store merchant exclusion (non-fatal if fails)
+          if (detected) {
+            try {
+              const { data: merchantRow, error: merchantError } = await supabase
+                .from('dismissed_merchants')
+                .upsert(
+                  { user_id: user.id, merchant_name: detected.merchantName },
+                  { onConflict: 'user_id,merchant_name' },
+                )
+                .select()
+                .single();
+
+              if (!merchantError && merchantRow) {
+                const newMerchant: DismissedMerchant = {
+                  id: merchantRow.id as string,
+                  userId: merchantRow.user_id as string,
+                  merchantName: merchantRow.merchant_name as string,
+                  dismissedAt: merchantRow.dismissed_at as string,
+                };
+                set((state) => ({
+                  dismissedMerchants: [...state.dismissedMerchants.filter((m) => m.merchantName !== detected.merchantName), newMerchant],
+                }));
+              }
+            } catch {
+              // Non-fatal: merchant exclusion failed but item was dismissed
+            }
+          }
+        } catch {
+          set({ detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' } });
+        }
+      },
+
+      fetchDismissedMerchants: async () => {
+        set({ isFetchingDismissed: true });
+
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(300);
+          set({ dismissedMerchants: MOCK_DISMISSED_MERCHANTS, isFetchingDismissed: false });
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) {
+          set({ isFetchingDismissed: false });
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('dismissed_merchants')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('dismissed_at', { ascending: false });
+
+          if (error) {
+            set({ isFetchingDismissed: false });
+            return;
+          }
+
+          const dismissedMerchants: DismissedMerchant[] = (data ?? []).map((row) => ({
+            id: row.id as string,
+            userId: row.user_id as string,
+            merchantName: row.merchant_name as string,
+            dismissedAt: row.dismissed_at as string,
+          }));
+          set({ dismissedMerchants, isFetchingDismissed: false });
+        } catch {
+          set({ isFetchingDismissed: false });
+        }
+      },
+
+      fetchDismissedItems: async () => {
+        set({ isFetchingDismissedItems: true });
+
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(300);
+          const dismissedItems = MOCK_DETECTED_SUBSCRIPTIONS.filter((s) => s.status === 'dismissed');
+          set({ dismissedItems, isFetchingDismissedItems: false });
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) {
+          set({ isFetchingDismissedItems: false });
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('detected_subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'dismissed')
+            .order('last_seen', { ascending: false });
+
+          if (error) {
+            set({ isFetchingDismissedItems: false });
+            return;
+          }
+
+          const dismissedItems = (data ?? []).map(mapRowToDetectedSubscription);
+          set({ dismissedItems, isFetchingDismissedItems: false });
+        } catch {
+          set({ isFetchingDismissedItems: false });
+        }
+      },
+
+      undismissDetectedSubscription: async (id: string) => {
+        set({ detectionError: null });
+
+        const { dismissedItems, dismissedMerchants } = useBankStore.getState();
+        const item = dismissedItems.find((s) => s.id === id);
+
+        if (env.DEMO_BANK_MODE) {
+          await mockDelay(200);
+          if (item) {
+            set((state) => ({
+              dismissedItems: state.dismissedItems.filter((s) => s.id !== id),
+              dismissedMerchants: state.dismissedMerchants.filter((m) => m.merchantName !== item.merchantName),
+              detectedSubscriptions: [...state.detectedSubscriptions, { ...item, status: 'detected' as const }],
+            }));
+          }
+          return;
+        }
+
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+
+        try {
+          const { error } = await supabase
+            .from('detected_subscriptions')
+            .update({ status: 'detected' })
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+          if (error) {
+            set({ detectionError: { code: 'UNDISMISS_FAILED', message: 'Failed to restore. Please try again.' } });
+            return;
+          }
+
+          if (item) {
+            // Remove from dismissed_merchants so future detection includes this merchant
+            await supabase
+              .from('dismissed_merchants')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('merchant_name', item.merchantName);
+
+            const merchantToRemove = dismissedMerchants.find((m) => m.merchantName === item.merchantName);
+            set((state) => ({
+              dismissedItems: state.dismissedItems.filter((s) => s.id !== id),
+              dismissedMerchants: merchantToRemove
+                ? state.dismissedMerchants.filter((m) => m.merchantName !== item.merchantName)
+                : state.dismissedMerchants,
+              detectedSubscriptions: [...state.detectedSubscriptions, { ...item, status: 'detected' as const }],
+            }));
+          } else {
+            set((state) => ({
+              dismissedItems: state.dismissedItems.filter((s) => s.id !== id),
+            }));
+          }
         } catch {
           set({ detectionError: { code: 'NETWORK_ERROR', message: 'Network error. Please try again.' } });
         }
@@ -697,6 +897,7 @@ export const useBankStore = create<BankStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         connections: state.connections,
+        dismissedMerchants: state.dismissedMerchants, // persisted — permanent user preference
         // detectedSubscriptions, lastDetectionResult, matchResults, isMatching are NOT persisted — transient data
       }),
     },

@@ -73,9 +73,15 @@ jest.mock('@shared/stores/usePremiumStore', () => ({
 }));
 
 const mockFetchBankConnections = jest.fn();
+const mockFetchDismissedItems = jest.fn();
 jest.mock('@shared/stores/useBankStore', () => ({
   useBankStore: jest.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ connections: [], fetchConnections: mockFetchBankConnections }),
+    selector({
+      connections: [],
+      fetchConnections: mockFetchBankConnections,
+      dismissedItems: [],
+      fetchDismissedItems: mockFetchDismissedItems,
+    }),
   ),
 }));
 
@@ -288,6 +294,72 @@ describe('SettingsScreen', () => {
         expect(screen.getByText('Personal')).toBeTruthy();
         expect(screen.getByText('Work')).toBeTruthy();
       });
+    });
+  });
+
+  describe('Dismissed Items section (Story 7.6)', () => {
+    const { useBankStore } = jest.requireMock('@shared/stores/useBankStore');
+
+    function setupBankMock(connections: unknown[], dismissedItems: unknown[]) {
+      useBankStore.mockImplementation((selector: (s: Record<string, unknown>) => unknown) =>
+        selector({
+          connections,
+          fetchConnections: mockFetchBankConnections,
+          dismissedItems,
+          fetchDismissedItems: mockFetchDismissedItems,
+        }),
+      );
+    }
+
+    it('does not render Dismissed Items for free users', () => {
+      setupBankMock([], []);
+      renderWithProvider();
+      expect(screen.queryByLabelText('Dismissed Items')).toBeNull();
+    });
+
+    it('does not render Dismissed Items for premium users without bank connected', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([], []);
+      renderWithProvider();
+      expect(screen.queryByLabelText('Dismissed Items')).toBeNull();
+    });
+
+    it('renders Dismissed Items for premium users with connected bank', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1' }], []);
+      renderWithProvider();
+      expect(screen.getByLabelText('Dismissed Items')).toBeTruthy();
+    });
+
+    it('shows count badge when dismissed items exist', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      const dismissedItems = [
+        { id: 'det-5', merchantName: 'Coffee Shop' },
+        { id: 'det-6', merchantName: 'Gym' },
+      ];
+      setupBankMock([{ id: 'conn-1' }], dismissedItems);
+      renderWithProvider();
+      expect(screen.getByText('2')).toBeTruthy();
+    });
+
+    it('navigates to DismissedItems screen when tapped', () => {
+      mockUsePremiumStore.mockImplementation(
+        (selector: (s: { isPremium: boolean }) => unknown) =>
+          selector({ isPremium: true }) as never,
+      );
+      setupBankMock([{ id: 'conn-1' }], []);
+      renderWithProvider();
+      fireEvent.press(screen.getByLabelText('Dismissed Items'));
+      expect(mockNavigate).toHaveBeenCalledWith('DismissedItems');
     });
   });
 });
