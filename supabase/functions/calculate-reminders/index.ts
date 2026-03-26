@@ -15,6 +15,15 @@ interface ReminderCandidate {
   remind_days_before: number
 }
 
+interface BankExpiryCandidate {
+  bank_connection_id: string
+  bank_name: string
+  consent_expires_at: string
+  user_id: string
+  days_until_expiry: number
+  connection_status: string
+}
+
 interface TrialExpiryCandidate {
   subscription_id: string
   subscription_name: string
@@ -23,6 +32,23 @@ interface TrialExpiryCandidate {
   trial_expiry_date: string
   user_id: string
   days_until_expiry: number
+}
+
+// NOTE: This function is duplicated in src/features/notifications/services/bankExpiryNotifications.test.ts
+// If you change the logic here, update the test copy as well.
+function formatBankExpiryNotification(candidate: BankExpiryCandidate) {
+  const { bank_name, days_until_expiry } = candidate
+
+  if (days_until_expiry <= 0) {
+    return {
+      title: `🔗 Your ${bank_name} connection has expired`,
+      body: 'Reconnect now to keep auto-detection active.',
+    }
+  }
+  return {
+    title: `🔗 Your ${bank_name} connection expires in ${days_until_expiry} day${days_until_expiry === 1 ? '' : 's'}`,
+    body: 'Reconnect to keep auto-detection active.',
+  }
 }
 
 // NOTE: This function is duplicated in src/features/notifications/services/trialExpiryNotifications.test.ts
@@ -226,14 +252,123 @@ Deno.serve(async (req: Request) => {
       else trialFailed++
     }
 
+    // ========================================
+    // 3. Process BANK CONNECTION EXPIRY notifications
+    // ========================================
+    const { data: bankCandidates, error: bankError } = await supabase.rpc(
+      'get_bank_expiry_candidates',
+      { check_date: today }
+    )
+    if (bankError) throw bankError
+
+    let bankSent = 0, bankSkipped = 0, bankFailed = 0
+
+    for (const candidate of (bankCandidates ?? []) as BankExpiryCandidate[]) {
+      // Deduplication — one notification per day per connection
+      const { data: existing } = await supabase
+        .from('notification_log')
+        .select('id, status')
+        .eq('bank_connection_id', candidate.bank_connection_id)
+        .eq('renewal_date', today)
+        .eq('notification_type', 'bank_expiry')
+        .maybeSingle()
+
+      if (existing?.status === 'sent') { bankSkipped++; continue }
+
+      const { data: tokens } = await supabase
+        .from('push_tokens')
+        .select('token')
+        .eq('user_id', candidate.user_id)
+
+      if (!tokens || tokens.length === 0) { bankSkipped++; continue }
+
+      const { title, body } = formatBankExpiryNotification(candidate)
+
+      const result = await sendPushNotification(tokens, title, body, candidate.bank_connection_id, expoAccessToken)
+
+      await supabase.from('notification_log').upsert(
+        {
+          user_id: candidate.user_id,
+          bank_connection_id: candidate.bank_connection_id,
+          renewal_date: today,
+          notification_type: 'bank_expiry',
+          status: result.success ? 'sent' : 'failed',
+          expo_receipt_id: result.expoReceiptId,
+          error_message: result.success ? null : result.lastError,
+        },
+        { onConflict: 'bank_connection_id,renewal_date,notification_type' }
+      )
+
+      // Update connection status to expired if it has passed expiry date
+      if (candidate.days_until_expiry <= 0 && candidate.connection_status !== 'expired') {
+        await supabase
+          .from('bank_connections')
+          .update({ status: 'expired' })
+          .eq('id', candidate.bank_connection_id)
+      }
+
+      if (result.success) bankSent++
+      else bankFailed++
+    }
+
+    // ========================================
+    // 3b. Process BANK CONNECTION ERROR notifications
+    // ========================================
+    const { data: errorConnections } = await supabase
+      .from('bank_connections')
+      .select('id, bank_name, user_id, status')
+      .eq('status', 'error')
+
+    for (const conn of (errorConnections ?? [])) {
+      // Dedup: one error notification per day per connection
+      const { data: existing } = await supabase
+        .from('notification_log')
+        .select('id, status')
+        .eq('bank_connection_id', conn.id)
+        .eq('renewal_date', today)
+        .eq('notification_type', 'bank_expiry')
+        .maybeSingle()
+
+      if (existing?.status === 'sent') { bankSkipped++; continue }
+
+      const { data: tokens } = await supabase
+        .from('push_tokens')
+        .select('token')
+        .eq('user_id', conn.user_id)
+
+      if (!tokens || tokens.length === 0) { bankSkipped++; continue }
+
+      const title = `⚠️ Issue with your ${conn.bank_name} connection`
+      const body = 'Check your bank connection settings.'
+
+      const result = await sendPushNotification(tokens, title, body, conn.id, expoAccessToken)
+
+      await supabase.from('notification_log').upsert(
+        {
+          user_id: conn.user_id,
+          bank_connection_id: conn.id,
+          renewal_date: today,
+          notification_type: 'bank_expiry',
+          status: result.success ? 'sent' : 'failed',
+          expo_receipt_id: result.expoReceiptId,
+          error_message: result.success ? null : result.lastError,
+        },
+        { onConflict: 'bank_connection_id,renewal_date,notification_type' }
+      )
+
+      if (result.success) bankSent++
+      else bankFailed++
+    }
+
     const summary = {
       renewals: { processed: (candidates ?? []).length, sent, skipped, failed },
       trials: { processed: (trialCandidates ?? []).length, sent: trialSent, skipped: trialSkipped, failed: trialFailed },
+      bankExpiry: { processed: (bankCandidates ?? []).length + (errorConnections ?? []).length, sent: bankSent, skipped: bankSkipped, failed: bankFailed },
       totals: {
-        processed: (candidates ?? []).length + (trialCandidates ?? []).length,
-        sent: sent + trialSent,
-        skipped: skipped + trialSkipped,
-        failed: failed + trialFailed,
+        processed: (candidates ?? []).length + (trialCandidates ?? []).length + (bankCandidates ?? []).length + (errorConnections ?? []).length,
+        sent: sent + trialSent + bankSent,
+        skipped: skipped + trialSkipped + bankSkipped,
+        failed: failed + trialFailed + bankFailed,
       },
     }
     console.log('calculate-reminders result:', JSON.stringify(summary))

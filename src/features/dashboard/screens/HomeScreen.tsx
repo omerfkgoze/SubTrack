@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { MainTabsParamList } from '@app/navigation/types';
 import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
@@ -22,11 +22,20 @@ import { UpcomingRenewals } from '../components/UpcomingRenewals';
 import { NotificationStatusBanner } from '@features/notifications/components/NotificationStatusBanner';
 import { NotificationStatusBadge } from '@features/notifications/components/NotificationStatusBadge';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
+import { BankConnectionExpiryBanner } from '@features/bank/components/BankConnectionExpiryBanner';
+import { useBankStore } from '@shared/stores/useBankStore';
 
 export function HomeScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabsParamList>>();
   const subscriptions = useSubscriptionStore((s) => s.subscriptions);
   const permissionStatus = useNotificationStore((s) => s.permissionStatus);
+  const fetchConnections = useBankStore((s) => s.fetchConnections);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchConnections();
+    }, [fetchConnections])
+  );
   const monthlyTotal = calculateTotalMonthlyCost(subscriptions);
   const categoryBreakdown = calculateCategoryBreakdown(subscriptions);
   const activeCount = calculateActiveCount(subscriptions);
@@ -40,6 +49,7 @@ export function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <NotificationStatusBanner />
+      <BankConnectionExpiryBanner />
       {permissionStatus !== 'denied' && <NotificationStatusBadge variant="header" />}
       <SpendingHero
         amount={monthlyTotal}

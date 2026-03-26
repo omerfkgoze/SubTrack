@@ -6,6 +6,7 @@ import { useSubscriptionStore } from '@shared/stores/useSubscriptionStore';
 import { useNotificationStore } from '@shared/stores/useNotificationStore';
 import { HomeScreen } from './HomeScreen';
 import type { Subscription } from '@features/subscriptions/types';
+import type { BankConnection } from '@features/bank/types';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
@@ -41,12 +42,25 @@ jest.mock('expo-constants', () => ({
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
+  useFocusEffect: (cb: () => void) => { cb(); },
 }));
 
 jest.mock('@features/notifications/services/notificationHistoryService', () => ({
   getDeliveryCount: jest.fn().mockResolvedValue(0),
   hasPartialNotifications: jest.fn().mockResolvedValue(false),
   getNotificationHistory: jest.fn().mockResolvedValue([]),
+}));
+
+const mockFetchConnections = jest.fn();
+let mockBankStoreState = {
+  connections: [] as BankConnection[],
+  fetchConnections: mockFetchConnections,
+};
+
+jest.mock('@shared/stores/useBankStore', () => ({
+  useBankStore: jest.fn((selector: (s: typeof mockBankStoreState) => unknown) =>
+    selector(mockBankStoreState)
+  ),
 }));
 
 function renderWithProvider() {
@@ -92,6 +106,7 @@ describe('HomeScreen', () => {
       error: null,
       pendingDelete: null,
     });
+    mockBankStoreState = { connections: [], fetchConnections: mockFetchConnections };
   });
 
   it('renders SpendingHero with correct total from store subscriptions', () => {
@@ -236,6 +251,51 @@ describe('HomeScreen', () => {
     });
     renderWithProvider();
     expect(screen.getByText('No upcoming renewals in the next 30 days')).toBeTruthy();
+  });
+
+  describe('BankConnectionExpiryBanner integration', () => {
+    const now = new Date();
+    const makeConnection = (overrides: Partial<BankConnection> = {}): BankConnection => ({
+      id: 'conn-1',
+      userId: 'user-1',
+      provider: 'tink',
+      bankName: 'Test Bank',
+      status: 'active',
+      connectedAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      consentGrantedAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      consentExpiresAt: new Date(now.getTime() + 166 * 24 * 60 * 60 * 1000).toISOString(),
+      lastSyncedAt: null,
+      tinkCredentialsId: 'cred-1',
+      ...overrides,
+    });
+
+    it('renders expiry banner when connection is expired', () => {
+      mockBankStoreState = {
+        connections: [makeConnection({ status: 'expired', bankName: 'My Bank' })],
+        fetchConnections: mockFetchConnections,
+      };
+      renderWithProvider();
+      expect(screen.getByText(/My Bank.*expired/i)).toBeTruthy();
+    });
+
+    it('renders expiry banner when connection is expiring_soon', () => {
+      mockBankStoreState = {
+        connections: [makeConnection({ status: 'expiring_soon', bankName: 'My Bank' })],
+        fetchConnections: mockFetchConnections,
+      };
+      renderWithProvider();
+      expect(screen.getByText(/My Bank.*expires soon/i)).toBeTruthy();
+    });
+
+    it('does not render expiry banner when all connections are active', () => {
+      mockBankStoreState = {
+        connections: [makeConnection({ status: 'active' })],
+        fetchConnections: mockFetchConnections,
+      };
+      renderWithProvider();
+      expect(screen.queryByText(/expires soon/i)).toBeNull();
+      expect(screen.queryByText(/has expired/i)).toBeNull();
+    });
   });
 
   describe('NotificationStatusBanner integration', () => {
