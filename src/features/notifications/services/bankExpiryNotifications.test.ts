@@ -109,11 +109,16 @@ async function processBankExpiryCandidates(
       { onConflict: 'bank_connection_id,renewal_date,notification_type' },
     );
 
-    // Update connection status if expired
+    // Update connection status based on expiry
     if (candidate.days_until_expiry <= 0 && candidate.connection_status !== 'expired') {
       await supabase
         .from('bank_connections')
         .update({ status: 'expired' })
+        .eq('id', candidate.bank_connection_id);
+    } else if (candidate.days_until_expiry > 0 && candidate.connection_status === 'active') {
+      await supabase
+        .from('bank_connections')
+        .update({ status: 'expiring_soon' })
         .eq('id', candidate.bank_connection_id);
     }
 
@@ -328,11 +333,38 @@ describe('Bank Expiry Notifications (Story 7.9)', () => {
       expect(supabase._bankConnectionsUpdate).not.toHaveBeenCalled();
     });
 
-    it('does NOT update status when connection has days remaining', async () => {
+    it('does NOT update status when connection has days remaining but is already expiring_soon', async () => {
       const supabase = createMockSupabase();
       const mockFetch = createMockFetch();
       const candidate = createBankCandidate({
         days_until_expiry: 5,
+        connection_status: 'expiring_soon',
+      });
+
+      await processBankExpiryCandidates([candidate], TODAY, supabase, mockFetch);
+
+      expect(supabase._bankConnectionsUpdate).not.toHaveBeenCalled();
+    });
+
+    it('updates bank_connections status to expiring_soon when days_until_expiry > 0 and currently active (AC3)', async () => {
+      const supabase = createMockSupabase();
+      const mockFetch = createMockFetch();
+      const candidate = createBankCandidate({
+        days_until_expiry: 5,
+        connection_status: 'active',
+        bank_connection_id: 'conn-expiring',
+      });
+
+      await processBankExpiryCandidates([candidate], TODAY, supabase, mockFetch);
+
+      expect(supabase._bankConnectionsUpdate).toHaveBeenCalledWith({ status: 'expiring_soon' });
+    });
+
+    it('does NOT update to expiring_soon when connection already has expiring_soon status', async () => {
+      const supabase = createMockSupabase();
+      const mockFetch = createMockFetch();
+      const candidate = createBankCandidate({
+        days_until_expiry: 3,
         connection_status: 'expiring_soon',
       });
 

@@ -79,15 +79,16 @@ async function sendPushNotification(
   tokens: { token: string }[],
   title: string,
   body: string,
-  subscriptionId: string,
+  entityId: string,
   expoAccessToken: string | undefined,
+  dataKey: string = 'subscription_id',
 ): Promise<{ success: boolean; lastError: string; expoReceiptId: string | null }> {
   const notifications = tokens.map((t) => ({
     to: t.token,
     title,
     body,
     sound: 'default' as const,
-    data: { subscription_id: subscriptionId },
+    data: { [dataKey]: entityId },
   }))
 
   let success = false
@@ -284,7 +285,7 @@ Deno.serve(async (req: Request) => {
 
       const { title, body } = formatBankExpiryNotification(candidate)
 
-      const result = await sendPushNotification(tokens, title, body, candidate.bank_connection_id, expoAccessToken)
+      const result = await sendPushNotification(tokens, title, body, candidate.bank_connection_id, expoAccessToken, 'bank_connection_id')
 
       await supabase.from('notification_log').upsert(
         {
@@ -299,11 +300,16 @@ Deno.serve(async (req: Request) => {
         { onConflict: 'bank_connection_id,renewal_date,notification_type' }
       )
 
-      // Update connection status to expired if it has passed expiry date
+      // Update connection status based on expiry
       if (candidate.days_until_expiry <= 0 && candidate.connection_status !== 'expired') {
         await supabase
           .from('bank_connections')
           .update({ status: 'expired' })
+          .eq('id', candidate.bank_connection_id)
+      } else if (candidate.days_until_expiry > 0 && candidate.connection_status === 'active') {
+        await supabase
+          .from('bank_connections')
+          .update({ status: 'expiring_soon' })
           .eq('id', candidate.bank_connection_id)
       }
 
@@ -341,7 +347,7 @@ Deno.serve(async (req: Request) => {
       const title = `⚠️ Issue with your ${conn.bank_name} connection`
       const body = 'Check your bank connection settings.'
 
-      const result = await sendPushNotification(tokens, title, body, conn.id, expoAccessToken)
+      const result = await sendPushNotification(tokens, title, body, conn.id, expoAccessToken, 'bank_connection_id')
 
       await supabase.from('notification_log').upsert(
         {

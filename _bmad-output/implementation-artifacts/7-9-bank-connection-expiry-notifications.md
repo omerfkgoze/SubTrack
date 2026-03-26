@@ -1,6 +1,6 @@
 # Story 7.9: Bank Connection Expiry Notifications
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -416,6 +416,9 @@ claude-sonnet-4-6
 - HomeScreen: imported banner + `useFocusEffect` with `fetchConnections()` on focus.
 - `notificationHistoryService`: added `bank_expiry` to type union, updated query to fetch `bank_connection_id`, added separate bank_connections lookup, COALESCE display name logic.
 - Tests: 16 new tests added (7 banner unit tests, 3 HomeScreen integration, 1 notificationHistoryService existing, 16 bank expiry edge function logic tests). All 951 tests pass.
+- Code review fix: Added `active` → `expiring_soon` status transition in edge function Section 3 (when `days_until_expiry > 0` and connection is `active`) — without this, AC3 amber banner would never display.
+- Code review fix: Updated `sendPushNotification` to accept optional `dataKey` param; bank notifications now send `data: { bank_connection_id: ... }` instead of the semantically wrong `data: { subscription_id: bankUUID }`.
+- 2 new tests added for `expiring_soon` status update coverage.
 
 ### File List
 
