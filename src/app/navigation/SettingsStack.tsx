@@ -12,6 +12,7 @@ import { SupportedBanksScreen } from '@features/bank/screens/SupportedBanksScree
 import { DetectedReviewScreen } from '@features/bank/screens/DetectedReviewScreen';
 import { DismissedItemsScreen } from '@features/bank/screens/DismissedItemsScreen';
 import { BankConnectionStatusScreen } from '@features/bank/screens/BankConnectionStatusScreen';
+import { ReconciliationScreen } from '@features/bank/screens/ReconciliationScreen';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -65,6 +66,11 @@ export function SettingsStack() {
         name="DismissedItems"
         component={DismissedItemsScreen}
         options={{ title: 'Dismissed Items' }}
+      />
+      <Stack.Screen
+        name="Reconciliation"
+        component={ReconciliationScreen}
+        options={{ title: 'Spending Reconciliation' }}
       />
       <Stack.Screen
         name="DataExport"

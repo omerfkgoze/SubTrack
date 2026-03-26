@@ -22,6 +22,7 @@ export type SettingsStackParamList = {
   SupportedBanks: undefined;
   DetectedReview: undefined;
   DismissedItems: undefined;
+  Reconciliation: undefined;
   DataExport: undefined;
   MyData: undefined;
   Account: undefined;

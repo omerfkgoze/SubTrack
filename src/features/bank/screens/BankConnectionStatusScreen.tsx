@@ -127,6 +127,17 @@ export function BankConnectionStatusScreen() {
 
   return (
     <View style={styles.container}>
+      <Button
+        mode="outlined"
+        onPress={() => navigation.navigate('Reconciliation')}
+        style={styles.reconciliationButton}
+        icon="bank-transfer"
+        accessibilityLabel="View Spending Reconciliation"
+        accessibilityRole="button"
+      >
+        View Spending Reconciliation
+      </Button>
+
       <FlatList
         data={connections}
         keyExtractor={(item: BankConnection) => item.id}
@@ -208,6 +219,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   connectButton: {
+    minHeight: 44,
+  },
+  reconciliationButton: {
+    margin: 16,
+    marginBottom: 0,
     minHeight: 44,
   },
 });

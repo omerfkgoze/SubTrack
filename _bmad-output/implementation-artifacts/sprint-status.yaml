@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-26 # story 7-10 ready-for-dev
+last_updated: 2026-03-26 # story 7-10 review
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -112,5 +112,5 @@ development_status:
   7-7-bank-connection-status-management: done
   7-8-manual-bank-data-refresh: done
   7-9-bank-connection-expiry-notifications: done
-  7-10-spending-reconciliation-view: ready-for-dev
+  7-10-spending-reconciliation-view: review
   epic-7-retrospective: optional
