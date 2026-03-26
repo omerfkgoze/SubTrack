@@ -41,9 +41,9 @@ describe('UnmatchedTransactionCard', () => {
     expect(screen.getByText('Spotify')).toBeTruthy();
   });
 
-  it('renders amount with currency and /mo suffix', () => {
+  it('renders amount with currency', () => {
     renderCard();
-    expect(screen.getByText('9.99 EUR/mo')).toBeTruthy();
+    expect(screen.getByText('9.99 EUR')).toBeTruthy();
   });
 
   it('renders frequency', () => {

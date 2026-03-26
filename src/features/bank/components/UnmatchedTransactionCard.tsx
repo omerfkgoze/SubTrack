@@ -32,7 +32,7 @@ export function UnmatchedTransactionCard({ item, onAdd, onDismiss }: UnmatchedTr
       <Card.Content>
         <Text variant="titleMedium">{item.merchantName}</Text>
         <Text variant="bodyMedium" style={styles.amount}>
-          {item.amount.toFixed(2)} {item.currency}/mo
+          {item.amount.toFixed(2)} {item.currency}
         </Text>
         <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
           {formatFrequency(item.frequency)}

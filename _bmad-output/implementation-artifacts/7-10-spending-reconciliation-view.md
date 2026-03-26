@@ -1,6 +1,6 @@
 # Story 7.10: Spending Reconciliation View
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -63,7 +63,7 @@ so that I can identify subscriptions I might have missed.
   - [x] 5.1 Add `Reconciliation` to `SettingsStackParamList` in `src/app/navigation/types.ts`
   - [x] 5.2 Add `<Stack.Screen name="Reconciliation" component={ReconciliationScreen} />` to `SettingsStack.tsx`
   - [x] 5.3 Add navigation entry point: a "Reconciliation" card/button in `BankConnectionStatusScreen` or a new row in Settings
-  - [x] 5.4 Optionally add a shortcut from HomeScreen dashboard (e.g., in the bank status section)
+  - [ ] 5.4 Optionally add a shortcut from HomeScreen dashboard (e.g., in the bank status section)
 
 - [x] Task 6: Tests (AC: all)
   - [x] 6.1 Unit tests for `reconciliationUtils` (covered in 1.3)
@@ -278,3 +278,4 @@ claude-sonnet-4-6
 ## Change Log
 
 - Implemented Spending Reconciliation View: ReconciliationSummary type, computeReconciliation utility, ReconciliationSummaryCard, UnmatchedTransactionCard, ReconciliationScreen, navigation integration, 37 tests added (Date: 2026-03-26)
+- Code review fix: Removed misleading "/mo" suffix from UnmatchedTransactionCard amount display; raw detected amount is not monthly-normalized so the suffix was factually wrong for yearly/quarterly/weekly subs. Updated test assertion accordingly. (Date: 2026-03-26)
