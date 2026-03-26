@@ -34,7 +34,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-02-11
-last_updated: 2026-03-26 # story 7-10 done
+last_updated: 2026-03-26 # epic 7 retrospective done
 project: SubTrack
 project_key: NOKEY
 tracking_system: file-system
@@ -102,7 +102,7 @@ development_status:
   epic-6-retrospective: done
 
   # Epic 7: Bank Integration (Phase 2)
-  epic-7: in-progress
+  epic-7: done
   7-1-bank-account-connection-via-open-banking: done
   7-2-supported-banks-list: done
   7-3-automatic-subscription-detection: done
@@ -113,4 +113,4 @@ development_status:
   7-8-manual-bank-data-refresh: done
   7-9-bank-connection-expiry-notifications: done
   7-10-spending-reconciliation-view: done
-  epic-7-retrospective: optional
+  epic-7-retrospective: done

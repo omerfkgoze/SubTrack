@@ -1,4 +1,5 @@
 # GOZE Release Management Tasks
+
 # SubTrack — App Store & Google Play
 
 **Owner:** GOZE (Project Lead)
@@ -12,7 +13,7 @@
 
 ### Apple / App Store
 
-- [ ] **Apple Developer Program enrollment**
+- [x] **Apple Developer Program enrollment**
   - URL: https://developer.apple.com/programs/enroll/
   - Cost: $99/year
   - Requires: Apple ID, D-U-N-S number (for organizations) or personal verification
@@ -50,12 +51,12 @@
 
 ### Google Play
 
-- [ ] **Google Play Developer account**
+- [x] **Google Play Developer account**
   - URL: https://play.google.com/console
   - Cost: $25 one-time
   - Requires: Google account, identity verification, 2–3 days for approval
 
-- [ ] **Google Play Console — create app**
+- [x] **Google Play Console — create app**
   - App name: SubTrack
   - Default language
   - App type: App
@@ -203,7 +204,7 @@
 
 ## PART 4: Epic 7 — Bank Integration Specific Tasks
 
-*(Complete when Epic 7 is ready for submission)*
+_(Complete when Epic 7 is ready for submission)_
 
 - [ ] **App Store — "Financial Services" category review**
   - Open Banking / bank data access may require additional review
@@ -226,17 +227,17 @@
 
 ## Reference Links
 
-| Resource | URL |
-|---|---|
-| App Store Connect | https://appstoreconnect.apple.com |
-| Apple Developer | https://developer.apple.com |
-| Google Play Console | https://play.google.com/console |
-| EAS Build docs | https://docs.expo.dev/build/introduction/ |
-| EAS Submit docs | https://docs.expo.dev/submit/introduction/ |
-| App Store Review Guidelines | https://developer.apple.com/app-store/review/guidelines/ |
-| Google Play Policy | https://play.google.com/about/developer-content-policy/ |
-| App Store IAP Guidelines | https://developer.apple.com/app-store/review/guidelines/#in-app-purchase |
+| Resource                    | URL                                                                      |
+| --------------------------- | ------------------------------------------------------------------------ |
+| App Store Connect           | https://appstoreconnect.apple.com                                        |
+| Apple Developer             | https://developer.apple.com                                              |
+| Google Play Console         | https://play.google.com/console                                          |
+| EAS Build docs              | https://docs.expo.dev/build/introduction/                                |
+| EAS Submit docs             | https://docs.expo.dev/submit/introduction/                               |
+| App Store Review Guidelines | https://developer.apple.com/app-store/review/guidelines/                 |
+| Google Play Policy          | https://play.google.com/about/developer-content-policy/                  |
+| App Store IAP Guidelines    | https://developer.apple.com/app-store/review/guidelines/#in-app-purchase |
 
 ---
 
-*This is a living document. Update as tasks are completed and new release cycles begin.*
+_This is a living document. Update as tasks are completed and new release cycles begin._
