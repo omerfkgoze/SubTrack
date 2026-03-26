@@ -67,7 +67,7 @@ export function NotificationPermissionScreen() {
           >
             Default Reminder Timing
           </Text>
-          <View accessibilityLabel="Default reminder timing options" accessibilityRole="radiogroup">
+          <View accessibilityLabel="Default reminder timing options" accessibilityRole="radiogroup" style={styles.segmentedWrapper}>
             <SegmentedButtons
               value={defaultTiming}
               onValueChange={handleTimingChange}
@@ -81,6 +81,7 @@ export function NotificationPermissionScreen() {
             mode="contained"
             onPress={() => navigation.goBack()}
             style={styles.button}
+            contentStyle={styles.buttonContent}
             accessibilityLabel="Continue to app"
           >
             Continue
@@ -123,6 +124,7 @@ export function NotificationPermissionScreen() {
           loading={isLoading}
           disabled={isLoading}
           style={styles.button}
+          contentStyle={styles.buttonContent}
           icon="bell"
           accessibilityLabel="Enable push notifications"
         >
@@ -133,6 +135,7 @@ export function NotificationPermissionScreen() {
           onPress={handleSkip}
           disabled={isLoading}
           style={styles.skipButton}
+          contentStyle={styles.buttonContent}
           accessibilityLabel="Skip notifications setup"
         >
           Maybe Later
@@ -183,8 +186,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
   },
+  segmentedWrapper: {
+    alignSelf: 'stretch',
+  },
   segmentedButtons: {
-    alignSelf: 'center',
-    maxWidth: '100%',
+    alignSelf: 'stretch',
+    marginHorizontal: 4,
+  },
+  buttonContent: {
+    height: 44,
   },
 });

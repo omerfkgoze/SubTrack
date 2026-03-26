@@ -139,10 +139,10 @@ describe('SubscriptionDetailScreen', () => {
     expect(screen.getByText('Netflix')).toBeTruthy();
     expect(screen.getAllByText(/17\.99/).length).toBeGreaterThan(0);
     expect(screen.getByText('Monthly')).toBeTruthy();
-    expect(screen.getByText('March 15, 2026')).toBeTruthy();
+    expect(screen.getByText('15 March 2026')).toBeTruthy();
     expect(screen.getAllByText('Entertainment').length).toBeGreaterThan(0);
     expect(screen.getByText('Active')).toBeTruthy();
-    expect(screen.getByText('January 10, 2026')).toBeTruthy();
+    expect(screen.getByText('10 January 2026')).toBeTruthy();
   });
 
   it('displays notes section when notes exist', () => {
@@ -160,7 +160,7 @@ describe('SubscriptionDetailScreen', () => {
   it('shows trial information when is_trial is true', () => {
     renderWithProvider('sub-trial');
     expect(screen.getByText('TRIAL INFO')).toBeTruthy();
-    expect(screen.getByText(/Expires:.*March 5, 2026/)).toBeTruthy();
+    expect(screen.getByText(/Expires:.*5 March 2026/)).toBeTruthy();
   });
 
   it('hides trial section when is_trial is false', () => {

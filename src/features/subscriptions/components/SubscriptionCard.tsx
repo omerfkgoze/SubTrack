@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     height: CARD_HEIGHT,
-    overflow: 'hidden',
   },
   inactiveContent: {
     opacity: 0.5,
@@ -99,6 +98,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: CARD_HEIGHT,
     paddingRight: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   categoryStripe: {
     width: 4,

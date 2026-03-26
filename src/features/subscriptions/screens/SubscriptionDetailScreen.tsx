@@ -427,10 +427,10 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         <DetailRow label="Billing Cycle" value={BILLING_CYCLE_LABELS[subscription.billing_cycle] ?? subscription.billing_cycle} />
         <DetailRow
           label="Next Renewal"
-          value={format(parseISO(subscription.renewal_date), 'MMMM d, yyyy')}
+          value={format(parseISO(subscription.renewal_date), 'd MMMM yyyy')}
           valueColor={theme.colors.primary}
           bold
-          accessibilityLabel={`Next renewal date: ${format(parseISO(subscription.renewal_date), 'MMMM d, yyyy')}`}
+          accessibilityLabel={`Next renewal date: ${format(parseISO(subscription.renewal_date), 'd MMMM yyyy')}`}
         />
         <DetailRow label="Category" value={categoryConfig.label} />
         <DetailRow
@@ -441,7 +441,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
         {subscription.created_at && (
           <DetailRow
             label="Created"
-            value={format(parseISO(subscription.created_at), 'MMMM d, yyyy')}
+            value={format(parseISO(subscription.created_at), 'd MMMM yyyy')}
           />
         )}
 
@@ -514,7 +514,7 @@ export function SubscriptionDetailScreen({ route, navigation }: Props) {
                   variant="bodyMedium"
                   style={{ color: theme.colors.onSurface, marginTop: 8 }}
                 >
-                  Expires: {format(parseISO(subscription.trial_expiry_date), 'MMMM d, yyyy')}
+                  Expires: {format(parseISO(subscription.trial_expiry_date), 'd MMMM yyyy')}
                 </Text>
               )}
             </View>
@@ -687,6 +687,8 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
   },
   heroCard: {
     borderRadius: 12,
@@ -745,6 +747,7 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     alignSelf: 'stretch',
+    marginHorizontal: 4,
   },
   actionsContainer: {
     marginTop: 32,
@@ -754,6 +757,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   actionButtonContent: {
-    minHeight: 44,
+    height: 44,
   },
 });

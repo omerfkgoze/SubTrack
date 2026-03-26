@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import { format, parseISO } from 'date-fns';
 import {
   List,
   Button,
@@ -86,7 +87,7 @@ export function MyDataScreen() {
   }
 
   const createdAtFormatted = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString()
+    ? format(parseISO(user.created_at), 'dd/MM/yyyy')
     : 'Unknown';
 
   return (

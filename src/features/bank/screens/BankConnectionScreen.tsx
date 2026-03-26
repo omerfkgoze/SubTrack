@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { format, parseISO } from 'date-fns';
 import {
   Text,
   Button,
@@ -295,6 +296,7 @@ export function BankConnectionScreen() {
   // Info screen (default)
   return (
     <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
       {isBankConnected && (
         <Surface style={styles.connectedCard} elevation={1}>
           <View style={styles.connectedRow}>
@@ -306,7 +308,7 @@ export function BankConnectionScreen() {
             </Text>
           </View>
           <Text variant="bodySmall" style={styles.connectedDetail}>
-            Connected {displayConnection ? new Date(displayConnection.connectedAt).toLocaleDateString() : ''}
+            Connected {displayConnection ? format(parseISO(displayConnection.connectedAt), 'dd/MM/yyyy') : ''}
           </Text>
 
           {activeConnection ? (
@@ -343,7 +345,7 @@ export function BankConnectionScreen() {
               )}
               <Text variant="bodySmall" style={styles.lastSyncedText}>
                 {activeConnection?.lastSyncedAt
-                  ? `Last scanned: ${new Date(activeConnection.lastSyncedAt).toLocaleDateString()}`
+                  ? `Last scanned: ${format(parseISO(activeConnection.lastSyncedAt), 'dd/MM/yyyy')}`
                   : 'Never scanned'}
               </Text>
             </>
@@ -431,6 +433,7 @@ export function BankConnectionScreen() {
           </View>
         )}
       </Surface>
+      </ScrollView>
 
       <BankConsentDialog
         visible={flowState === 'consent'}
@@ -461,6 +464,9 @@ export function BankConnectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   centered: {
     justifyContent: 'center',

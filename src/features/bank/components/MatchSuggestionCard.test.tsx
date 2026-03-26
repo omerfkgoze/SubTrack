@@ -93,12 +93,12 @@ describe('MatchSuggestionCard', () => {
   describe('match reason chips', () => {
     it('displays name_similar reason chip', () => {
       renderCard();
-      expect(screen.getByLabelText('Name Match')).toBeTruthy();
+      expect(screen.getByLabelText('Name')).toBeTruthy();
     });
 
     it('displays cycle_match reason chip', () => {
       renderCard();
-      expect(screen.getByLabelText('Same Cycle')).toBeTruthy();
+      expect(screen.getByLabelText('Cycle')).toBeTruthy();
     });
 
     it('displays amount_close chip when present', () => {
@@ -107,7 +107,7 @@ describe('MatchSuggestionCard', () => {
         matchReasons: ['name_similar', 'amount_close', 'cycle_match'],
       };
       renderCard(mockDetected, matchWithAmount);
-      expect(screen.getByLabelText('Amount Close')).toBeTruthy();
+      expect(screen.getByLabelText('Amount')).toBeTruthy();
     });
   });
 

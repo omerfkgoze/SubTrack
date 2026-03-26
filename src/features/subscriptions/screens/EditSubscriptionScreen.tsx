@@ -22,6 +22,7 @@ import { CategoryChip } from '@features/subscriptions/components/CategoryChip';
 import type { SubscriptionsStackScreenProps } from '@app/navigation/types';
 
 registerTranslation('en', en);
+registerTranslation('en-GB', en);
 
 const BILLING_CYCLE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
@@ -211,7 +212,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
             name="renewal_date"
             render={({ field: { onChange } }) => (
               <DatePickerInput
-                locale="en"
+                locale="en-GB"
                 label="Next Renewal Date"
                 value={renewalDate}
                 onChange={(date: Date | undefined) => {
@@ -283,7 +284,7 @@ export function EditSubscriptionScreen({ route, navigation }: Props) {
                 const trialDate = value ? new Date(value) : undefined;
                 return (
                   <DatePickerInput
-                    locale="en"
+                    locale="en-GB"
                     label="Trial Expiry Date"
                     value={trialDate}
                     onChange={(date) => {
@@ -406,6 +407,7 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     marginTop: 4,
+    marginHorizontal: 4,
   },
   chipScroll: {
     flexDirection: 'row',
@@ -425,6 +427,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   submitButtonContent: {
-    minHeight: 44,
+    height: 44,
   },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button, Surface, useTheme } from 'react-native-paper';
+import { format, parseISO } from 'date-fns';
 import type { BankConnection, BankConnectionStatus } from '../types';
 
 function formatRelativeDate(isoDate: string | null): string {
@@ -21,8 +22,7 @@ function formatRelativeDate(isoDate: string | null): string {
 }
 
 function formatDate(isoDate: string): string {
-  const date = new Date(isoDate);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return format(parseISO(isoDate), 'dd/MM/yyyy');
 }
 
 function getDaysUntilExpiry(isoDate: string): number {
@@ -113,6 +113,7 @@ export function ConnectionStatusCard({
             loading={isDisconnecting}
             disabled={isDisconnecting || isDetecting}
             style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
             accessibilityLabel="Disconnect bank"
           >
             Disconnect
@@ -123,6 +124,7 @@ export function ConnectionStatusCard({
             loading={isDetecting}
             disabled={isDisconnecting || isDetecting}
             style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
             accessibilityLabel="Refresh bank data"
           >
             Refresh Now
@@ -141,6 +143,7 @@ export function ConnectionStatusCard({
             mode="contained"
             onPress={onReconnect}
             style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
             accessibilityLabel="Reconnect bank"
           >
             Reconnect
@@ -157,6 +160,7 @@ export function ConnectionStatusCard({
             mode="contained"
             onPress={onReconnect}
             style={styles.actionButton}
+            contentStyle={styles.actionButtonContent}
             accessibilityLabel="Retry bank connection"
           >
             Retry
@@ -212,6 +216,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minHeight: 44,
+  },
+  actionButtonContent: {
+    height: 44,
   },
   warningText: {
     marginBottom: 4,

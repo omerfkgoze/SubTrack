@@ -23,15 +23,21 @@ function formatCycle(cycle: string): string {
 }
 
 function MatchReasonChip({ reason }: { reason: string }) {
+  const theme = useTheme();
   const labels: Record<string, string> = {
-    name_similar: 'Name Match',
-    amount_close: 'Amount Close',
-    cycle_match: 'Same Cycle',
+    name_similar: 'Name',
+    amount_close: 'Amount',
+    cycle_match: 'Cycle',
   };
   return (
-    <Chip compact style={styles.reasonChip} accessibilityLabel={labels[reason] ?? reason}>
-      {labels[reason] ?? reason}
-    </Chip>
+    <View
+      style={[styles.reasonChip, { backgroundColor: theme.colors.secondaryContainer }]}
+      accessibilityLabel={labels[reason] ?? reason}
+    >
+      <Text style={[styles.reasonChipText, { color: theme.colors.onSecondaryContainer }]}>
+        {labels[reason] ?? reason}
+      </Text>
+    </View>
   );
 }
 
@@ -139,6 +145,7 @@ export function MatchSuggestionCard({
           mode="contained"
           onPress={onConfirm}
           style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
           accessibilityLabel={`Confirm match between ${detected.merchantName} and ${match.subscriptionName}`}
           accessibilityRole="button"
         >
@@ -148,6 +155,7 @@ export function MatchSuggestionCard({
           mode="outlined"
           onPress={onDismiss}
           style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
           accessibilityLabel={`Not a match: ${detected.merchantName}`}
           accessibilityRole="button"
         >
@@ -173,7 +181,7 @@ const styles = StyleSheet.create({
   },
   matchChip: {
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   comparisonRow: {
     flexDirection: 'row',
@@ -197,18 +205,30 @@ const styles = StyleSheet.create({
   reasonsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 4,
+    marginTop: 4,
   },
   reasonChip: {
-    marginBottom: 4,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 2,
+  },
+  reasonChipText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   actions: {
     justifyContent: 'flex-start',
     flexWrap: 'wrap',
     paddingTop: 0,
+    gap: 4,
   },
   actionButton: {
     minHeight: 44,
     marginBottom: 4,
+  },
+  actionButtonContent: {
+    height: 44,
   },
 });

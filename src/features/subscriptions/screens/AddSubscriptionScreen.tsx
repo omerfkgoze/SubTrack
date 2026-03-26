@@ -28,6 +28,7 @@ import { CategoryChip } from '@features/subscriptions/components/CategoryChip';
 import { CelebrationOverlay } from '@shared/components/CelebrationOverlay';
 
 registerTranslation('en', en);
+registerTranslation('en-GB', en);
 
 function computeRenewalDate(lastSeen: string, frequency: string): Date {
   const base = new Date(lastSeen);
@@ -293,7 +294,7 @@ export function AddSubscriptionScreen() {
             name="renewal_date"
             render={({ field: { onChange } }) => (
               <DatePickerInput
-                locale="en"
+                locale="en-GB"
                 label="Next Renewal Date"
                 value={renewalDate}
                 onChange={(date: Date | undefined) => {
@@ -365,7 +366,7 @@ export function AddSubscriptionScreen() {
                 const trialDate = value ? new Date(value) : undefined;
                 return (
                   <DatePickerInput
-                    locale="en"
+                    locale="en-GB"
                     label="Trial Expiry Date"
                     value={trialDate}
                     onChange={(date) => {
@@ -489,6 +490,7 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     marginTop: 4,
+    marginHorizontal: 4,
   },
   chipScroll: {
     flexDirection: 'row',
@@ -508,6 +510,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   submitButtonContent: {
-    minHeight: 44,
+    height: 44,
   },
 });
