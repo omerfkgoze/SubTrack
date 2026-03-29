@@ -1,306 +1,478 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy — SubTrack</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f8f8f8;
-      color: #1a1a1a;
-      line-height: 1.7;
-    }
-    header {
-      background: #6750A4;
-      color: #fff;
-      padding: 2.5rem 1.5rem 2rem;
-      text-align: center;
-    }
-    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
-    header p  { margin-top: 0.5rem; opacity: 0.85; font-size: 0.95rem; }
-    main {
-      max-width: 780px;
-      margin: 2.5rem auto;
-      padding: 0 1.25rem 4rem;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 2rem 2.25rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    h2 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #6750A4;
-      margin-bottom: 1rem;
-      padding-bottom: 0.4rem;
-      border-bottom: 2px solid #ede7f6;
-    }
-    h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 1.25rem 0 0.5rem;
-      color: #333;
-    }
-    p  { margin-bottom: 0.85rem; font-size: 0.95rem; }
-    ul { margin: 0.4rem 0 0.85rem 1.3rem; font-size: 0.95rem; }
-    ul li { margin-bottom: 0.35rem; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      margin: 0.75rem 0 1rem;
-    }
-    th {
-      background: #ede7f6;
-      color: #4a3880;
-      text-align: left;
-      padding: 0.55rem 0.75rem;
-      font-weight: 600;
-    }
-    td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-    tr:last-child td { border-bottom: none; }
-    .badge {
-      display: inline-block;
-      background: #ede7f6;
-      color: #6750A4;
-      border-radius: 4px;
-      padding: 0.1rem 0.5rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-left: 0.4rem;
-    }
-    .highlight {
-      background: #f3f0ff;
-      border-left: 3px solid #6750A4;
-      padding: 0.75rem 1rem;
-      border-radius: 0 6px 6px 0;
-      margin: 0.75rem 0;
-      font-size: 0.93rem;
-    }
-    a { color: #6750A4; }
-    footer {
-      text-align: center;
-      font-size: 0.82rem;
-      color: #888;
-      margin-top: 1rem;
-    }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy — SubTrack</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: #f8f8f8;
+        color: #1a1a1a;
+        line-height: 1.7;
+      }
+      header {
+        background: #6750a4;
+        color: #fff;
+        padding: 2.5rem 1.5rem 2rem;
+        text-align: center;
+      }
+      header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      header p {
+        margin-top: 0.5rem;
+        opacity: 0.85;
+        font-size: 0.95rem;
+      }
+      main {
+        max-width: 780px;
+        margin: 2.5rem auto;
+        padding: 0 1.25rem 4rem;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 2rem 2.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      }
+      h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #6750a4;
+        margin-bottom: 1rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #ede7f6;
+      }
+      h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 1.25rem 0 0.5rem;
+        color: #333;
+      }
+      p {
+        margin-bottom: 0.85rem;
+        font-size: 0.95rem;
+      }
+      ul {
+        margin: 0.4rem 0 0.85rem 1.3rem;
+        font-size: 0.95rem;
+      }
+      ul li {
+        margin-bottom: 0.35rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        margin: 0.75rem 0 1rem;
+      }
+      th {
+        background: #ede7f6;
+        color: #4a3880;
+        text-align: left;
+        padding: 0.55rem 0.75rem;
+        font-weight: 600;
+      }
+      td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .badge {
+        display: inline-block;
+        background: #ede7f6;
+        color: #6750a4;
+        border-radius: 4px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 0.4rem;
+      }
+      .highlight {
+        background: #f3f0ff;
+        border-left: 3px solid #6750a4;
+        padding: 0.75rem 1rem;
+        border-radius: 0 6px 6px 0;
+        margin: 0.75rem 0;
+        font-size: 0.93rem;
+      }
+      a {
+        color: #6750a4;
+      }
+      footer {
+        text-align: center;
+        font-size: 0.82rem;
+        color: #888;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SubTrack</h1>
+      <p>Privacy Policy &nbsp;·&nbsp; Last updated: March 29, 2026</p>
+    </header>
 
-<header>
-  <h1>SubTrack</h1>
-  <p>Privacy Policy &nbsp;·&nbsp; Last updated: March 29, 2026</p>
-</header>
+    <main>
+      <!-- 1. Overview -->
+      <div class="card">
+        <h2>1. Overview</h2>
+        <p>
+          SubTrack ("the app", "we", "us") is a subscription tracking application. This Privacy
+          Policy explains what personal data we collect, why we collect it, how we use and protect
+          it, and your rights as a user.
+        </p>
+        <p>
+          SubTrack is operated by Ömer Faruk Göze ("Controller") and complies with the General Data
+          Protection Regulation (GDPR) and applicable data protection laws.
+        </p>
+        <div class="highlight">
+          By using SubTrack, you agree to the collection and use of information as described in this
+          policy.
+        </div>
+      </div>
 
-<main>
+      <!-- 2. Data We Collect -->
+      <div class="card">
+        <h2>2. Data We Collect</h2>
 
-  <!-- 1. Overview -->
-  <div class="card">
-    <h2>1. Overview</h2>
-    <p>SubTrack ("the app", "we", "us") is a subscription tracking application. This Privacy Policy explains what personal data we collect, why we collect it, how we use and protect it, and your rights as a user.</p>
-    <p>SubTrack is operated by Ömer Faruk Göze ("Controller") and complies with the General Data Protection Regulation (GDPR) and applicable data protection laws.</p>
-    <div class="highlight">By using SubTrack, you agree to the collection and use of information as described in this policy.</div>
-  </div>
+        <h3>2.1 Account Data</h3>
+        <ul>
+          <li><strong>Email address</strong> — used for authentication and account recovery</li>
+          <li>
+            <strong>Password</strong> — stored as a hashed value; we never see your plain-text
+            password
+          </li>
+        </ul>
 
-  <!-- 2. Data We Collect -->
-  <div class="card">
-    <h2>2. Data We Collect</h2>
+        <h3>2.2 Subscription Data (User-Entered)</h3>
+        <ul>
+          <li>Subscription name, amount, currency, billing cycle, category, renewal date</li>
+          <li>Notes and tags you add to subscriptions</li>
+        </ul>
+        <p>This data is entered by you and stored in your account.</p>
 
-    <h3>2.1 Account Data</h3>
-    <ul>
-      <li><strong>Email address</strong> — used for authentication and account recovery</li>
-      <li><strong>Password</strong> — stored as a hashed value; we never see your plain-text password</li>
-    </ul>
+        <h3>2.3 Bank Account Data <span class="badge">Premium</span></h3>
+        <p>If you choose to connect your bank account, we collect:</p>
+        <ul>
+          <li>Bank account metadata (account name, institution name, last 4 digits of IBAN)</li>
+          <li>Transaction history from the last 90 days (amount, description, date, category)</li>
+          <li>Detected recurring subscriptions derived from transaction analysis</li>
+        </ul>
+        <div class="highlight">
+          Bank connectivity is <strong>optional</strong>. SubTrack works fully without it. Bank data
+          is processed via <strong>Tink</strong> (a Visa-licensed, PSD2-regulated Account
+          Information Service Provider). We never see or store your bank login credentials.
+        </div>
 
-    <h3>2.2 Subscription Data (User-Entered)</h3>
-    <ul>
-      <li>Subscription name, amount, currency, billing cycle, category, renewal date</li>
-      <li>Notes and tags you add to subscriptions</li>
-    </ul>
-    <p>This data is entered by you and stored in your account.</p>
+        <h3>2.4 Purchase Data <span class="badge">Premium</span></h3>
+        <p>
+          When you subscribe to SubTrack Premium, your purchase is processed by Apple (App Store) or
+          Google (Play Store). We receive a purchase receipt to verify your subscription status. We
+          do not store credit card or payment method details.
+        </p>
 
-    <h3>2.3 Bank Account Data <span class="badge">Premium</span></h3>
-    <p>If you choose to connect your bank account, we collect:</p>
-    <ul>
-      <li>Bank account metadata (account name, institution name, last 4 digits of IBAN)</li>
-      <li>Transaction history from the last 90 days (amount, description, date, category)</li>
-      <li>Detected recurring subscriptions derived from transaction analysis</li>
-    </ul>
-    <div class="highlight">
-      Bank connectivity is <strong>optional</strong>. SubTrack works fully without it. Bank data is processed via <strong>Tink</strong> (a Visa-licensed, PSD2-regulated Account Information Service Provider). We never see or store your bank login credentials.
-    </div>
+        <h3>2.5 Notification Preferences</h3>
+        <ul>
+          <li>Push notification settings (enabled/disabled, reminder timing)</li>
+          <li>Notification history (which reminders were sent)</li>
+        </ul>
 
-    <h3>2.4 Purchase Data <span class="badge">Premium</span></h3>
-    <p>When you subscribe to SubTrack Premium, your purchase is processed by Apple (App Store) or Google (Play Store). We receive a purchase receipt to verify your subscription status. We do not store credit card or payment method details.</p>
+        <h3>2.6 Calendar Data</h3>
+        <p>
+          If you grant calendar permission, SubTrack creates calendar events for subscription
+          renewal reminders. We access your calendar only to create and manage these events. We do
+          not read, store, or transmit your existing calendar content.
+        </p>
 
-    <h3>2.5 Notification Preferences</h3>
-    <ul>
-      <li>Push notification settings (enabled/disabled, reminder timing)</li>
-      <li>Notification history (which reminders were sent)</li>
-    </ul>
+        <h3>2.7 Biometric Data</h3>
+        <p>
+          If you enable Face ID / fingerprint login, biometric authentication is handled entirely by
+          your device's operating system (iOS Secure Enclave / Android Keystore). Biometric data is
+          never transmitted to SubTrack servers.
+        </p>
 
-    <h3>2.6 Calendar Data</h3>
-    <p>If you grant calendar permission, SubTrack creates calendar events for subscription renewal reminders. We access your calendar only to create and manage these events. We do not read, store, or transmit your existing calendar content.</p>
+        <h3>2.8 Technical Data</h3>
+        <ul>
+          <li>Device type and OS version (for crash diagnostics and compatibility)</li>
+          <li>App version</li>
+        </ul>
+        <p>We do not use third-party analytics or advertising SDKs.</p>
+      </div>
 
-    <h3>2.7 Biometric Data</h3>
-    <p>If you enable Face ID / fingerprint login, biometric authentication is handled entirely by your device's operating system (iOS Secure Enclave / Android Keystore). Biometric data is never transmitted to SubTrack servers.</p>
+      <!-- 3. Legal Basis -->
+      <div class="card">
+        <h2>3. Legal Basis for Processing (GDPR)</h2>
+        <table>
+          <tr>
+            <th>Data Type</th>
+            <th>Legal Basis</th>
+          </tr>
+          <tr>
+            <td>Account data (email)</td>
+            <td>Contract — necessary to provide the service</td>
+          </tr>
+          <tr>
+            <td>Subscription data</td>
+            <td>Contract — core app functionality</td>
+          </tr>
+          <tr>
+            <td>Bank account data</td>
+            <td>Consent — you explicitly initiate bank connection</td>
+          </tr>
+          <tr>
+            <td>Transaction data</td>
+            <td>Consent — granted via bank SCA (Strong Customer Authentication)</td>
+          </tr>
+          <tr>
+            <td>Push notifications</td>
+            <td>Consent — you grant notification permission</td>
+          </tr>
+          <tr>
+            <td>Calendar access</td>
+            <td>Consent — you grant calendar permission</td>
+          </tr>
+          <tr>
+            <td>Purchase receipts</td>
+            <td>Legitimate interest — verifying your Premium status</td>
+          </tr>
+        </table>
+      </div>
 
-    <h3>2.8 Technical Data</h3>
-    <ul>
-      <li>Device type and OS version (for crash diagnostics and compatibility)</li>
-      <li>App version</li>
-    </ul>
-    <p>We do not use third-party analytics or advertising SDKs.</p>
-  </div>
+      <!-- 4. How We Use Your Data -->
+      <div class="card">
+        <h2>4. How We Use Your Data</h2>
+        <ul>
+          <li>To provide the subscription tracking service</li>
+          <li>
+            To automatically detect recurring subscriptions from your bank transactions (if
+            connected)
+          </li>
+          <li>To send renewal reminders via push notifications and/or calendar events</li>
+          <li>To verify your SubTrack Premium subscription status</li>
+          <li>To enable biometric login on your device</li>
+          <li>To allow you to export your own data</li>
+          <li>To maintain the security and integrity of your account</li>
+        </ul>
+        <div class="highlight">
+          We do not use your data for advertising, profiling, or sale to third parties.
+        </div>
+      </div>
 
-  <!-- 3. Legal Basis -->
-  <div class="card">
-    <h2>3. Legal Basis for Processing (GDPR)</h2>
-    <table>
-      <tr><th>Data Type</th><th>Legal Basis</th></tr>
-      <tr><td>Account data (email)</td><td>Contract — necessary to provide the service</td></tr>
-      <tr><td>Subscription data</td><td>Contract — core app functionality</td></tr>
-      <tr><td>Bank account data</td><td>Consent — you explicitly initiate bank connection</td></tr>
-      <tr><td>Transaction data</td><td>Consent — granted via bank SCA (Strong Customer Authentication)</td></tr>
-      <tr><td>Push notifications</td><td>Consent — you grant notification permission</td></tr>
-      <tr><td>Calendar access</td><td>Consent — you grant calendar permission</td></tr>
-      <tr><td>Purchase receipts</td><td>Legitimate interest — verifying your Premium status</td></tr>
-    </table>
-  </div>
+      <!-- 5. Data Retention -->
+      <div class="card">
+        <h2>5. Data Retention</h2>
+        <table>
+          <tr>
+            <th>Data Type</th>
+            <th>Retention Period</th>
+          </tr>
+          <tr>
+            <td>Account data</td>
+            <td>Until you delete your account</td>
+          </tr>
+          <tr>
+            <td>Subscription data</td>
+            <td>Until you delete the subscription or your account</td>
+          </tr>
+          <tr>
+            <td>Raw bank transaction data</td>
+            <td>30 days after import — then automatically deleted</td>
+          </tr>
+          <tr>
+            <td>Detected subscriptions from bank</td>
+            <td>Until you remove them or delete your account</td>
+          </tr>
+          <tr>
+            <td>Bank connection tokens</td>
+            <td>Deleted immediately upon disconnecting your bank</td>
+          </tr>
+          <tr>
+            <td>Notification history</td>
+            <td>90 days (rolling)</td>
+          </tr>
+          <tr>
+            <td>Purchase receipts</td>
+            <td>Until your Premium subscription ends or account deletion</td>
+          </tr>
+        </table>
+      </div>
 
-  <!-- 4. How We Use Your Data -->
-  <div class="card">
-    <h2>4. How We Use Your Data</h2>
-    <ul>
-      <li>To provide the subscription tracking service</li>
-      <li>To automatically detect recurring subscriptions from your bank transactions (if connected)</li>
-      <li>To send renewal reminders via push notifications and/or calendar events</li>
-      <li>To verify your SubTrack Premium subscription status</li>
-      <li>To enable biometric login on your device</li>
-      <li>To allow you to export your own data</li>
-      <li>To maintain the security and integrity of your account</li>
-    </ul>
-    <div class="highlight">We do not use your data for advertising, profiling, or sale to third parties.</div>
-  </div>
+      <!-- 6. Data Sharing -->
+      <div class="card">
+        <h2>6. Data Sharing &amp; Third-Party Processors</h2>
+        <p>
+          We share data only with the following processors, under strict data processing agreements:
+        </p>
+        <table>
+          <tr>
+            <th>Processor</th>
+            <th>Role</th>
+            <th>Data Shared</th>
+            <th>Location</th>
+          </tr>
+          <tr>
+            <td><strong>Supabase</strong></td>
+            <td>Database &amp; backend infrastructure</td>
+            <td>All app data (encrypted at rest)</td>
+            <td>EU (Frankfurt, Germany)</td>
+          </tr>
+          <tr>
+            <td><strong>Tink (Visa)</strong></td>
+            <td>Bank connectivity (PSD2-licensed AISP)</td>
+            <td>Bank consent session data</td>
+            <td>EU (Sweden)</td>
+          </tr>
+          <tr>
+            <td><strong>Apple App Store</strong></td>
+            <td>IAP processing (iOS Premium)</td>
+            <td>Purchase receipts</td>
+            <td>Apple's infrastructure</td>
+          </tr>
+          <tr>
+            <td><strong>Google Play</strong></td>
+            <td>IAP processing (Android Premium)</td>
+            <td>Purchase receipts</td>
+            <td>Google's infrastructure</td>
+          </tr>
+          <tr>
+            <td><strong>Expo / EAS</strong></td>
+            <td>App build &amp; update delivery</td>
+            <td>No access to user data at runtime</td>
+            <td>USA</td>
+          </tr>
+        </table>
+        <p>We do not sell, rent, or share your personal data with any other third parties.</p>
+      </div>
 
-  <!-- 5. Data Retention -->
-  <div class="card">
-    <h2>5. Data Retention</h2>
-    <table>
-      <tr><th>Data Type</th><th>Retention Period</th></tr>
-      <tr><td>Account data</td><td>Until you delete your account</td></tr>
-      <tr><td>Subscription data</td><td>Until you delete the subscription or your account</td></tr>
-      <tr><td>Raw bank transaction data</td><td>30 days after import — then automatically deleted</td></tr>
-      <tr><td>Detected subscriptions from bank</td><td>Until you remove them or delete your account</td></tr>
-      <tr><td>Bank connection tokens</td><td>Deleted immediately upon disconnecting your bank</td></tr>
-      <tr><td>Notification history</td><td>90 days (rolling)</td></tr>
-      <tr><td>Purchase receipts</td><td>Until your Premium subscription ends or account deletion</td></tr>
-    </table>
-  </div>
+      <!-- 7. Data Security -->
+      <div class="card">
+        <h2>7. Data Security</h2>
+        <ul>
+          <li><strong>Encryption in transit:</strong> All communication uses TLS 1.2+</li>
+          <li>
+            <strong>Encryption at rest:</strong> All data stored in Supabase is encrypted at rest
+          </li>
+          <li>
+            <strong>Row Level Security:</strong> Database policies ensure each user can only access
+            their own data
+          </li>
+          <li>
+            <strong>Token security:</strong> Tink API credentials stored only in server-side Edge
+            Function environment — never in the client app
+          </li>
+          <li>
+            <strong>Biometric data:</strong> Processed exclusively by your device OS; never
+            transmitted
+          </li>
+          <li>
+            <strong>No raw credential storage:</strong> We never store your bank login credentials
+          </li>
+        </ul>
+        <p>
+          In the event of a data breach involving bank data, we will notify affected users within 72
+          hours as required by GDPR Article 33.
+        </p>
+      </div>
 
-  <!-- 6. Data Sharing -->
-  <div class="card">
-    <h2>6. Data Sharing &amp; Third-Party Processors</h2>
-    <p>We share data only with the following processors, under strict data processing agreements:</p>
-    <table>
-      <tr><th>Processor</th><th>Role</th><th>Data Shared</th><th>Location</th></tr>
-      <tr>
-        <td><strong>Supabase</strong></td>
-        <td>Database &amp; backend infrastructure</td>
-        <td>All app data (encrypted at rest)</td>
-        <td>EU (Frankfurt, Germany)</td>
-      </tr>
-      <tr>
-        <td><strong>Tink (Visa)</strong></td>
-        <td>Bank connectivity (PSD2-licensed AISP)</td>
-        <td>Bank consent session data</td>
-        <td>EU (Sweden)</td>
-      </tr>
-      <tr>
-        <td><strong>Apple App Store</strong></td>
-        <td>IAP processing (iOS Premium)</td>
-        <td>Purchase receipts</td>
-        <td>Apple's infrastructure</td>
-      </tr>
-      <tr>
-        <td><strong>Google Play</strong></td>
-        <td>IAP processing (Android Premium)</td>
-        <td>Purchase receipts</td>
-        <td>Google's infrastructure</td>
-      </tr>
-      <tr>
-        <td><strong>Expo / EAS</strong></td>
-        <td>App build &amp; update delivery</td>
-        <td>No access to user data at runtime</td>
-        <td>USA</td>
-      </tr>
-    </table>
-    <p>We do not sell, rent, or share your personal data with any other third parties.</p>
-  </div>
+      <!-- 8. Your Rights -->
+      <div class="card">
+        <h2>8. Your Rights (GDPR)</h2>
+        <table>
+          <tr>
+            <th>Right</th>
+            <th>How to Exercise</th>
+          </tr>
+          <tr>
+            <td><strong>Access</strong> — get a copy of your data</td>
+            <td>Settings → Export Data (JSON / CSV)</td>
+          </tr>
+          <tr>
+            <td><strong>Erasure</strong> — delete all your data</td>
+            <td>Settings → Delete Account</td>
+          </tr>
+          <tr>
+            <td><strong>Portability</strong> — receive data in machine-readable format</td>
+            <td>Settings → Export Data</td>
+          </tr>
+          <tr>
+            <td><strong>Withdraw bank consent</strong> — disconnect bank at any time</td>
+            <td>Settings → Bank → Disconnect</td>
+          </tr>
+          <tr>
+            <td><strong>Rectification</strong> — correct inaccurate data</td>
+            <td>Edit subscriptions directly in the app</td>
+          </tr>
+          <tr>
+            <td><strong>Restriction</strong> — limit processing</td>
+            <td>Contact us (see Section 11)</td>
+          </tr>
+          <tr>
+            <td><strong>Object</strong> — object to processing</td>
+            <td>Contact us (see Section 11)</td>
+          </tr>
+        </table>
+        <p>
+          We respond to all data rights requests within 30 days. To request deletion of your data
+          via the web, contact us at the email below.
+        </p>
+      </div>
 
-  <!-- 7. Data Security -->
-  <div class="card">
-    <h2>7. Data Security</h2>
-    <ul>
-      <li><strong>Encryption in transit:</strong> All communication uses TLS 1.2+</li>
-      <li><strong>Encryption at rest:</strong> All data stored in Supabase is encrypted at rest</li>
-      <li><strong>Row Level Security:</strong> Database policies ensure each user can only access their own data</li>
-      <li><strong>Token security:</strong> Tink API credentials stored only in server-side Edge Function environment — never in the client app</li>
-      <li><strong>Biometric data:</strong> Processed exclusively by your device OS; never transmitted</li>
-      <li><strong>No raw credential storage:</strong> We never store your bank login credentials</li>
-    </ul>
-    <p>In the event of a data breach involving bank data, we will notify affected users within 72 hours as required by GDPR Article 33.</p>
-  </div>
+      <!-- 9. Children -->
+      <div class="card">
+        <h2>9. Children's Privacy</h2>
+        <p>
+          SubTrack is not intended for children under 16. We do not knowingly collect personal data
+          from children under 16. If we become aware that a child under 16 has provided us with
+          personal data, we will delete it promptly.
+        </p>
+      </div>
 
-  <!-- 8. Your Rights -->
-  <div class="card">
-    <h2>8. Your Rights (GDPR)</h2>
-    <table>
-      <tr><th>Right</th><th>How to Exercise</th></tr>
-      <tr><td><strong>Access</strong> — get a copy of your data</td><td>Settings → Export Data (JSON / CSV)</td></tr>
-      <tr><td><strong>Erasure</strong> — delete all your data</td><td>Settings → Delete Account</td></tr>
-      <tr><td><strong>Portability</strong> — receive data in machine-readable format</td><td>Settings → Export Data</td></tr>
-      <tr><td><strong>Withdraw bank consent</strong> — disconnect bank at any time</td><td>Settings → Bank → Disconnect</td></tr>
-      <tr><td><strong>Rectification</strong> — correct inaccurate data</td><td>Edit subscriptions directly in the app</td></tr>
-      <tr><td><strong>Restriction</strong> — limit processing</td><td>Contact us (see Section 11)</td></tr>
-      <tr><td><strong>Object</strong> — object to processing</td><td>Contact us (see Section 11)</td></tr>
-    </table>
-    <p>We respond to all data rights requests within 30 days. To request deletion of your data via the web, contact us at the email below.</p>
-  </div>
+      <!-- 10. Changes -->
+      <div class="card">
+        <h2>10. Changes to This Policy</h2>
+        <p>
+          We may update this Privacy Policy from time to time. When we make material changes, we
+          will notify you in the app. The date at the top of this page indicates when the policy was
+          last updated.
+        </p>
+      </div>
 
-  <!-- 9. Children -->
-  <div class="card">
-    <h2>9. Children's Privacy</h2>
-    <p>SubTrack is not intended for children under 16. We do not knowingly collect personal data from children under 16. If we become aware that a child under 16 has provided us with personal data, we will delete it promptly.</p>
-  </div>
+      <!-- 11. Contact -->
+      <div class="card">
+        <h2>11. Contact &amp; Data Deletion Requests</h2>
+        <p>For privacy-related questions or to submit a data deletion request:</p>
+        <ul>
+          <li><strong>App:</strong> Settings → Delete Account (immediate, full deletion)</li>
+          <li>
+            <strong>Email:</strong>
+            <a href="mailto:farukucukgoze@googlemail.com">farukucukgoze@googlemail.com</a>
+          </li>
+        </ul>
+        <p>
+          You also have the right to lodge a complaint with your local data protection authority if
+          you believe we have not handled your data in accordance with applicable law.
+        </p>
+      </div>
 
-  <!-- 10. Changes -->
-  <div class="card">
-    <h2>10. Changes to This Policy</h2>
-    <p>We may update this Privacy Policy from time to time. When we make material changes, we will notify you in the app. The date at the top of this page indicates when the policy was last updated.</p>
-  </div>
-
-  <!-- 11. Contact -->
-  <div class="card">
-    <h2>11. Contact &amp; Data Deletion Requests</h2>
-    <p>For privacy-related questions or to submit a data deletion request:</p>
-    <ul>
-      <li><strong>App:</strong> Settings → Delete Account (immediate, full deletion)</li>
-      <li><strong>Email:</strong> <a href="mailto:subtrack.app@gmail.com">subtrack.app@gmail.com</a></li>
-    </ul>
-    <p>You also have the right to lodge a complaint with your local data protection authority if you believe we have not handled your data in accordance with applicable law.</p>
-  </div>
-
-  <footer>
-    <p>&copy; 2026 SubTrack · Ömer Faruk Göze · All rights reserved</p>
-  </footer>
-
-</main>
-</body>
+      <footer>
+        <p>&copy; 2026 SubTrack · ofk-tech · All rights reserved</p>
+      </footer>
+    </main>
+  </body>
 </html>
