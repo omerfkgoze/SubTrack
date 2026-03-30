@@ -92,6 +92,7 @@ async function createOrGetTinkUser(
 async function generateDelegatedCode(
   clientAccessToken: string,
   externalUserId: string,
+  idHint: string,
 ): Promise<string> {
   const response = await fetch(
     'https://api.tink.com/api/v1/oauth/authorization-grant/delegate',
@@ -104,8 +105,9 @@ async function generateDelegatedCode(
       body: new URLSearchParams({
         actor_client_id: TINK_LINK_ACTOR_CLIENT_ID,
         external_user_id: externalUserId,
+        id_hint: idHint,
         scope:
-          'authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read',
+          'authorization:read,credentials:read,credentials:refresh,credentials:write,providers:read,user:read,provider-consents:read,provider-consents:write',
       }),
     },
   )
@@ -168,7 +170,9 @@ Deno.serve(async (req: Request) => {
     await createOrGetTinkUser(clientAccessToken, user.id, market)
 
     // Step 3: Generate delegated authorization code for Tink Link
-    const delegatedCode = await generateDelegatedCode(clientAccessToken, user.id, TINK_LINK_ACTOR_CLIENT_ID)
+    // id_hint: user-recognizable string shown in Tink Link (prevents URL spoofing)
+    const idHint = user.email ?? user.id
+    const delegatedCode = await generateDelegatedCode(clientAccessToken, user.id, idHint)
     console.log('Delegated authorization code generated')
 
     return jsonResponse({

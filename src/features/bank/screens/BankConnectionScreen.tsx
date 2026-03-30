@@ -80,6 +80,7 @@ export function BankConnectionScreen() {
     clientId: env.TINK_CLIENT_ID,
     redirectUri: TINK_REDIRECT_URI,
     market: 'DE',
+    locale: 'en_US',
     authorizationCode: delegatedCode ?? undefined,
   });
 

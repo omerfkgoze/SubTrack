@@ -25,9 +25,16 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
   if (params.locale) {
     url.searchParams.set('locale', params.locale);
   }
-  url.searchParams.set('scope', 'accounts:read,transactions:read');
   if (params.authorizationCode) {
+    // Permanent user flow: scope is determined by the delegated authorization, not the URL
     url.searchParams.set('authorization_code', params.authorizationCode);
+  } else {
+    // One-time access flow: scope must be in the URL
+    url.searchParams.set('scope', 'accounts:read,transactions:read');
+  }
+  // Enable test/demo providers in sandbox
+  if (__DEV__) {
+    url.searchParams.set('test', 'true');
   }
   return url.toString();
 }
