@@ -158,7 +158,7 @@ Deno.serve(async (req: Request) => {
     console.log('Auth OK, user:', user.id)
 
     const body: LinkSessionRequest = await req.json().catch(() => ({}))
-    const market = body.market ?? 'SE'
+    const market = body.market ?? 'DE'
 
     // Step 1: Get client access token
     const clientAccessToken = await getClientAccessToken(tinkClientId, tinkClientSecret)

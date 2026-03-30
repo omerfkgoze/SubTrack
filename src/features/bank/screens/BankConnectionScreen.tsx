@@ -79,6 +79,7 @@ export function BankConnectionScreen() {
   const tinkLinkUrl = buildTinkLinkUrl({
     clientId: env.TINK_CLIENT_ID,
     redirectUri: TINK_REDIRECT_URI,
+    market: 'DE',
     authorizationCode: delegatedCode ?? undefined,
   });
 
@@ -131,7 +132,7 @@ export function BankConnectionScreen() {
   const handleConsentConfirm = useCallback(async () => {
     setFlowState('preparing');
     clearConnectionError();
-    const code = await createLinkSession();
+    const code = await createLinkSession('DE');
     if (code) {
       if (env.DEMO_BANK_MODE) {
         // Skip WebView in demo mode — go straight to processing with the mock auth code
