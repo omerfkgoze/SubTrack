@@ -105,30 +105,30 @@
   - iPad (if supporting iPad)
   - Use realistic data in screenshots — no placeholder content
 
-- [ ] **App icon**
+- [x] **App icon**
   - 1024×1024 PNG, no transparency, no rounded corners (App Store applies rounding)
   - Must match icon in app
 
-- [ ] **Age rating questionnaire** — fill in App Store Connect
+- [x] **Age rating questionnaire** — fill in App Store Connect
   - SubTrack: likely 4+ (no objectionable content)
 
-- [ ] **Privacy nutrition labels (App Store)**
+- [x] **Privacy nutrition labels (App Store)**
   - Declare all data collected: email, usage data, purchase history
   - Financial data (when Epic 7 launches): bank account data
 
-- [ ] **Google Play store listing**
+- [x] **Google Play store listing**
   - Short description (80 chars)
   - Full description (4000 chars)
   - Screenshots: phone (min 2), 7" tablet, 10" tablet (optional)
   - Feature graphic: 1024×500 px
   - App icon: 512×512 PNG
 
-- [ ] **Privacy policy**
+- [x] **Privacy policy**
   - Must cover: what data is collected, how it's used, third parties (Supabase, Apple/Google IAP, future: bank aggregator)
   - Must be publicly hosted (GitHub Pages, own domain, etc.)
   - Same URL used for both App Store and Play Store
 
-- [ ] **Google Play — data safety section**
+- [x] **Google Play — data safety section**
   - Declare data types collected: account info, purchase history, financial info (Epic 7)
 
 ### Build & Upload
@@ -158,8 +158,8 @@
   - Review time: typically 1–3 days (can be longer for first submission)
   - Have answers ready for: does app use encryption? (yes — HTTPS/Supabase), does app use IAP? (yes)
 
-- [ ] **Android: publish to Google Play**
-  - Internal → Closed Testing → Open Testing → Production (progressive rollout)
+- [x] **Android: publish to Google Play**
+  - Internal → Closed Testing → Open Testing → Production (progressive rollout) (🚧 sended to Closed Testing and waiting review results)
   - First review: 3–7 days typically
   - Can do staged rollout: start at 10–20%, monitor crash rate, expand
 
