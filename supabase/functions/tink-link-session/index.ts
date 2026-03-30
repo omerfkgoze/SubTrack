@@ -5,9 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Tink Link actor client ID — loaded from env or falls back to Tink's standard actor ID
-const TINK_LINK_ACTOR_CLIENT_ID =
-  Deno.env.get('TINK_LINK_ACTOR_CLIENT_ID') ?? 'df05e4b379934cd09963197cc855bfe9'
+// Tink Link actor client ID — loaded from env (falls back to app client ID at runtime)
 
 interface LinkSessionRequest {
   market?: string
@@ -92,6 +90,7 @@ async function createOrGetTinkUser(
 async function generateDelegatedCode(
   clientAccessToken: string,
   externalUserId: string,
+  actorClientId: string,
 ): Promise<string> {
   const response = await fetch(
     'https://api.tink.com/api/v1/oauth/authorization-grant/delegate',
@@ -102,7 +101,7 @@ async function generateDelegatedCode(
         Authorization: `Bearer ${clientAccessToken}`,
       },
       body: new URLSearchParams({
-        actor_client_id: TINK_LINK_ACTOR_CLIENT_ID,
+        actor_client_id: actorClientId,
         external_user_id: externalUserId,
         scope:
           'authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read',
@@ -168,7 +167,9 @@ Deno.serve(async (req: Request) => {
     await createOrGetTinkUser(clientAccessToken, user.id, market)
 
     // Step 3: Generate delegated authorization code for Tink Link
-    const delegatedCode = await generateDelegatedCode(clientAccessToken, user.id)
+    // actor_client_id must match the client_id used in the Tink Link URL (our app client)
+    const actorClientId = Deno.env.get('TINK_LINK_ACTOR_CLIENT_ID') ?? tinkClientId
+    const delegatedCode = await generateDelegatedCode(clientAccessToken, user.id, actorClientId)
     console.log('Delegated authorization code generated')
 
     return jsonResponse({
