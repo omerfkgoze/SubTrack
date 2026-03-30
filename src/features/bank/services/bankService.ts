@@ -26,8 +26,10 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
     url.searchParams.set('locale', params.locale);
   }
   if (params.authorizationCode) {
-    // Permanent user flow: scope is determined by the delegated authorization, not the URL
+    // Permanent user flow: scope is determined by the delegated authorization, not the URL.
+    // refreshable_items enables continuous access (re-fetch transactions without re-authenticating).
     url.searchParams.set('authorization_code', params.authorizationCode);
+    url.searchParams.set('refreshable_items', 'CHECKING_ACCOUNTS,CHECKING_TRANSACTIONS');
   } else {
     // One-time access flow: scope must be in the URL
     url.searchParams.set('scope', 'accounts:read,transactions:read');

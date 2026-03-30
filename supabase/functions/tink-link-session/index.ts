@@ -22,6 +22,7 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 
 /**
  * Gets a client access token using client_credentials grant.
+ * Includes user:read scope so we can look up existing users by external_user_id.
  */
 async function getClientAccessToken(
   clientId: string,
@@ -34,7 +35,7 @@ async function getClientAccessToken(
       client_id: clientId,
       client_secret: clientSecret,
       grant_type: 'client_credentials',
-      scope: 'user:create,authorization:grant',
+      scope: 'user:create,user:read,authorization:grant',
     }),
   })
 
@@ -50,13 +51,16 @@ async function getClientAccessToken(
 
 /**
  * Creates a permanent Tink user using the Supabase user ID as external_user_id.
- * If the user already exists, Tink returns the existing user.
+ * Returns the Tink internal user_id (not the external_user_id).
+ *
+ * On 201: parses user_id from the create response.
+ * On 409 (user already exists): looks up the Tink user_id by external_user_id.
  */
 async function createOrGetTinkUser(
   clientAccessToken: string,
   externalUserId: string,
   market: string,
-): Promise<void> {
+): Promise<string> {
   const response = await fetch('https://api.tink.com/api/v1/user/create', {
     method: 'POST',
     headers: {
@@ -70,28 +74,84 @@ async function createOrGetTinkUser(
     }),
   })
 
-  // 409 = user already exists, which is fine
+  const responseText = await response.text()
+
   if (!response.ok && response.status !== 409) {
-    const errorText = await response.text()
-    console.error(`Tink user create failed: ${response.status}`, errorText)
-    throw new Error(`[step:user_create] Tink API ${response.status}: ${errorText}`)
+    console.error(`Tink user create failed: ${response.status}`, responseText)
+    throw new Error(`[step:user_create] Tink API ${response.status}: ${responseText}`)
+  }
+
+  // Try to extract user_id from the response body (works for 201, may work for 409)
+  try {
+    const data = JSON.parse(responseText)
+    if (data.user_id) {
+      if (response.status === 409) {
+        console.log('Tink user already exists, got user_id from 409 response:', externalUserId)
+      } else {
+        console.log('Tink user created for:', externalUserId)
+      }
+      return data.user_id
+    }
+  } catch {
+    // JSON parse failed — fall through to lookup
   }
 
   if (response.status === 409) {
-    console.log('Tink user already exists for:', externalUserId)
-  } else {
-    console.log('Tink user created for:', externalUserId)
+    // User exists but user_id was not in the 409 response body.
+    // Look up the Tink user_id via the user search endpoint.
+    console.log('Tink user already exists, looking up user_id for:', externalUserId)
+    return await lookupTinkUserId(clientAccessToken, externalUserId)
   }
+
+  throw new Error(`[step:user_create] Could not get user_id from Tink create response: ${responseText}`)
+}
+
+/**
+ * Looks up the Tink internal user_id for an existing user by external_user_id.
+ * Requires user:read scope on the client access token.
+ */
+async function lookupTinkUserId(
+  clientAccessToken: string,
+  externalUserId: string,
+): Promise<string> {
+  const url = new URL('https://api.tink.com/api/v1/user')
+  url.searchParams.set('external_user_id', externalUserId)
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${clientAccessToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`Tink user lookup failed: ${response.status}`, errorText)
+    throw new Error(`[step:user_lookup] Tink API ${response.status}: ${errorText}`)
+  }
+
+  const data = await response.json()
+
+  // Response may be a single user object or a list — handle both
+  const userObj = Array.isArray(data) ? data[0] : (data.users ? data.users[0] : data)
+
+  if (!userObj?.user_id) {
+    throw new Error(`[step:user_lookup] No user_id in lookup response: ${JSON.stringify(data)}`)
+  }
+
+  console.log('Tink user_id found via lookup for:', externalUserId)
+  return userObj.user_id
 }
 
 /**
  * Generates a delegated authorization code for Tink Link.
- * This code is passed to the Tink Link URL so the bank connection
- * is tied to a permanent user, enabling refresh token support.
+ * Uses the Tink internal user_id (not external_user_id) as required by the delegate endpoint.
+ * This code is passed to the Tink Link URL so the bank connection is tied to a permanent
+ * user, enabling refresh token support.
  */
 async function generateDelegatedCode(
   clientAccessToken: string,
-  externalUserId: string,
+  tinkUserId: string,
   idHint: string,
 ): Promise<string> {
   const response = await fetch(
@@ -103,8 +163,9 @@ async function generateDelegatedCode(
         Authorization: `Bearer ${clientAccessToken}`,
       },
       body: new URLSearchParams({
+        response_type: 'code',
         actor_client_id: TINK_LINK_ACTOR_CLIENT_ID,
-        external_user_id: externalUserId,
+        user_id: tinkUserId,
         id_hint: idHint,
         scope:
           'authorization:read,credentials:read,credentials:refresh,credentials:write,providers:read,user:read,provider-consents:read,provider-consents:write',
@@ -162,17 +223,19 @@ Deno.serve(async (req: Request) => {
     const body: LinkSessionRequest = await req.json().catch(() => ({}))
     const market = body.market ?? 'DE'
 
-    // Step 1: Get client access token
+    // Step 1: Get client access token (includes user:read for existing user lookup)
     const clientAccessToken = await getClientAccessToken(tinkClientId, tinkClientSecret)
     console.log('Client access token obtained')
 
     // Step 2: Create permanent Tink user (idempotent — 409 if exists)
-    await createOrGetTinkUser(clientAccessToken, user.id, market)
+    // Returns Tink's internal user_id (not external_user_id) — required for the delegate call
+    const tinkUserId = await createOrGetTinkUser(clientAccessToken, user.id, market)
+    console.log('Tink user_id obtained')
 
     // Step 3: Generate delegated authorization code for Tink Link
-    // id_hint: user-recognizable string shown in Tink Link (prevents URL spoofing)
+    // Must use Tink's internal user_id (not external_user_id) in the delegate call
     const idHint = user.email ?? user.id
-    const delegatedCode = await generateDelegatedCode(clientAccessToken, user.id, idHint)
+    const delegatedCode = await generateDelegatedCode(clientAccessToken, tinkUserId, idHint)
     console.log('Delegated authorization code generated')
 
     return jsonResponse({
