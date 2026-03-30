@@ -62,7 +62,7 @@
   - App type: App
   - Free / Paid: Free (IAP is handled separately)
 
-- [ ] **Google Play — In-App Purchase products setup**
+- [x] **Google Play — In-App Purchase products setup**
   - Create subscription: "SubTrack Premium"
   - Add products:
     - `com.subtrack.premium.monthly` — €2.99/month
@@ -70,12 +70,19 @@
   - ⚠️ Product IDs must exactly match `src/features/premium/config/iapProducts.ts`
   - Note: Google Play requires at least one APK/AAB uploaded before activating IAP products
 
-- [ ] **Google Play API credentials (for server-side receipt validation)**
-  - Create service account in Google Cloud Console
-  - Grant "Financial data viewer" role in Play Console
-  - Download JSON key file
-  - Share with dev team — needed for `validate-premium` Edge Function (Android path)
-  - ⚠️ Store securely — this is a secret, never commit to git
+- [x] **Google Play API credentials (for server-side receipt validation)**
+  - Step 1 — Google Cloud Console:
+    1. Go to console.cloud.google.com → select (or create) a project linked to your Play account
+    2. APIs & Services → Enable **Google Play Android Developer API**
+    3. IAM & Admin → Service Accounts → Create Service Account
+    4. Name: e.g. `subtrack-play-validator`, Role: none needed here (set in Play Console)
+    5. Keys tab → Add Key → JSON → download the file
+  - Step 2 — Google Play Console:
+    1. Setup → API access → Link to the Google Cloud project above
+    2. Grant access to the service account → Role: **Financial data viewer**
+  - Step 3 — Supabase:
+    - `supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON='<paste full JSON content here>'`
+  - ⚠️ Never commit the JSON file to git — already in .gitignore as `google-service-account.json`
 
 ---
 
@@ -130,7 +137,7 @@
   - `eas build --platform ios --profile production`
   - Upload to App Store Connect via `eas submit --platform ios` or Transporter app
 
-- [ ] **Android: production AAB via EAS**
+- [x] **Android: production AAB via EAS**
   - `eas build --platform android --profile production`
   - Upload to Google Play Console as AAB (not APk)
 
@@ -139,7 +146,7 @@
   - Test IAP in sandbox before production submission
   - Apple Sandbox account: create in App Store Connect > Users > Sandbox Testers
 
-- [ ] **Google Play internal testing track**
+- [x] **Google Play internal testing track**
   - Upload AAB to internal testing track first
   - Test IAP with test accounts
   - Promote to production when ready

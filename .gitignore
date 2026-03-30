@@ -64,6 +64,7 @@ coverage/
 .env.*
 !.env.example
 *.pem
+google-service-account.json
 
 # ---------- Supabase ----------
 supabase/.temp/
