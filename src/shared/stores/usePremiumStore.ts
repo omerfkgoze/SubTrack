@@ -81,6 +81,13 @@ export const usePremiumStore = create<PremiumStore>()(
       purchaseErrorMessage: null,
 
       checkPremiumStatus: async () => {
+        // DEV ONLY: bypass real premium check when EXPO_PUBLIC_DEV_FORCE_PREMIUM=true.
+        // __DEV__ is always false in production/EAS builds, so this can never run in prod.
+        if (__DEV__ && process.env.EXPO_PUBLIC_DEV_FORCE_PREMIUM === 'true') {
+          set({ isPremium: true, planType: 'monthly', expiresAt: null, isLoading: false });
+          return;
+        }
+
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -142,8 +149,10 @@ export const usePremiumStore = create<PremiumStore>()(
             }
           }
         } else {
-          // data is null, no error — user has no settings row
-          set({ isLoading: false });
+          // data is null, no error — user has no settings row yet.
+          // Explicitly reset isPremium so stale persisted state from a previous user
+          // session doesn't bleed into a newly signed-in account.
+          set({ isPremium: false, planType: null, expiresAt: null, isLoading: false });
         }
       },
 

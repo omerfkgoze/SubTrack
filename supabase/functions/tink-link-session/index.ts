@@ -167,8 +167,11 @@ async function generateDelegatedCode(
         actor_client_id: TINK_LINK_ACTOR_CLIENT_ID,
         user_id: tinkUserId,
         id_hint: idHint,
+        // Scope must include the data scopes for the product (transactions/connect-accounts).
+        // Without accounts:read + transactions:read, Tink cannot create the callback authorization
+        // code after bank auth → REQUEST_FAILED_CREATE_AUTHORIZATION_CODE.
         scope:
-          'authorization:read,credentials:read,credentials:refresh,credentials:write,providers:read,user:read,provider-consents:read,provider-consents:write',
+          'authorization:read,credentials:read,credentials:refresh,credentials:write,providers:read,user:read,provider-consents:read,provider-consents:write,accounts:read,balances:read,transactions:read',
       }),
     },
   )

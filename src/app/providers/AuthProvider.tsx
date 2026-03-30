@@ -25,6 +25,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (useAuthStore.getState().isDeleting) return;
 
       if (event === 'SIGNED_OUT') {
+        // Always reset premium state on sign-out so a stale isPremium:true from a
+        // previous user session never bleeds into a newly signed-in account.
+        usePremiumStore.setState({ isPremium: false, planType: null, expiresAt: null, lastValidatedAt: null });
+
         const wasAuthenticated = useAuthStore.getState().isAuthenticated;
         if (wasAuthenticated) {
           handleSessionExpired('Your session has expired. Please log in again.');
