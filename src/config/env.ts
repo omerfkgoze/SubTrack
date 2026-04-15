@@ -1,6 +1,7 @@
 /**
  * Typed runtime environment configuration.
  * Uses EXPO_PUBLIC_ prefix for client-accessible env vars.
+ * Vars are statically inlined by Metro at build time — must be set in eas.json env section.
  */
 
 interface Env {
