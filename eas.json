@@ -22,6 +22,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xdvlhtslslglbdxvhhgn.supabase.co",
+        "EXPO_PUBLIC_TINK_CLIENT_ID": "a75e9404aa414809b7cfe069d63cc8b2",
         "EXPO_PUBLIC_DEMO_BANK_MODE": "false",
         "EXPO_PUBLIC_MOCK_IAP": "false"
       }
