@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { supabase } from '@shared/services/supabase';
 import { useAuthStore } from '@shared/stores/useAuthStore';
 import { usePremiumStore } from '@shared/stores/usePremiumStore';
+import { enrollBiometric } from '@features/auth/services/biometricService';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -40,6 +41,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (session) {
         checkPremiumStatus();
+
+        // Keep biometric keychain in sync after Supabase token rotation.
+        // Supabase rotates the refresh_token on every use (TOKEN_REFRESHED) and on new
+        // sessions (SIGNED_IN). If the keychain is not updated, the next biometric login
+        // will fail with "Session expired" because the stored token is stale.
+        if (
+          (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+          session.refresh_token &&
+          useAuthStore.getState().isBiometricEnabled
+        ) {
+          enrollBiometric(session.refresh_token).catch(() => {
+            // Non-fatal: user will see keychain error on next biometric login
+            // and be prompted to re-enable biometrics
+          });
+        }
       }
     });
 

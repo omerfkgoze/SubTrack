@@ -8,6 +8,8 @@ export interface TinkLinkParams {
   market?: string;
   locale?: string;
   authorizationCode?: string;
+  /** Set true to include test/demo providers in Tink Link UI (sandbox testing only). */
+  testMode?: boolean;
 }
 
 /**
@@ -34,8 +36,10 @@ export function buildTinkLinkUrl(params: TinkLinkParams): string {
     // One-time access flow: scope must be in the URL
     url.searchParams.set('scope', 'accounts:read,transactions:read');
   }
-  // Enable test/demo providers in sandbox
-  if (__DEV__) {
+  // Enable test/demo providers in sandbox builds.
+  // __DEV__ covers local Metro dev builds; params.testMode covers production builds
+  // that are still using Tink sandbox credentials (e.g. Google Play internal testing).
+  if (__DEV__ || params.testMode) {
     url.searchParams.set('test', 'true');
   }
   return url.toString();

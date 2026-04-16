@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
+import * as Linking from 'expo-linking';
 import { format, parseISO } from 'date-fns';
 import {
   Text,
@@ -82,6 +83,7 @@ export function BankConnectionScreen() {
     market: 'DE',
     locale: 'en_US',
     authorizationCode: delegatedCode ?? undefined,
+    testMode: env.TINK_TEST_MODE,
   });
 
   // Process auth code AFTER WebView is unmounted (flowState === 'processing')
@@ -208,6 +210,21 @@ export function BankConnectionScreen() {
     },
     [handleCallbackUrl, flowState],
   );
+
+  // On Android, the system intent-filter for `subtrack://` intercepts Tink's callback
+  // redirect before the WebView can handle it via onShouldStartLoadWithRequest.
+  // The app is brought to foreground with the URL as a deep link — we must catch it here.
+  useEffect(() => {
+    if (flowState !== 'webview') return;
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (isTinkCallbackUrl(url)) {
+        handleCallbackUrl(url);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [flowState, handleCallbackUrl]);
 
   const handleRetry = useCallback(() => {
     clearConnectionError();
