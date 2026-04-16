@@ -30,25 +30,32 @@ function mapBiometricError(error: unknown): BiometricError {
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
 
-    if (msg.includes('cancel') || msg.includes('user cancel')) {
+    if (msg.includes('cancel') || msg.includes('user cancel') || msg.includes('negative button')) {
       return { message: '', code: 'USER_CANCELLED' };
     }
-    if (msg.includes('not available') || msg.includes('no hardware')) {
+    if (msg.includes('not available') || msg.includes('no hardware') || msg.includes('biometric not available')) {
       return {
         message: 'Your device does not support biometric authentication',
         code: 'NOT_AVAILABLE',
       };
     }
-    if (msg.includes('not enrolled') || msg.includes('no biometrics')) {
+    if (msg.includes('not enrolled') || msg.includes('no biometrics') || msg.includes('no fingerprints')) {
       return {
         message: 'No biometrics enrolled on this device',
         code: 'NOT_ENROLLED',
       };
     }
-    if (msg.includes('keychain') || msg.includes('credential')) {
+    if (msg.includes('keychain') || msg.includes('credential') || msg.includes('keystore')
+      || msg.includes('cipher') || msg.includes('invalidated') || msg.includes('securityexception')) {
       return {
-        message: 'Failed to access secure storage',
+        message: 'Secure storage error. Please disable and re-enable biometrics.',
         code: 'KEYCHAIN_ERROR',
+      };
+    }
+    if (msg.includes('lockout') || msg.includes('too many')) {
+      return {
+        message: 'Too many failed attempts. Try again later or use your password.',
+        code: 'AUTH_FAILED',
       };
     }
   }
@@ -75,8 +82,12 @@ export async function enrollBiometric(refreshToken: string): Promise<BiometricRe
     await rnBiometrics.createKeys();
 
     try {
+      // Store refresh token in device Keychain/Keystore.
+      // Do NOT use ACCESS_CONTROL.BIOMETRY_ANY — it forces a second biometric prompt
+      // on getGenericPassword (Android), which conflicts with simplePrompt and causes
+      // "Biometric authentication failed" on production builds. simplePrompt already
+      // serves as the biometric gate; the Keychain is protected by device security.
       await Keychain.setGenericPassword('biometric_token', refreshToken, {
-        accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
         accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
         service: KEYCHAIN_SERVICE,
       });
@@ -114,15 +125,33 @@ export async function authenticateWithBiometric(): Promise<BiometricAuthResult> 
       };
     }
 
-    const credentials = await Keychain.getGenericPassword({
-      service: KEYCHAIN_SERVICE,
-    });
+    let credentials: false | Keychain.UserCredentials;
+    try {
+      credentials = await Keychain.getGenericPassword({
+        service: KEYCHAIN_SERVICE,
+      });
+    } catch (keychainError) {
+      // Keychain access can fail if the entry was stored with ACCESS_CONTROL.BIOMETRY_ANY
+      // (old enrollment) and the Android Keystore rejects the biometric context.
+      // User needs to re-enable biometrics to re-store without double-gating.
+      return {
+        success: false,
+        refreshToken: null,
+        error: {
+          message: 'Secure storage error. Please disable and re-enable biometrics in Settings.',
+          code: 'KEYCHAIN_ERROR',
+        },
+      };
+    }
 
     if (!credentials) {
       return {
         success: false,
         refreshToken: null,
-        error: { message: 'Failed to access secure storage', code: 'KEYCHAIN_ERROR' },
+        error: {
+          message: 'No stored credentials found. Please disable and re-enable biometrics in Settings.',
+          code: 'KEYCHAIN_ERROR',
+        },
       };
     }
 

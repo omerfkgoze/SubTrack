@@ -4,6 +4,9 @@ import {
   buildConsentDates,
   getClientAccessToken,
   generateUserAuthorizationCode,
+  createTinkUserBestEffort,
+  fetchTransactions,
+  detectRecurringSubscriptions,
 } from './utils.ts'
 
 const corsHeaders = {
@@ -82,14 +85,24 @@ Deno.serve(async (req: Request) => {
     )
     console.log('Callback token exchange OK, scopes:', callbackTokenResponse.scope)
 
-    // The callback code exchange may not return a refresh_token.
-    // For continuous access, generate a server-side authorization code and exchange it.
+    // Create permanent Tink user (best-effort) before attempting server-side grant.
+    // This ensures the user exists for authorization-grant to reference.
+    let clientAccessToken: string | null = null
+    try {
+      clientAccessToken = await getClientAccessToken(tinkClientId, tinkClientSecret)
+      await createTinkUserBestEffort(clientAccessToken, userId, 'DE')
+    } catch (clientTokenError) {
+      const msg = clientTokenError instanceof Error ? clientTokenError.message : 'Unknown'
+      console.warn('Client token / user creation failed:', msg)
+    }
+
+    // The callback code exchange may not return a refresh_token (one-time flow).
+    // Try server-side authorization-grant as a best-effort to get a refresh_token.
     let refreshToken = callbackTokenResponse.refresh_token ?? null
 
-    if (!refreshToken) {
-      console.log('No refresh_token from callback code. Generating server-side authorization code...')
+    if (!refreshToken && clientAccessToken) {
+      console.log('No refresh_token from callback code. Trying server-side authorization grant...')
       try {
-        const clientAccessToken = await getClientAccessToken(tinkClientId, tinkClientSecret)
         const serverCode = await generateUserAuthorizationCode(clientAccessToken, userId)
         const serverTokenResponse = await exchangeAuthorizationCode(
           serverCode,
@@ -159,8 +172,73 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('Bank connection created:', newConnection.id)
-    // access_token is request-scoped (in-memory only, never persisted)
-    // refresh_token is stored in tink_refresh_token column — server-side only (NFR17)
+
+    // ── One-time flow: fetch transactions & detect subscriptions immediately ──
+    // The access_token from callback code exchange is valid for ~30 min.
+    // Use it now to fetch transactions before the token expires.
+    let detectedCount = 0
+    let newCount = 0
+
+    if (callbackTokenResponse.access_token) {
+      try {
+        const transactions = await fetchTransactions(callbackTokenResponse.access_token)
+        console.log('One-time flow: fetched', transactions.length, 'transactions')
+
+        const detectedRows = detectRecurringSubscriptions(transactions, userId, newConnection.id)
+        console.log('One-time flow: detected', detectedRows.length, 'recurring subscriptions')
+
+        if (detectedRows.length > 0) {
+          // Filter out already-actioned subscriptions
+          const { data: existingActioned } = await supabaseAdmin
+            .from('detected_subscriptions')
+            .select('tink_group_id')
+            .eq('user_id', userId)
+            .neq('status', 'detected')
+
+          const actionedGroupIds = new Set(
+            (existingActioned ?? []).map((r: { tink_group_id: string }) => r.tink_group_id)
+          )
+          const rowsToUpsert = detectedRows.filter((row) => !actionedGroupIds.has(row.tink_group_id))
+
+          // Track new vs existing
+          const { data: existingDetected } = await supabaseAdmin
+            .from('detected_subscriptions')
+            .select('tink_group_id')
+            .eq('user_id', userId)
+            .eq('status', 'detected')
+
+          const existingGroupIds = new Set(
+            (existingDetected ?? []).map((r: { tink_group_id: string }) => r.tink_group_id)
+          )
+          newCount = rowsToUpsert.filter((row) => !existingGroupIds.has(row.tink_group_id)).length
+
+          if (rowsToUpsert.length > 0) {
+            const { error: upsertError } = await supabaseAdmin
+              .from('detected_subscriptions')
+              .upsert(rowsToUpsert, {
+                onConflict: 'user_id,tink_group_id',
+                ignoreDuplicates: false,
+              })
+
+            if (upsertError) {
+              console.error('Failed to upsert detected subscriptions:', upsertError.message)
+            }
+          }
+
+          detectedCount = detectedRows.length
+        }
+
+        // Update last_synced_at
+        await supabaseAdmin
+          .from('bank_connections')
+          .update({ last_synced_at: new Date().toISOString() })
+          .eq('id', newConnection.id)
+      } catch (detectError) {
+        const msg = detectError instanceof Error ? detectError.message : 'Unknown'
+        console.warn('One-time flow detection failed (non-fatal):', msg)
+        // Non-fatal: connection was created successfully, detection can be retried
+      }
+    }
 
     // Strip sensitive fields before returning to client
     const { tink_refresh_token: _secret, ...safeConnection } = newConnection
@@ -168,6 +246,8 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({
       success: true,
       connection: safeConnection,
+      detectedCount,
+      newCount,
     })
   } catch (error) {
     // Log error without credentials

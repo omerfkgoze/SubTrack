@@ -302,6 +302,12 @@ export const useBankStore = create<BankStore>()(
               connections: [...state.connections, newConnection],
               isConnecting: false,
             }));
+            // One-time flow: tink-connect now also detects subscriptions.
+            // Refresh the detected list from DB to pick up any new detections.
+            if (data.detectedCount && data.detectedCount > 0) {
+              const { fetchDetectedSubscriptions } = useBankStore.getState();
+              await fetchDetectedSubscriptions();
+            }
           } else {
             const detail = data?.error ?? 'Connection setup failed. Please try again.';
             console.error('[useBankStore] Unexpected response:', JSON.stringify(data));

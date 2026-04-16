@@ -131,24 +131,27 @@ export function BankConnectionScreen() {
   }, [clearConnectionError]);
 
   const handleConsentConfirm = useCallback(async () => {
-    setFlowState('preparing');
     clearConnectionError();
-    const code = await createLinkSession('DE');
-    if (code) {
-      if (env.DEMO_BANK_MODE) {
-        // Skip WebView in demo mode — go straight to processing with the mock auth code
+    if (env.DEMO_BANK_MODE) {
+      // Demo mode: use mock flow via createLinkSession
+      setFlowState('preparing');
+      const code = await createLinkSession('DE');
+      if (code) {
         setPendingAuthCode(code);
         setPendingCredentialsId(null);
         setFlowState('processing');
       } else {
-        setDelegatedCode(code);
-        setFlowState('webview');
+        const currentError = useBankStore.getState().connectionError;
+        setSnackbarType('error');
+        setSnackbarMessage(currentError?.message ?? 'Failed to prepare bank connection. Please try again.');
+        setFlowState('info');
       }
     } else {
-      const currentError = useBankStore.getState().connectionError;
-      setSnackbarType('error');
-      setSnackbarMessage(currentError?.message ?? 'Failed to prepare bank connection. Please try again.');
-      setFlowState('info');
+      // One-time flow: open Tink Link directly without delegated authorization code.
+      // No tink-link-session call needed — tink-connect will handle everything
+      // (token exchange + transaction fetch + subscription detection) in one step.
+      setDelegatedCode(null);
+      setFlowState('webview');
     }
   }, [createLinkSession, clearConnectionError]);
 
