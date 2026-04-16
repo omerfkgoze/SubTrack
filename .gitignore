@@ -63,7 +63,6 @@ coverage/
 .env
 .env.*
 !.env.example
-!.env.production
 *.pem
 google-service-account.json
 
