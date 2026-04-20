@@ -179,6 +179,18 @@ export async function disableBiometric(): Promise<void> {
   }
 }
 
+/**
+ * Updates only the stored refresh token without recreating biometric keys.
+ * Use this for token rotation sync (TOKEN_REFRESHED / SIGNED_IN events).
+ * Use enrollBiometric() only when the user first enables biometrics.
+ */
+export async function updateBiometricToken(refreshToken: string): Promise<void> {
+  await Keychain.setGenericPassword('biometric_token', refreshToken, {
+    accessible: Keychain.ACCESSIBLE.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+    service: KEYCHAIN_SERVICE,
+  });
+}
+
 export async function getStoredToken(): Promise<string | null> {
   try {
     const credentials = await Keychain.getGenericPassword({

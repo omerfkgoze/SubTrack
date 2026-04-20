@@ -182,7 +182,8 @@ export const useBankStore = create<BankStore>()(
           const { data, error } = await supabase
             .from('bank_connections')
             .select('*')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .neq('status', 'disconnected');
 
           if (error) {
             set({
