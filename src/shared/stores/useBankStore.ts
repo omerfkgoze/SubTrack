@@ -365,6 +365,11 @@ export const useBankStore = create<BankStore>()(
               }));
               message = 'Bank connection expired. Please reconnect.';
               errorCode = 'TOKEN_REFRESH_FAILED';
+            } else if (errorField === 'RECONNECT_REQUIRED') {
+              // Continuous Access not yet approved — connection is still valid,
+              // user must reconnect (one-time flow) to get a fresh access token.
+              message = 'Reconnect your bank to scan for new subscriptions.';
+              errorCode = 'RECONNECT_REQUIRED';
             } else if (errorField === 'CONNECTION_NOT_ACTIVE') {
               message = 'Bank connection is not active. Please reconnect your bank.';
               errorCode = 'CONNECTION_NOT_ACTIVE';

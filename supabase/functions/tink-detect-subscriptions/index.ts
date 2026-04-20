@@ -105,7 +105,17 @@ Deno.serve(async (req: Request) => {
       const message = tokenError instanceof Error ? tokenError.message : 'Unknown'
       console.error('Authorization grant failed:', message)
 
-      // Update connection status to expired (AC9)
+      // AUTHORIZATION_GRANT_FAILED means Continuous Access is not yet approved by Tink.
+      // The bank connection itself is valid — the user just needs to reconnect (one-time
+      // flow) to get a fresh access token. Do NOT mark the connection as expired.
+      if (message.startsWith('AUTHORIZATION_GRANT_FAILED')) {
+        return jsonResponse({
+          error: 'RECONNECT_REQUIRED',
+          detail: 'Reconnect your bank to scan for new subscriptions.',
+        }, 401)
+      }
+
+      // For genuine token/credential expiry, mark the connection as expired (AC9)
       await supabaseAdmin
         .from('bank_connections')
         .update({ status: 'expired', updated_at: new Date().toISOString() })

@@ -470,7 +470,9 @@ export function BankConnectionScreen() {
         accessibilityLiveRegion="polite"
         style={snackbarType === 'error' ? { backgroundColor: theme.colors.error } : undefined}
         action={
-          snackbarType === 'error' && detectionError && activeConnection
+          snackbarType === 'error' && detectionError?.code === 'RECONNECT_REQUIRED'
+            ? { label: 'Reconnect', onPress: handleConnectPress }
+            : snackbarType === 'error' && detectionError && activeConnection
             ? { label: 'Retry', onPress: handleScanPress }
             : detectionSnackbarWithReview
             ? { label: 'Review', onPress: () => navigation.navigate('DetectedReview') }

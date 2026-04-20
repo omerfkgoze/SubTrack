@@ -144,6 +144,8 @@ export async function createTinkUserBestEffort(
 
 // ── Transaction Fetching (one-time flow) ──
 
+const SEARCH_PAGE_SIZE = 100
+
 interface TinkSearchTransaction {
   accountId: string
   amount: number
@@ -173,6 +175,7 @@ interface TinkSearchResponse {
 
 /**
  * Fetches user transactions from Tink Search API (last 6 months).
+ * Paginates through all results using pageIndex.
  */
 export async function fetchTransactions(
   accessToken: string,
@@ -184,33 +187,46 @@ export async function fetchTransactions(
   const formatDate = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-  const response = await fetch('https://api.tink.com/api/v1/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      startDate: formatDate(startDate),
-      endDate: formatDate(endDate),
-      includeUpcoming: false,
-      order: 'ASC',
-      sort: 'DATE',
-    }),
-  })
+  const allTransactions: TinkSearchTransaction[] = []
+  let pageIndex = 0
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`Tink search failed: ${response.status}`, errorText)
-    throw new Error(`SEARCH_API_FAILED:${response.status}`)
+  while (true) {
+    const response = await fetch('https://api.tink.com/api/v1/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        includeUpcoming: false,
+        order: 'ASC',
+        sort: 'DATE',
+        pageSize: SEARCH_PAGE_SIZE,
+        pageIndex,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Tink search failed: ${response.status}`, errorText)
+      throw new Error(`SEARCH_API_FAILED:${response.status}`)
+    }
+
+    const data: TinkSearchResponse = await response.json()
+    const page = data.results
+      .filter((r) => r.type === 'TRANSACTION')
+      .map((r) => r.transaction)
+
+    allTransactions.push(...page)
+
+    if (allTransactions.length >= data.count || page.length < SEARCH_PAGE_SIZE) break
+    pageIndex++
   }
 
-  const data: TinkSearchResponse = await response.json()
-  console.log('Fetched transactions:', data.count)
-
-  return data.results
-    .filter((r) => r.type === 'TRANSACTION')
-    .map((r) => r.transaction)
+  console.log('Fetched transactions total:', allTransactions.length)
+  return allTransactions
 }
 
 // ── Custom Recurring Detection ──
