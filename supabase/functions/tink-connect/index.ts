@@ -145,6 +145,29 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Rate limit: max 3 new connections per user per 24 h to cap Tink API costs.
+    // Counts all rows (including disconnected) — intentional, abuse uses reconnect cycles.
+    const windowStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { count: recentCount, error: countError } = await supabaseAdmin
+      .from('bank_connections')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', windowStart)
+
+    if (countError) {
+      console.error('Rate limit check failed:', countError.message)
+      return jsonResponse({ error: 'Connection setup failed. Please try again.' }, 500)
+    }
+
+    const MAX_CONNECTIONS_PER_DAY = 3
+    if ((recentCount ?? 0) >= MAX_CONNECTIONS_PER_DAY) {
+      console.warn('Rate limit hit for user:', userId, 'recent connections:', recentCount)
+      return jsonResponse(
+        { error: 'Too many bank connections in 24 hours. Please try again tomorrow.' },
+        429,
+      )
+    }
+
     // Calculate consent expiry: consent_granted_at + 180 days (EBA rules)
     const { consentGrantedAt, consentExpiresAt } = buildConsentDates()
 

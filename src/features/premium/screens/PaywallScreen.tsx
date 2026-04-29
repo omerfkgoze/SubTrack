@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import * as Linking from 'expo-linking';
 import { ActivityIndicator, Button, Divider, Icon, Snackbar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -218,7 +219,12 @@ export function PaywallScreen() {
           <Button mode="text" compact textColor={theme.colors.onSurfaceVariant} onPress={() => {}}>
             Terms of Use
           </Button>
-          <Button mode="text" compact textColor={theme.colors.onSurfaceVariant} onPress={() => {}}>
+          <Button
+            mode="text"
+            compact
+            textColor={theme.colors.onSurfaceVariant}
+            onPress={() => Linking.openURL('https://omerfkgoze.github.io/SubTrack/privacy-policy.html')}
+          >
             Privacy Policy
           </Button>
         </View>

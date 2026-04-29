@@ -1,5 +1,5 @@
 export interface DeepLinkResult {
-  type: 'recovery' | 'unknown';
+  type: 'recovery' | 'signup' | 'unknown';
   accessToken?: string;
   refreshToken?: string;
 }
@@ -33,9 +33,13 @@ function parseSupabaseFragment(url: string): Record<string, string> {
 export function parseSupabaseDeepLink(url: string): DeepLinkResult {
   const params = parseSupabaseFragment(url);
 
-  if (params.type === 'recovery' && params.access_token && params.refresh_token) {
+  if (
+    (params.type === 'recovery' || params.type === 'signup') &&
+    params.access_token &&
+    params.refresh_token
+  ) {
     return {
-      type: 'recovery',
+      type: params.type as 'recovery' | 'signup',
       accessToken: params.access_token,
       refreshToken: params.refresh_token,
     };

@@ -74,7 +74,11 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResult> {
   try {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'subtrack://auth/confirm' },
+    });
 
     if (error) {
       return {

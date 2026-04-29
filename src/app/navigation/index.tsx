@@ -36,13 +36,18 @@ export function RootNavigator() {
     async (url: string) => {
       const result = parseSupabaseDeepLink(url);
 
-      if (result.type === 'recovery' && result.accessToken && result.refreshToken) {
+      if (
+        (result.type === 'recovery' || result.type === 'signup') &&
+        result.accessToken &&
+        result.refreshToken
+      ) {
         setIsProcessingDeepLink(true);
         try {
           const sessionResult = await setSessionFromTokens(result.accessToken, result.refreshToken);
-          if (!sessionResult.error) {
+          if (!sessionResult.error && result.type === 'recovery') {
             setPendingPasswordReset(true);
           }
+          // type === 'signup': session is set, AuthProvider SIGNED_IN event logs the user in automatically
         } finally {
           setIsProcessingDeepLink(false);
         }
